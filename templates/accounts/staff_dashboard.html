@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex;">
+    {% include 'includes/sidebar.html' %}
+    <div style="padding: 20px;">
+        <h2>Welcome Staff {{ user.name }}</h2>
+        <p>You can manage your assigned records.</p>
+    </div>
+</div>
+{% endblock %}
