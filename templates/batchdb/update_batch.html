@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Update Batch{% endblock %}
+
+{% block content %}
+<h2>Update Batch - {{ batch.batch_id }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Update Batch</button>
+    <a href="{% url 'batch_list' %}">Cancel</a>
+</form>
+{% endblock %}

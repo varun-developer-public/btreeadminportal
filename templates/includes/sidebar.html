@@ -1,11 +1,11 @@
 <div style="width: 250px; background-color: #f0f0f0; padding: 20px;">
-    <h3>Navigation</h3>
+    <h3>BTree Admin Portal</h3>
     <ul style="list-style: none; padding: 0;">
-        <li><a href="#">📘 Student DB</a></li>
-        <li><a href="#">📋 Placement DB</a></li>
-        <li><a href="#">📅 Batch DB</a></li>
-        <li><a href="#">💳 Payment DB</a></li>
-        <li><a href="#">👨‍🏫 Trainers DB</a></li>
+        <li><a href="{% url 'student_list' %}">📘 Student DB</a></li>
+        <li><a href="{% url 'placement_list' %}">📋 Placement DB</a></li>
+        <li><a href="{% url 'batch_list' %}">📅 Batch DB</a></li>
+        <li><a href="#">💳 Payment DB</a></li>  <!-- Fill this once paymentdb is ready -->
+        <li><a href="{% url 'trainer_list' %}">👨‍🏫 Trainers DB</a></li>
         <li><a href="{% url 'logout' %}">🚪 Logout</a></li>
     </ul>
 </div>

@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Update Placement{% endblock %}
+
+{% block content %}
+<h2>Update Placement for {{ placement.student.student_id }} - {{ placement.student.name }}</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save Changes</button>
+    <a href="{% url 'placement_list' %}">Cancel</a>
+</form>
+{% endblock %}

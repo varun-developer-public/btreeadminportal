@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Placement Records{% endblock %}
+
+{% block content %}
+<h2>Placement Records</h2>
+
+<table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Student ID</th>
+            <th>Batch IDs</th>
+            <th>Student Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Trainer(s)</th>
+            <th>Resume Link</th>
+            <th>Status</th>
+            <th>Feedback</th>
+            <th>Company 1</th>
+            <th>Company 2</th>
+            <th>Company 3</th>
+            <th>Company 4</th>
+            <th>Company 5</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for placement in placements %}
+        <tr>
+            <td>{{ placement.student.student_id }}</td>
+            <td>
+                {% if placement.student.batches.all %}
+                    {% for batch in placement.student.batches.all %}
+                        {{ batch.batch_id }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>{{ placement.student.name }}</td>
+            <td>{{ placement.student.phone }}</td>
+            <td>{{ placement.student.email }}</td>
+            <td>
+                {% if placement.student.batches.all %}
+                    {% for batch in placement.student.batches.all %}
+                        {% if batch.trainer %}
+                            {{ batch.trainer.name }}{% if not forloop.last %}, {% endif %}
+                        {% else %}
+                            —{% if not forloop.last %}, {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    —
+                {% endif %}
+            </td>
+            <td>
+                {% if placement.resume_link %}
+                    <a href="{{ placement.resume_link }}" target="_blank">View Resume</a>
+                {% else %}
+                    N/A
+                {% endif %}
+            </td>
+            <td>{{ placement.is_active|yesno:"Active,Not Active" }}</td>
+            <td>{{ placement.feedback }}</td>
+            <td>{{ placement.company_1 }}</td>
+            <td>{{ placement.company_2 }}</td>
+            <td>{{ placement.company_3 }}</td>
+            <td>{{ placement.company_4 }}</td>
+            <td>{{ placement.company_5 }}</td>
+            <td>
+                <a href="{% url 'update_placement' placement.pk %}">✏️ Edit</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="15">No placement records found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

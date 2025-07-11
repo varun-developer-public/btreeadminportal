@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Create Student{% endblock %}
+
+{% block content %}
+<h2>Create New Student</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+
+    <button type="submit">Save Student</button>
+</form>
+
+<a href="{% url 'student_list' %}">Back to Student List</a>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const emiType = document.getElementById("id_emi_type");
+
+    const emi1Fields = [
+        document.getElementById("id_emi_1_amount"),
+        document.getElementById("id_emi_1_date")
+    ];
+    const emi2Fields = [
+        document.getElementById("id_emi_2_amount"),
+        document.getElementById("id_emi_2_date")
+    ];
+    const emi3Fields = [
+        document.getElementById("id_emi_3_amount"),
+        document.getElementById("id_emi_3_date")
+    ];
+    const emi4Fields = [
+        document.getElementById("id_emi_4_amount"),
+        document.getElementById("id_emi_4_date")
+    ];
+
+    function hideAllEMI() {
+        [...emi1Fields, ...emi2Fields, ...emi3Fields, ...emi4Fields].forEach(el => {
+            el.closest('p').style.display = 'none';
+        });
+    }
+
+    function showEMIFields() {
+        hideAllEMI();
+        const type = emiType.value;
+
+        if (type === '2') {
+            [...emi1Fields, ...emi2Fields].forEach(el => el.closest('p').style.display = 'block');
+        } else if (type === '3') {
+            [...emi1Fields, ...emi2Fields, ...emi3Fields].forEach(el => el.closest('p').style.display = 'block');
+        } else if (type === '4') {
+            [...emi1Fields, ...emi2Fields, ...emi3Fields, ...emi4Fields].forEach(el => el.closest('p').style.display = 'block');
+        } else {
+            hideAllEMI();  // For 'NONE'
+        }
+    }
+
+    emiType.addEventListener("change", showEMIFields);
+    showEMIFields();  // trigger on load
+});
+</script>
+
+
+{% endblock %}
