@@ -6,6 +6,12 @@
 
 <form method="post">
     {% csrf_token %}
+
+    <p>
+        <label>Batch ID:</label>
+        <input type="text" value="{{ next_batch_id }}" readonly style="background-color: #eee; border: 1px solid #ccc;">
+    </p>
+
     {{ form.as_p }}
 
     <button type="submit">Create Batch</button>

@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'studentsdb',
     'placementdb',
     'batchdb',
-    'trainersdb'
+    'trainersdb',
+    'consultantdb'
 ]
 
 MIDDLEWARE = [

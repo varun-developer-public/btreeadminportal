@@ -17,4 +17,4 @@ class BatchForm(forms.ModelForm):
 
     class Meta:
         model = Batch
-        fields = ['batch_id', 'students', 'trainer', 'slot_timings']
+        fields = ['students', 'trainer', 'slot_timings'] 

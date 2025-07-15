@@ -1,11 +1,35 @@
-<div style="width: 250px; background-color: #f0f0f0; padding: 20px;">
-    <h3>BTree Admin Portal</h3>
-    <ul style="list-style: none; padding: 0;">
-        <li><a href="{% url 'student_list' %}">📘 Student DB</a></li>
-        <li><a href="{% url 'placement_list' %}">📋 Placement DB</a></li>
-        <li><a href="{% url 'batch_list' %}">📅 Batch DB</a></li>
-        <li><a href="#">💳 Payment DB</a></li>  <!-- Fill this once paymentdb is ready -->
-        <li><a href="{% url 'trainer_list' %}">👨‍🏫 Trainers DB</a></li>
-        <li><a href="{% url 'logout' %}">🚪 Logout</a></li>
+<div style="padding: 20px;">
+    <h3 style="margin: 0 0 20px 0; color: #333;">Menu</h3>
+    <ul style="list-style: none; padding: 0; margin: 0;">
+        <li style="margin-bottom: 15px;">
+            <a href="{% url 'student_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; transition: background-color 0.2s; color: #333;">
+                <span style="margin-right: 10px;">📘</span> Student DB
+            </a>
+        </li>
+        <li style="margin-bottom: 15px;">
+            <a href="{% url 'placement_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; transition: background-color 0.2s; color: #333;">
+                <span style="margin-right: 10px;">📋</span> Placement DB
+            </a>
+        </li>
+        <li style="margin-bottom: 15px;">
+            <a href="{% url 'batch_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; transition: background-color 0.2s; color: #333;">
+                <span style="margin-right: 10px;">📅</span> Batch DB
+            </a>
+        </li>
+        <li style="margin-bottom: 15px;">
+            <a href="#" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; transition: background-color 0.2s; color: #333;">
+                <span style="margin-right: 10px;">💳</span> Payment DB
+            </a>
+        </li>
+        <li style="margin-bottom: 15px;">
+            <a href="{% url 'trainer_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; transition: background-color 0.2s; color: #333;">
+                <span style="margin-right: 10px;">👨‍🏫</span> Trainers DB
+            </a>
+        </li>
+        <li style="margin-bottom: 15px;">
+            <a href="{% url 'consultant_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; transition: background-color 0.2s; color: #333;">
+                <span style="margin-right: 10px;">🤝</span> Consultant DB
+            </a>
+        </li>
     </ul>
 </div>

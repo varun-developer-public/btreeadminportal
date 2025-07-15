@@ -8,4 +8,5 @@ urlpatterns = [
     path('placements/', include('placementdb.urls')),
     path('batches/', include('batchdb.urls')),
     path('trainers/', include('trainersdb.urls')),
+    path('consultants/', include('consultantdb.urls')),
 ]

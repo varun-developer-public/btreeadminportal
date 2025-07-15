@@ -19,7 +19,6 @@
             <th>Batch</th>
             <th>Trainer</th>
             <th>Join Date</th>
-            <th>Pending Amount</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -49,7 +48,6 @@
             {% endfor %}
             </td>
             <td>{{ student.join_date }}</td>
-            <td>₹{{ student.total_pending_amount }}</td>
             <td>
                 <a href="{% url 'update_student' student.student_id %}">✏️ Edit</a> |
                 <a href="{% url 'delete_student' student.student_id %}">🗑️ Delete</a>

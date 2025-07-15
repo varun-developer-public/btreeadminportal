@@ -1,5 +1,8 @@
 body {
     font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
 }
 
 a {
@@ -8,5 +11,57 @@ a {
 }
 
 a:hover {
-    text-decoration: underline;
+    text-decoration: none;
+}
+
+.sidebar a:hover {
+    background-color: #e0e0e0;
+}
+
+button, input[type='submit'] {
+    padding: 8px 16px;
+    background-color: #f0f0f0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #333;
+    transition: background-color 0.2s;
+}
+
+button:hover, input[type='submit']:hover {
+    background-color: #e0e0e0;
+}
+
+input[type='text'], input[type='email'], input[type='password'], textarea, select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 100%;
+    max-width: 300px;
+    margin-bottom: 10px;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+.search-form {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.search-form input {
+    margin-bottom: 0;
+}
+
+.error-message {
+    color: #dc3545;
+    margin-bottom: 10px;
+}
+
+.success-message {
+    color: #28a745;
+    margin-bottom: 10px;
 }

@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from consultantdb.models import Consultant
 class Student(models.Model):
     MODE_CHOICES = [
         ('ON', 'Online'),
@@ -22,6 +22,7 @@ class Student(models.Model):
     student_id = models.CharField(max_length=10, unique=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
+    alternative_phone = models.CharField(max_length=15, null=True,blank=True)
     email = models.EmailField()
     trainer = models.ForeignKey('trainersdb.Trainer', on_delete=models.SET_NULL, null=True, blank=True)
     join_date = models.DateField(default=timezone.now)
@@ -32,7 +33,7 @@ class Student(models.Model):
     source_of_joining = models.CharField(max_length=100, blank=True)
     mode_of_class = models.CharField(max_length=3, choices=MODE_CHOICES)
     week_type = models.CharField(max_length=2, choices=WEEK_TYPE)
-    consultant = models.CharField(max_length=100, blank=True)
+    consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True, blank=True)
     payment_account = models.CharField(max_length=100, blank=True)
     total_fees = models.DecimalField(max_digits=10, decimal_places=2)
     gst_bill = models.BooleanField(default=False)

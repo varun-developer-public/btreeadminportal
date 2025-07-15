@@ -7,7 +7,7 @@ class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
         fields = [
-            'name', 'phone', 'email',
+            'name', 'phone','alternative_phone', 'email',
             'join_date','start_date', 'tentative_end_date',
             'course_percentage', 'pl_required', 'source_of_joining',
             'mode_of_class', 'week_type', 'consultant', 'payment_account',
@@ -43,20 +43,38 @@ class StudentForm(forms.ModelForm):
         total_fees = cleaned_data.get('total_fees') or 0
         amount_paid = cleaned_data.get('amount_paid') or 0
 
-        # Auto-calculate pending amount
-        cleaned_data['total_pending_amount'] = total_fees - amount_paid
+        pending = total_fees - amount_paid
+        cleaned_data['total_pending_amount'] = pending
 
-        # EMI field validation
-        if emi_type == '1' and not cleaned_data.get('emi_1_amount'):
-            self.add_error('emi_1_amount', 'Please enter EMI 1 amount')
-        if emi_type == '2' and not cleaned_data.get('emi_2_amount'):
-            self.add_error('emi_2_amount', 'Please enter EMI 2 amount')
-        if emi_type == '3' and not cleaned_data.get('emi_3_amount'):
-            self.add_error('emi_3_amount', 'Please enter EMI 3 amount')
-        if emi_type == '4' and not cleaned_data.get('emi_4_amount'):
-            self.add_error('emi_4_amount', 'Please enter EMI 4 amount')
+        # Collect EMI amounts
+        emi_amounts = []
+        if emi_type == '2':
+            emi_amounts = [
+                cleaned_data.get('emi_1_amount') or 0,
+                cleaned_data.get('emi_2_amount') or 0
+            ]
+        elif emi_type == '3':
+            emi_amounts = [
+                cleaned_data.get('emi_1_amount') or 0,
+                cleaned_data.get('emi_2_amount') or 0,
+                cleaned_data.get('emi_3_amount') or 0
+            ]
+        elif emi_type == '4':
+            emi_amounts = [
+                cleaned_data.get('emi_1_amount') or 0,
+                cleaned_data.get('emi_2_amount') or 0,
+                cleaned_data.get('emi_3_amount') or 0,
+                cleaned_data.get('emi_4_amount') or 0
+            ]
+
+        # Validate sum of EMIs if any EMI plan is selected
+        if emi_type in ['2', '3', '4']:
+            emi_sum = sum(emi_amounts)
+            if emi_sum != pending:
+                self.add_error(None, f"Sum of EMI amounts ({emi_sum}) must equal pending amount ({pending})")
 
         return cleaned_data
+
 
 class StudentUpdateForm(forms.ModelForm):
     class Meta:
@@ -64,6 +82,7 @@ class StudentUpdateForm(forms.ModelForm):
         fields = [
             'name',
             'phone',
+            'alternative_phone',
             'email',
             'tentative_end_date',
             'course_percentage',
@@ -77,5 +96,4 @@ class StudentUpdateForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        # (Future) Add PDB sync logic here
         return cleaned_data

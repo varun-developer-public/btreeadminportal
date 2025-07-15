@@ -1,0 +1,13 @@
+<nav style="background-color: #ffffff; padding: 1.2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: fixed; width: 98%; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center;">
+    <div class="logo" style="font-size: 1.5rem; font-weight: bold;">
+        <a href="/" style="text-decoration: none; color: #333;">BTree Institute</a>
+    </div>
+    <div class="auth-buttons">
+        {% if user.is_authenticated %}
+            <span style="margin-right: 1rem;">Welcome, {{ user.name }}</span>
+            <a href="{% url 'logout' %}" style="padding: 0.5rem 1rem; background-color: #f0f0f0; border-radius: 4px; color: #333; text-decoration: none;">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}" style="padding: 0.5rem 1rem; background-color: #f0f0f0; border-radius: 4px; color: #333; text-decoration: none;">Login</a>
+        {% endif %}
+    </div>
+</nav>

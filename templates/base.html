@@ -4,13 +4,53 @@
     <title>{% block title %}Institute Portal{% endblock %}</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .main-container {
+            display: flex;
+            margin-top: 60px;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #f0f0f0;
+            min-height: calc(100vh - 60px);
+            position: fixed;
+            left: 0;
+            display: {% if user.is_authenticated %}block{% else %}none{% endif %};
+        }
+        .content-container {
+            flex: 1;
+            margin-left: {% if user.is_authenticated %}250px{% else %}0{% endif %};
+            padding: 20px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+    </style>
 </head>
 <body>
-   <div class="main-container" style="display: flex;">
-     {% include 'includes/sidebar.html' %}
-    <div class="container" style="padding: 50px;">
-        {% block content %}{% endblock %}
+    {% include 'includes/navbar.html' %}
+    <div class="main-container">
+        <div class="sidebar">
+            {% include 'includes/sidebar.html' %}
+        </div>
+        <div class="content-container">
+            {% block content %}{% endblock %}
+        </div>
     </div>
-   </div>
 </body>
 </html>
