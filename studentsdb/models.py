@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from consultantdb.models import Consultant
+from settingsdb.models import SourceOfJoining
+
 class Student(models.Model):
     MODE_CHOICES = [
         ('ON', 'Online'),
@@ -22,7 +24,7 @@ class Student(models.Model):
     student_id = models.CharField(max_length=10, unique=True, blank=True)
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
-    alternative_phone = models.CharField(max_length=15, null=True,blank=True)
+    alternative_phone = models.CharField(max_length=15, null=True, blank=True)
     email = models.EmailField()
     trainer = models.ForeignKey('trainersdb.Trainer', on_delete=models.SET_NULL, null=True, blank=True)
     join_date = models.DateField(default=timezone.now)
@@ -30,11 +32,11 @@ class Student(models.Model):
     tentative_end_date = models.DateField(blank=True, null=True)
     course_percentage = models.FloatField(default=0)
     pl_required = models.BooleanField(default=False)
-    source_of_joining = models.CharField(max_length=100, blank=True)
+    source_of_joining = models.ForeignKey(SourceOfJoining, on_delete=models.SET_NULL, null=True, blank=True)
     mode_of_class = models.CharField(max_length=3, choices=MODE_CHOICES)
     week_type = models.CharField(max_length=2, choices=WEEK_TYPE)
     consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True, blank=True)
-    payment_account = models.CharField(max_length=100, blank=True)
+    payment_account = models.ForeignKey('settingsdb.PaymentAccount', on_delete=models.SET_NULL, null=True, blank=True)
     total_fees = models.DecimalField(max_digits=10, decimal_places=2)
     gst_bill = models.BooleanField(default=False)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)

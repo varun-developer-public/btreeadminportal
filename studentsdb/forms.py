@@ -1,14 +1,32 @@
 from django import forms
 from .models import Student
+from consultantdb.models import Consultant
+from settingsdb.models import SourceOfJoining, PaymentAccount
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 
 class StudentForm(forms.ModelForm):
+    source_of_joining = forms.ModelChoiceField(
+        queryset=SourceOfJoining.objects.all(),
+        required=False,
+        empty_label="Select Source of Joining"
+    )
+    consultant = forms.ModelChoiceField(
+        queryset=Consultant.objects.all(),
+        required=False,
+        empty_label="Select Consultant"
+    )
+    payment_account = forms.ModelChoiceField(
+        queryset=PaymentAccount.objects.all(),
+        required=False,
+        empty_label="Select Payment Account"
+    )
+
     class Meta:
         model = Student
         fields = [
-            'name', 'phone','alternative_phone', 'email',
-            'join_date','start_date', 'tentative_end_date',
+            'name', 'phone', 'alternative_phone', 'email',
+            'join_date', 'start_date', 'tentative_end_date',
             'course_percentage', 'pl_required', 'source_of_joining',
             'mode_of_class', 'week_type', 'consultant', 'payment_account',
             'total_fees', 'gst_bill', 'amount_paid', 'emi_type',
@@ -46,7 +64,7 @@ class StudentForm(forms.ModelForm):
         pending = total_fees - amount_paid
         cleaned_data['total_pending_amount'] = pending
 
-        # Collect EMI amounts
+        # Collect EMI amounts based on emi_type
         emi_amounts = []
         if emi_type == '2':
             emi_amounts = [
@@ -67,7 +85,6 @@ class StudentForm(forms.ModelForm):
                 cleaned_data.get('emi_4_amount') or 0
             ]
 
-        # Validate sum of EMIs if any EMI plan is selected
         if emi_type in ['2', '3', '4']:
             emi_sum = sum(emi_amounts)
             if emi_sum != pending:

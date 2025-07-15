@@ -9,4 +9,5 @@ urlpatterns = [
     path('batches/', include('batchdb.urls')),
     path('trainers/', include('trainersdb.urls')),
     path('consultants/', include('consultantdb.urls')),
+    path('settings/', include('settingsdb.urls')),
 ]

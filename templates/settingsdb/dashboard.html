@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Settings Dashboard{% endblock %}
+
+{% block content %}
+<h2>Admin Settings Dashboard</h2>
+
+<ul style="list-style:none; padding-left: 0;">
+    <li><a href="{% url 'source_list' %}">Manage Source of Joining</a></li>
+    <li><a href="{% url 'payment_account_list' %}">Manage Payment Accounts</a></li>
+    <li><a href="{% url 'transaction_log' %}">View Transaction Logs</a></li>
+</ul>
+
+<a href="{% url 'admin:index' %}">Go to Django Admin</a>
+{% endblock %}

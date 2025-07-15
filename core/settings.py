@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'placementdb',
     'batchdb',
     'trainersdb',
-    'consultantdb'
+    'consultantdb',
+    'settingsdb'
 ]
 
 MIDDLEWARE = [
@@ -52,6 +53,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'settingsdb.middleware.CaptureUserMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

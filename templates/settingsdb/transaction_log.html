@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Transaction Logs{% endblock %}
+
+{% block content %}
+<h2>Transaction Logs</h2>
+
+<table border="1" cellpadding="5" cellspacing="0" style="width: 100%; font-size: 14px;">
+    <thead>
+        <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>Action</th>
+            <th>Changed Data</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+            <td>
+            {% if log.user and log.user.name %}
+                {{ log.user.name }}
+            {% else %}
+                Unknown
+            {% endif %}
+            </td>
+            <td>{{ log.get_action_display }}</td>
+            <td>
+                <pre style="white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{{ log.changes|safe }}</pre>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;">No transaction logs found.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'settings_dashboard' %}">Back to Settings Dashboard</a>
+{% endblock %}
