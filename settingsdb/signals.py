@@ -1,6 +1,7 @@
 import sys
 import json
 from datetime import datetime, date
+from decimal import Decimal
 from threading import local
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
@@ -21,11 +22,14 @@ def is_running_migrations():
     return 'makemigrations' in sys.argv or 'migrate' in sys.argv
 
 def json_serializable(data):
-    """Convert data dict values to JSON-serializable types, especially dates."""
+    """Convert model data to JSON-serializable format."""
     def serialize_value(value):
         if isinstance(value, (datetime, date)):
             return value.isoformat()
+        elif isinstance(value, Decimal):
+            return float(value)  # or str(value) if you prefer
         return value
+
     return {k: serialize_value(v) for k, v in data.items()}
 
 @receiver(pre_save)

@@ -10,4 +10,5 @@ urlpatterns = [
     path('trainers/', include('trainersdb.urls')),
     path('consultants/', include('consultantdb.urls')),
     path('settings/', include('settingsdb.urls')),
+    path('payments/', include('paymentdb.urls')),
 ]

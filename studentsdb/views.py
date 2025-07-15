@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from .forms import StudentForm
 from .models import Student
+from paymentdb.forms import PaymentForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -12,28 +13,39 @@ from placementdb.models import Placement
 @login_required
 def create_student(request):
     if request.method == 'POST':
-        form = StudentForm(request.POST)
-        if form.is_valid():
-            student = form.save(commit=False)
+        student_form = StudentForm(request.POST)
+        payment_form = PaymentForm(request.POST)  # a separate form for payment fields
 
-            # Auto-calculate pending amount
-            student.total_pending_amount = student.total_fees - student.amount_paid
+        if student_form.is_valid() and payment_form.is_valid():
+            # Save student first
+            student = student_form.save()
 
-            # Auto-generate student_id handled in model save()
-            student.save()
+            # Create payment object but don't commit yet
+            payment = payment_form.save(commit=False)
+            payment.student = student
 
-            # === Create Placement if needed ===
+            # Calculate pending amount inside Payment model or here
+            payment.total_pending_amount = payment.total_fees - payment.amount_paid
+
+            payment.save()
+
+            # Create placement if required
             if student.pl_required:
                 Placement.objects.get_or_create(student=student)
 
             messages.success(request, f"Student {student.student_id} created successfully.")
             return redirect('student_list')
     else:
-        form = StudentForm()
+        student_form = StudentForm()
+        payment_form = PaymentForm()
 
-    return render(request, 'studentsdb/create_student.html', {'form': form})
-
-
+    context = {
+        'student_form': student_form,
+        'payment_form': payment_form,
+    }
+    return render(request, 'studentsdb/create_student.html', context)
+    
+    
 @login_required
 def student_list(request):
     query = request.GET.get('q')

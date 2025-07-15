@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}All Payments{% endblock %}
+
+{% block content %}
+<h2>All Payments</h2>
+
+<table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+        <tr>
+            <th>Student ID</th>
+            <th>Student Name</th>
+            <th>Total Fees</th>
+            <th>Amount Paid</th>
+            <th>Pending Amount</th>
+            <th>EMI Type</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for payment in payments %}
+        <tr>
+            <td>{{ payment.student.student_id }}</td>
+            <td>{{ payment.student.name }}</td>
+            <td>{{ payment.total_fees }}</td>
+            <td>{{ payment.amount_paid }}</td>
+            <td>{{ payment.total_pending_amount }}</td>
+            <td>{{ payment.get_emi_type_display }}</td>
+            <td>
+                <a href="{% url 'payment_detail' payment.student.student_id %}">View Details</a>
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="7">No payment records found.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

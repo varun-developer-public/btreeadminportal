@@ -6,12 +6,20 @@
 
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
 
-    <button type="submit">Save Student</button>
+    <h4>Student Details</h4>
+    <div class="card p-3 mb-4">
+        {{ student_form.as_p }}
+    </div>
+
+    <h4>Payment Details</h4>
+    <div class="card p-3 mb-4">
+        {{ payment_form.as_p }}
+    </div>
+
+    <button type="submit" class="btn btn-success">Save Student</button>
+    <a href="{% url 'student_list' %}" class="btn btn-secondary">Back to Student List</a>
 </form>
-
-<a href="{% url 'student_list' %}">Back to Student List</a>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -59,6 +67,4 @@ document.addEventListener("DOMContentLoaded", function () {
     showEMIFields();  // trigger on load
 });
 </script>
-
-
 {% endblock %}

@@ -4,8 +4,7 @@
 
 {% block content %}
 <h2>Login</h2>
-
-{% if messages %}
+{% if request.method == 'POST' and messages %}
     {% for message in messages %}
         <p style="color: red;">{{ message }}</p>
     {% endfor %}
