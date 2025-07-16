@@ -51,12 +51,13 @@ class Payment(models.Model):
     total_pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def calculate_total_pending(self):
-        """Calculate the total pending amount including unpaid EMIs."""
-        total_paid = self.amount_paid or 0
+        """Calculate the total pending amount from unpaid EMIs."""
+        pending = 0
         for i in range(1, 5):
-            paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
-            total_paid += paid_amount
-        return self.total_fees - total_paid
+                emi_amount = getattr(self, f'emi_{i}_amount') or 0
+                paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
+                pending += max(emi_amount - paid_amount, 0)
+        return pending
 
     def save(self, *args, **kwargs):
         # Generate payment ID if not exists
@@ -82,7 +83,7 @@ class Payment(models.Model):
             current_emi_amount = getattr(self, f'emi_{i}_amount')
             current_paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
             
-            if current_emi_amount and current_paid_amount < current_emi_amount:
+            if current_emi_amount and current_paid_amount and current_paid_amount < current_emi_amount:
                 unpaid_amount = current_emi_amount - current_paid_amount
                 next_emi_num = i + 1
                 

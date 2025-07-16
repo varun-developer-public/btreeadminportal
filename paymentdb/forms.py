@@ -81,7 +81,11 @@ class PaymentForm(forms.ModelForm):
         if amount_paid > total_fees:
             raise ValidationError("Initial payment must be less than total fees.")
 
+        # Update pending calculation to use EMI commitments
         pending = total_fees - amount_paid
+        if max_emis > 0:
+            pending = sum(emi_amounts)  # Should equal total_fees - amount_paid
+       
         cleaned_data['total_pending_amount'] = pending
 
         # Validate EMI selection
