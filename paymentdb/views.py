@@ -1,141 +1,135 @@
 from django.shortcuts import get_object_or_404, render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db import transaction
+from django.db.models import Q
+
 from .models import Payment
 from studentsdb.models import Student
-from django.db.models import Q
-from django.contrib.auth.decorators import login_required
-from .forms import PaymentUpdateForm
-from django.db import transaction
+from .forms import PaymentForm, PaymentUpdateForm
 
 @login_required
 def payment_list(request):
-    payments = Payment.objects.select_related('student', 'student__consultant').all()
+    payments = Payment.objects.select_related('student', 'student__consultant')
 
-    search = request.GET.get('search', '').strip()  # For student id, name, or consultant
+    # Enhanced filtering logic
+    search = request.GET.get('search', '').strip()
     emi_type = request.GET.get('emi_type', '').strip()
-    emi_field = request.GET.get('emi_field', '').strip()
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
+    payment_status = request.GET.get('payment_status', '').strip()
+    emi_number = request.GET.get('emi_number', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
 
     if search:
         payments = payments.filter(
             Q(student__student_id__icontains=search) |
             Q(student__name__icontains=search) |
-            Q(student__consultant__name__icontains=search)
+            Q(student__consultant__name__icontains=search) |
+            Q(payment_id__icontains=search)
         )
 
     if emi_type in ['NONE', '2', '3', '4']:
         payments = payments.filter(emi_type=emi_type)
 
-    valid_emi_fields = ['emi_1_date', 'emi_2_date', 'emi_3_date', 'emi_4_date']
-    if emi_field in valid_emi_fields:
-        if start_date and end_date:
-            payments = payments.filter(**{f"{emi_field}__range": [start_date, end_date]})
-        elif start_date:
-            payments = payments.filter(**{f"{emi_field}__gte": start_date})
-        elif end_date:
-            payments = payments.filter(**{f"{emi_field}__lte": end_date})
+    # Filter by EMI date range if specified
+    if emi_number and emi_number in ['1', '2', '3', '4']:
+        date_field = f'emi_{emi_number}_date'
+        if date_from:
+            payments = payments.filter(**{f'{date_field}__gte': date_from})
+        if date_to:
+            payments = payments.filter(**{f'{date_field}__lte': date_to})
 
-    payments = payments.order_by('student__student_id')
+    # Process payments to include total pending amount
+    processed_payments = []
+    for payment in payments:
+        payment.total_pending_amount = payment.calculate_total_pending()
+        processed_payments.append(payment)
+
+    # Filter by payment status if specified
+    if payment_status:
+        filtered_payments = []
+        for payment in processed_payments:
+            if payment_status == 'PAID' and payment.total_pending_amount == 0:
+                filtered_payments.append(payment)
+            elif payment_status == 'PARTIAL' and 0 < payment.total_pending_amount < payment.total_fees:
+                filtered_payments.append(payment)
+            elif payment_status == 'PENDING' and payment.total_pending_amount == payment.total_fees:
+                filtered_payments.append(payment)
+        processed_payments = filtered_payments
 
     context = {
-        'payments': payments,
-        'request': request,
+        'payments': processed_payments,
+        'emi_types': Payment.EMI_CHOICES,
+        'payment_statuses': [
+            ('PENDING', 'Pending'),
+            ('PARTIAL', 'Partially Paid'),
+            ('PAID', 'Fully Paid'),
+        ],
+        'emi_numbers': [
+            ('1', 'EMI 1'),
+            ('2', 'EMI 2'),
+            ('3', 'EMI 3'),
+            ('4', 'EMI 4'),
+        ],
+        'search': search,
+        'emi_type': emi_type,
+        'payment_status': payment_status,
+        'emi_number': emi_number,
+        'date_from': date_from,
+        'date_to': date_to,
     }
     return render(request, 'paymentdb/payment_list.html', context)
-
-@login_required
-def payment_detail(request, student_id):
-    student = get_object_or_404(Student, student_id=student_id)
-    payment = Payment.objects.filter(student=student).first()
-    context = {
-        'student': student,
-        'payment': payment,
-    }
-    return render(request, 'paymentdb/payment_detail.html', context)
-
 
 
 @login_required
 def payment_update(request, payment_id):
-    payment = get_object_or_404(Payment, id=payment_id)
-
-    def get_editable_emi(payment):
-        # First EMI amount exists but no proof => editable EMI
-        for i in range(1, 5):
-            amount = getattr(payment, f"emi_{i}_amount")
-            proof = getattr(payment, f"emi_{i}_proof")
-            if amount and not proof:
-                return i
-        return None
-
-    editable_index = get_editable_emi(payment)
+    payment = get_object_or_404(Payment, payment_id=payment_id)
+    next_payable_emi = payment.get_next_payable_emi()
 
     if request.method == 'POST':
         form = PaymentUpdateForm(request.POST, request.FILES, instance=payment)
 
-        if form.is_valid() and editable_index:
-            # Fetch fresh from DB for original EMI amounts before update
-            original_payment = payment.__class__.objects.get(pk=payment.pk)
-            emi_amount = getattr(original_payment, f"emi_{editable_index}_amount") or 0
-
-            paid = form.cleaned_data.get(f"emi_{editable_index}_paid") or 0
-
-            # Validate paid <= emi_amount
-            if paid > emi_amount:
-                form.add_error(f"emi_{editable_index}_paid", "Paid amount cannot exceed EMI amount.")
-            else:
+        if form.is_valid() and next_payable_emi and payment.can_edit_emi(next_payable_emi):
+            try:
                 with transaction.atomic():
-                    # Update current EMI amount to paid amount
-                    setattr(payment, f"emi_{editable_index}_amount", paid)
+                    # Get the form data for the current EMI
+                    paid_amount = form.cleaned_data.get(f'emi_{next_payable_emi}_paid_amount')
+                    paid_date = form.cleaned_data.get(f'emi_{next_payable_emi}_paid_date')
+                    proof = form.cleaned_data.get(f'emi_{next_payable_emi}_proof')
+                    original_amount = getattr(payment, f'emi_{next_payable_emi}_amount')
 
-                    balance = emi_amount - paid
-
-                    # Carry forward unpaid balance to next EMI if any
-                    if balance > 0 and editable_index < 4:
-                        next_emi_field = f"emi_{editable_index + 1}_amount"
-                        next_emi_val = getattr(payment, next_emi_field) or 0
-                        setattr(payment, next_emi_field, next_emi_val + balance)
-
-                    # Save proof if uploaded
-                    proof = form.cleaned_data.get(f"emi_{editable_index}_proof")
+                    # Update the payment fields
+                    setattr(payment, f'emi_{next_payable_emi}_paid_amount', paid_amount)
+                    setattr(payment, f'emi_{next_payable_emi}_paid_date', paid_date)
                     if proof:
-                        setattr(payment, f"emi_{editable_index}_proof", proof)
+                        setattr(payment, f'emi_{next_payable_emi}_proof', proof)
 
-                    # Paid date update only if field enabled (normally disabled)
-                    paid_date = form.cleaned_data.get(f"emi_{editable_index}_date")
-                    if paid_date and not form.fields[f'emi_{editable_index}_date'].disabled:
-                        setattr(payment, f"emi_{editable_index}_date", paid_date)
+                    # Handle carry-forward if partial payment
+                    if paid_amount < original_amount:
+                        carry_forward = original_amount - paid_amount
+                        next_emi_num = next_payable_emi + 1
 
-                    # Recalculate total paid & pending
-                    total_paid = payment.amount_paid + sum(
-                        getattr(payment, f"emi_{i}_amount") or 0 for i in range(1, 5)
-                    )
-                    payment.total_pending_amount = payment.total_fees - total_paid
+                        if next_emi_num <= 4 and getattr(payment, f'emi_{next_emi_num}_amount') is not None:
+                            # Store the carry-forward amount without modifying the next EMI's original amount
+                            messages.info(request, 
+                                f'₹{carry_forward} will be added to your next EMI {next_emi_num} payment')
 
                     payment.save()
+                    messages.success(request, f'EMI {next_payable_emi} payment of ₹{paid_amount} recorded successfully.')
+                    return redirect('payment_list')
 
-                return redirect('payment_list')
-
+            except Exception as e:
+                messages.error(request, f'Error updating payment: {str(e)}')
     else:
         form = PaymentUpdateForm(instance=payment)
 
-    emi_fields = []
-    for i in range(1, 5):
-        proof_file = getattr(payment, f'emi_{i}_proof')
-        proof_url = proof_file.url if proof_file else None
-
-        emi_fields.append({
-            'label': f'EMI {i}',
-            'amount': form[f'emi_{i}_amount'],
-            'date': form[f'emi_{i}_date'],
-            'paid': form[f'emi_{i}_paid'],
-            'proof': form[f'emi_{i}_proof'],
-            'proof_url': proof_url,
-            'editable': (i == editable_index)
-        })
-
-    return render(request, 'paymentdb/payment_update.html', {
+    context = {
         'form': form,
         'payment': payment,
-        'emi_fields': emi_fields,
-    })
+        'next_payable_emi': next_payable_emi,
+        'total_fees': payment.total_fees,
+        'amount_paid': payment.amount_paid,
+        'total_pending': payment.calculate_total_pending()
+    }
+
+    return render(request, 'paymentdb/payment_update.html', context)

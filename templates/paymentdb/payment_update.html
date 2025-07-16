@@ -1,64 +1,226 @@
 {% extends "base.html" %}
-{% load static %}
+{% block title %}Update Payment{% endblock %}
 
 {% block content %}
-<h2>Update Payment - {{ payment.payment_id }} ({{ payment.student }})</h2>
+<div class="payment-update">
+    <h2>Update Payment - {{ payment.student.name }} ({{ payment.student.student_id }})</h2>
 
-<form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    <table class="table table-bordered">
-        <thead>
-            <tr>
-                <th>EMI</th>
-                <th>Original Amount</th>
-                <th>Payment Date</th>
-                <th>Amount Paid</th>
-                <th>Proof Upload</th>
-                <th>Existing Proof</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for emi in emi_fields %}
-            <tr>
-                <td>{{ emi.label }}</td>
-                <td>
-                    {{ emi.amount.value|default:"-" }}
-                </td>
-                <td>
-                    <!-- Paid date is always readonly -->
-                    <input type="text" value="{{ emi.date.value|default:"-" }}" class="form-control" readonly>
-                </td>
-                <td>
-                    {% if emi.editable %}
-                        {{ emi.paid }}
-                    {% else %}
-                        <input type="text" value="{{ emi.paid.value|default:"-" }}" class="form-control" readonly>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if emi.editable %}
-                        {{ emi.proof }}
-                    {% else %}
-                        <input type="file" disabled>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if emi.proof_url %}
-                        <a href="{{ emi.proof_url }}" target="_blank">View Proof</a>
-                    {% else %}
-                        No proof uploaded
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-            <tr>
-                <td colspan="5" style="text-align: right;"><strong>Total Pending Amount:</strong></td>
-                <td><strong>{{ payment.total_pending_amount }}</strong></td>
-            </tr>
-        </tbody>
-    </table>
+    <!-- Payment Summary -->
+    <div class="payment-summary">
+        <div class="summary-item">
+            <label>Total Fees:</label>
+            <span>₹{{ total_fees }}</span>
+        </div>
+        <div class="summary-item">
+            <label>Amount Paid:</label>
+            <span>₹{{ amount_paid }}</span>
+        </div>
+        <div class="summary-item">
+            <label>Total Pending:</label>
+            <span>₹{{ total_pending }}</span>
+        </div>
+    </div>
 
-    <button type="submit" class="btn btn-primary">Save</button>
-    <a href="{% url 'payment_list' %}" class="btn btn-secondary">Cancel</a>
-</form>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="error-messages">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <!-- EMI Details -->
+        {% if payment.emi_type != 'NONE' %}
+            {% if payment.emi_1_amount %}
+            <div class="emi-section {% if next_payable_emi == 1 %}current-emi{% endif %}">
+                <h3>EMI 1</h3>
+                <div class="emi-details">
+                    <div class="emi-row">
+                        <label>Amount:</label>
+                        <span>₹{{ payment.emi_1_amount }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Due Date:</label>
+                        <span>{{ payment.emi_1_date }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Amount:</label>
+                        {{ form.emi_1_paid_amount }}
+                        {% if payment.emi_1_paid_amount %}
+                            <span class="current-value">(Current: ₹{{ payment.emi_1_paid_amount }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Date:</label>
+                        {{ form.emi_1_paid_date }}
+                        {% if payment.emi_1_paid_date %}
+                            <span class="current-value">(Current: {{ payment.emi_1_paid_date }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Payment Proof:</label>
+                        {{ form.emi_1_proof }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if payment.emi_2_amount %}
+            <div class="emi-section {% if next_payable_emi == 2 %}current-emi{% endif %}">
+                <h3>EMI 2</h3>
+                <div class="emi-details">
+                    <div class="emi-row">
+                        <label>Amount:</label>
+                        <span>₹{{ payment.emi_2_amount }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Due Date:</label>
+                        <span>{{ payment.emi_2_date }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Amount:</label>
+                        {{ form.emi_2_paid_amount }}
+                        {% if payment.emi_2_paid_amount %}
+                            <span class="current-value">(Current: ₹{{ payment.emi_2_paid_amount }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Date:</label>
+                        {{ form.emi_2_paid_date }}
+                        {% if payment.emi_2_paid_date %}
+                            <span class="current-value">(Current: {{ payment.emi_2_paid_date }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Payment Proof:</label>
+                        {{ form.emi_2_proof }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if payment.emi_3_amount %}
+            <div class="emi-section {% if next_payable_emi == 3 %}current-emi{% endif %}">
+                <h3>EMI 3</h3>
+                <div class="emi-details">
+                    <div class="emi-row">
+                        <label>Amount:</label>
+                        <span>₹{{ payment.emi_3_amount }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Due Date:</label>
+                        <span>{{ payment.emi_3_date }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Amount:</label>
+                        {{ form.emi_3_paid_amount }}
+                        {% if payment.emi_3_paid_amount %}
+                            <span class="current-value">(Current: ₹{{ payment.emi_3_paid_amount }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Date:</label>
+                        {{ form.emi_3_paid_date }}
+                        {% if payment.emi_3_paid_date %}
+                            <span class="current-value">(Current: {{ payment.emi_3_paid_date }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Payment Proof:</label>
+                        {{ form.emi_3_proof }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if payment.emi_4_amount %}
+            <div class="emi-section {% if next_payable_emi == 4 %}current-emi{% endif %}">
+                <h3>EMI 4</h3>
+                <div class="emi-details">
+                    <div class="emi-row">
+                        <label>Amount:</label>
+                        <span>₹{{ payment.emi_4_amount }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Due Date:</label>
+                        <span>{{ payment.emi_4_date }}</span>
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Amount:</label>
+                        {{ form.emi_4_paid_amount }}
+                        {% if payment.emi_4_paid_amount %}
+                            <span class="current-value">(Current: ₹{{ payment.emi_4_paid_amount }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Paid Date:</label>
+                        {{ form.emi_4_paid_date }}
+                        {% if payment.emi_4_paid_date %}
+                            <span class="current-value">(Current: {{ payment.emi_4_paid_date }})</span>
+                        {% endif %}
+                    </div>
+                    <div class="emi-row">
+                        <label>Payment Proof:</label>
+                        {{ form.emi_4_proof }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit">Save Changes</button>
+            <a href="{% url 'payment_list' %}">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.payment-update {
+    padding: 20px;
+}
+
+.payment-summary {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+}
+
+.summary-item {
+    margin: 5px 0;
+}
+
+.emi-section {
+    margin: 20px 0;
+    padding: 15px;
+    border: 1px solid #ddd;
+}
+
+.current-emi {
+    border: 2px solid #007bff;
+}
+
+.emi-details {
+    margin-top: 10px;
+}
+
+.emi-row {
+    margin: 10px 0;
+}
+
+.current-value {
+    margin-left: 10px;
+    color: #666;
+}
+
+.form-actions {
+    margin-top: 20px;
+}
+
+.error-messages {
+    color: red;
+    margin: 10px 0;
+}
+</style>
 {% endblock %}

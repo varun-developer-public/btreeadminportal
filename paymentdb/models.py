@@ -16,32 +16,134 @@ class Payment(models.Model):
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     emi_type = models.CharField(max_length=4, choices=EMI_CHOICES, default='NONE')
 
-    initial_payment_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    initial_payment_proof = models.ImageField(upload_to='payment_proofs/', null=True)
+    
+    # EMI fields with payment tracking
 
+    # EMI 1
     emi_1_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_1_date = models.DateField(blank=True, null=True)
+    emi_1_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    emi_1_paid_date = models.DateField(blank=True, null=True)
     emi_1_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
 
+    # EMI 2
     emi_2_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_2_date = models.DateField(blank=True, null=True)
+    emi_2_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    emi_2_paid_date = models.DateField(blank=True, null=True)
     emi_2_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
 
+    # EMI 3
     emi_3_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_3_date = models.DateField(blank=True, null=True)
+    emi_3_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    emi_3_paid_date = models.DateField(blank=True, null=True)
     emi_3_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
 
+    # EMI 4
     emi_4_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_4_date = models.DateField(blank=True, null=True)
+    emi_4_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    emi_4_paid_date = models.DateField(blank=True, null=True)
     emi_4_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
 
     total_pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
+    def calculate_total_pending(self):
+        """Calculate the total pending amount including unpaid EMIs."""
+        total_paid = self.amount_paid or 0
+        for i in range(1, 5):
+            paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
+            total_paid += paid_amount
+        return self.total_fees - total_paid
+
     def save(self, *args, **kwargs):
+        # Generate payment ID if not exists
         if not self.payment_id:
             last = Payment.objects.order_by('-id').first()
             next_id = int(last.payment_id.replace('PMT', '')) + 1 if last and last.payment_id else 1
             self.payment_id = f'PMT{next_id:04d}'
+
+        # Validate EMI amounts based on EMI type
+        max_emis = int(self.emi_type) if self.emi_type in ['2', '3', '4'] else 0
+        for i in range(1, 5):
+            if i > max_emis:
+                setattr(self, f'emi_{i}_amount', None)
+                setattr(self, f'emi_{i}_date', None)
+                setattr(self, f'emi_{i}_paid_amount', None)
+                setattr(self, f'emi_{i}_paid_date', None)
+                if getattr(self, f'emi_{i}_proof'):
+                    getattr(self, f'emi_{i}_proof').delete(save=False)
+                setattr(self, f'emi_{i}_proof', None)
+
+        # Calculate and carry forward unpaid balances
+        for i in range(1, 4):  # Only process EMIs 1-3 for carry forward
+            current_emi_amount = getattr(self, f'emi_{i}_amount')
+            current_paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
+            
+            if current_emi_amount and current_paid_amount < current_emi_amount:
+                unpaid_amount = current_emi_amount - current_paid_amount
+                next_emi_num = i + 1
+                
+                if next_emi_num <= max_emis:
+                    next_emi_amount = getattr(self, f'emi_{next_emi_num}_amount') or 0
+                    if next_emi_amount > 0:
+                        setattr(self, f'emi_{next_emi_num}_amount', next_emi_amount + unpaid_amount)
+
+        # Update total pending amount
+        self.total_pending_amount = self.calculate_total_pending()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.payment_id} - {self.student}"
+
+    def get_next_payable_emi(self):
+        """Returns the next EMI number that needs to be paid."""
+        previous_emi_paid = True  # First EMI doesn't need to check previous
+        
+        for i in range(1, 5):
+            amount = getattr(self, f'emi_{i}_amount')
+            if not amount:  # Skip if this EMI doesn't exist
+                continue
+                
+            paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
+            if not previous_emi_paid:  # If previous EMI is not fully paid
+                return None
+            
+            if paid_amount < amount:  # If current EMI is not fully paid
+                return i
+                
+            previous_emi_paid = True  # Mark current EMI as paid for next iteration
+            
+        return None  # All EMIs are paid
+
+    def is_emi_fully_paid(self, emi_number):
+        """Checks if a specific EMI is fully paid."""
+        if not 1 <= emi_number <= 4:
+            return False
+            
+        amount = getattr(self, f'emi_{emi_number}_amount')
+        if not amount:  # If EMI doesn't exist
+            return True
+            
+        paid_amount = getattr(self, f'emi_{emi_number}_paid_amount') or 0
+        return paid_amount >= amount
+
+    def can_edit_emi(self, emi_number):
+        """Determines if a specific EMI can be edited based on payment status."""
+        if not 1 <= emi_number <= 4:
+            return False
+            
+        # First EMI can always be edited if it exists and is not fully paid
+        if emi_number == 1:
+            return bool(getattr(self, 'emi_1_amount')) and not self.is_emi_fully_paid(1)
+            
+        # For other EMIs, check if previous EMI exists and is fully paid
+        prev_emi_amount = getattr(self, f'emi_{emi_number-1}_amount')
+        if not prev_emi_amount or not self.is_emi_fully_paid(emi_number-1):
+            return False
+            
+        # Current EMI must exist and not be fully paid
+        current_emi_amount = getattr(self, f'emi_{emi_number}_amount')
+        return bool(current_emi_amount) and not self.is_emi_fully_paid(emi_number)

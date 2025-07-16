@@ -2,92 +2,224 @@
 {% block title %}All Payments{% endblock %}
 
 {% block content %}
-<h2>All Payments</h2>
+<div class="payment-list">
+    <h2>All Payments</h2>
 
-<form method="get" class="mb-3">
-    <label for="search">Search (Student ID / Name / Consultant):</label>
-    <input type="text" id="search" name="search" value="{{ request.GET.search|default_if_none:'' }}">
+    <form method="get" class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="search">Search:</label>
+                <input type="text" id="search" name="search" value="{{ search }}" placeholder="Student ID / Name / Consultant / Payment ID">
+            </div>
 
-    <label for="emi_type">EMI Type:</label>
-    <select name="emi_type" id="emi_type">
-        <option value="">--Select EMI Type--</option>
-        <option value="NONE" {% if request.GET.emi_type == 'NONE' %}selected{% endif %}>None</option>
-        <option value="2" {% if request.GET.emi_type == '2' %}selected{% endif %}>2</option>
-        <option value="3" {% if request.GET.emi_type == '3' %}selected{% endif %}>3</option>
-        <option value="4" {% if request.GET.emi_type == '4' %}selected{% endif %}>4</option>
-    </select>
+            <div class="filter-group">
+                <label for="emi_type">EMI Type:</label>
+                <select name="emi_type" id="emi_type">
+                    <option value="">All EMI Types</option>
+                    {% for value, label in emi_types %}
+                        <option value="{{ value }}" {% if emi_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-    <label for="emi_field">Select EMI Date Field:</label>
-    <select name="emi_field" id="emi_field">
-        <option value="">--Select EMI--</option>
-        <option value="emi_1_date" {% if request.GET.emi_field == 'emi_1_date' %}selected{% endif %}>EMI 1 Date</option>
-        <option value="emi_2_date" {% if request.GET.emi_field == 'emi_2_date' %}selected{% endif %}>EMI 2 Date</option>
-        <option value="emi_3_date" {% if request.GET.emi_field == 'emi_3_date' %}selected{% endif %}>EMI 3 Date</option>
-        <option value="emi_4_date" {% if request.GET.emi_field == 'emi_4_date' %}selected{% endif %}>EMI 4 Date</option>
-    </select>
+            <div class="filter-group">
+                <label for="payment_status">Payment Status:</label>
+                <select name="payment_status" id="payment_status">
+                    <option value="">All Statuses</option>
+                    {% for value, label in payment_statuses %}
+                        <option value="{{ value }}" {% if payment_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
 
-    <label for="start_date">Start Date:</label>
-    <input type="date" id="start_date" name="start_date" value="{{ request.GET.start_date|default_if_none:'' }}">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="emi_number">EMI Number:</label>
+                <select name="emi_number" id="emi_number">
+                    <option value="">All EMIs</option>
+                    {% for value, label in emi_numbers %}
+                        <option value="{{ value }}" {% if emi_number == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-    <label for="end_date">End Date:</label>
-    <input type="date" id="end_date" name="end_date" value="{{ request.GET.end_date|default_if_none:'' }}">
+            <div class="filter-group">
+                <label for="date_from">Due Date From:</label>
+                <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
+            </div>
 
-    <button type="submit" class="btn btn-primary">Filter</button>
-    <a href="{% url 'payment_list' %}" class="btn btn-secondary">Reset</a>
-</form>
+            <div class="filter-group">
+                <label for="date_to">Due Date To:</label>
+                <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
+            </div>
+        </div>
 
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filters</button>
+            <a href="{% url 'payment_list' %}" class="btn-secondary">Reset</a>
+        </div>
+    </form>
 
-<table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-        <tr>
-            <th>Student ID</th>
-            <th>Student Name</th>
-            <th>Consultant</th>
-            <th>Total Fees</th>
-            <th>Amount Paid</th>
-            <th>Pending Amount</th>
-            <th>EMI Type</th>
-            <th>EMI 1 Amount</th>
-            <th>EMI 1 Date</th>
-            <th>EMI 2 Amount</th>
-            <th>EMI 2 Date</th>
-            <th>EMI 3 Amount</th>
-            <th>EMI 3 Date</th>
-            <th>EMI 4 Amount</th>
-            <th>EMI 4 Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% if payments %}
-        {% for payment in payments %}
-        <tr>
-            <td>{{ payment.student.student_id }}</td>
-            <td>{{ payment.student.name }}</td>
-            <td>{{ payment.student.consultant.name }}</td>
-            <td>{{ payment.total_fees }}</td>
-            <td>{{ payment.amount_paid }}</td>
-            <td>{{ payment.total_pending_amount }}</td>
-            <td>{{ payment.get_emi_type_display }}</td>
-            <td>{{ payment.emi_1_amount|default:"-" }}</td>
-            <td>{{ payment.emi_1_date|date:"Y-m-d" }}</td>
-            <td>{{ payment.emi_2_amount|default:"-" }}</td>
-            <td>{{ payment.emi_2_date|date:"Y-m-d" }}</td>
-            <td>{{ payment.emi_3_amount|default:"-" }}</td>
-            <td>{{ payment.emi_3_date|date:"Y-m-d" }}</td>
-            <td>{{ payment.emi_4_amount|default:"-" }}</td>
-            <td>{{ payment.emi_4_date|date:"Y-m-d" }}</td>
-            <td>
-                <a href="{% url 'payment_update' payment.id %}">Update</a>
-            </td>
-        </tr>
-        {% endfor %}
-    {% else %}
-        <tr>
-            <td colspan="16" style="text-align:center;">No payment records found.</td>
-        </tr>
-    {% endif %}
-    </tbody>
-</table>
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Consultant</th>
+                <th>Total Fees</th>
+                <th>Initial Payment</th>
+                <th>EMI 1</th>
+                <th>EMI 2</th>
+                <th>EMI 3</th>
+                <th>EMI 4</th>
+                <th>Total Pending</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% if payments %}
+            {% for payment in payments %}
+            <tr>
+                <td>{{ payment.student.student_id }}</td>
+                <td>{{ payment.student.name }}</td>
+                <td>{{ payment.student.consultant.name }}</td>
+                <td>₹{{ payment.total_fees }}</td>
+                <td>₹{{ payment.amount_paid }}</td>
+                <td class="emi-cell">
+                    {% if payment.emi_1_amount %}
+                    <div>Amount: ₹{{ payment.emi_1_amount }}</div>
+                    <div>Due: {{ payment.emi_1_date|default:'-' }}</div>
+                    <div>Paid: ₹{{ payment.emi_1_paid_amount|default:'0' }}</div>
+                    {% else %}-{% endif %}
+                </td>
+                <td class="emi-cell">
+                    {% if payment.emi_2_amount %}
+                    <div>Amount: ₹{{ payment.emi_2_amount }}</div>
+                    <div>Due: {{ payment.emi_2_date|default:'-' }}</div>
+                    <div>Paid: ₹{{ payment.emi_2_paid_amount|default:'0' }}</div>
+                    {% else %}-{% endif %}
+                </td>
+                <td class="emi-cell">
+                    {% if payment.emi_3_amount %}
+                    <div>Amount: ₹{{ payment.emi_3_amount }}</div>
+                    <div>Due: {{ payment.emi_3_date|default:'-' }}</div>
+                    <div>Paid: ₹{{ payment.emi_3_paid_amount|default:'0' }}</div>
+                    {% else %}-{% endif %}
+                </td>
+                <td class="emi-cell">
+                    {% if payment.emi_4_amount %}
+                    <div>Amount: ₹{{ payment.emi_4_amount }}</div>
+                    <div>Due: {{ payment.emi_4_date|default:'-' }}</div>
+                    <div>Paid: ₹{{ payment.emi_4_paid_amount|default:'0' }}</div>
+                    {% else %}-{% endif %}
+                </td>
+                <td>₹{{ payment.total_pending_amount }}</td>
+                <td>
+                    <a href="{% url 'payment_update' payment_id=payment.payment_id %}">Update</a>
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="11">No payment records found.</td>
+            </tr>
+        {% endif %}
+        </tbody>
+    </table>
+</div>
 
+<style>
+.payment-list {
+    padding: 20px;
+}
+
+.filters {
+    margin-bottom: 20px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.filter-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.filter-group input,
+.filter-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-primary,
+.btn-secondary {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    text-decoration: none;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    padding: 12px 8px;
+    border: 1px solid #ddd;
+    text-align: left;
+    font-size: 0.9em;
+}
+
+th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+}
+
+.emi-cell {
+    font-size: 0.85em;
+    background-color: #fafafa;
+}
+
+.emi-cell div {
+    margin-bottom: 3px;
+}
+
+.emi-cell div:last-child {
+    margin-bottom: 0;
+}
+</style>
 {% endblock %}
