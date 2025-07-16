@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib import messages
 from .models import Payment
 from settingsdb.models import PaymentAccount
 from dateutil.relativedelta import relativedelta
@@ -83,7 +84,16 @@ class PaymentForm(forms.ModelForm):
 
         # Update pending calculation to use EMI commitments
         pending = total_fees - amount_paid
+        
+        # Process EMI fields based on selected EMI type
+        max_emis = int(emi_type) if emi_type in ['2', '3', '4'] else 0
+        
         if max_emis > 0:
+            emi_amounts = []
+            for i in range(1, max_emis + 1):
+                amount = cleaned_data.get(f'emi_{i}_amount')
+                if amount:
+                    emi_amounts.append(amount)
             pending = sum(emi_amounts)  # Should equal total_fees - amount_paid
        
         cleaned_data['total_pending_amount'] = pending
@@ -94,9 +104,6 @@ class PaymentForm(forms.ModelForm):
                 self.add_error('emi_type', "Select an EMI option (2/3/4) for the pending amount.")
             elif emi_type not in ['2', '3', '4']:
                 self.add_error('emi_type', "Invalid EMI type selected.")
-
-        # Process EMI fields based on selected EMI type
-        max_emis = int(emi_type) if emi_type in ['2', '3', '4'] else 0
 
         # Clear EMI fields not corresponding to selected EMI type
         for i in range(1, 5):
@@ -158,10 +165,10 @@ class PaymentUpdateForm(forms.ModelForm):
             'emi_4_paid_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, request=None, **kwargs):
+        self.request = request
         super().__init__(*args, **kwargs)
         payment = self.instance
-        next_emi = payment.get_next_payable_emi()
 
         # Disable all fields by default
         for field in self.fields:
@@ -173,8 +180,12 @@ class PaymentUpdateForm(forms.ModelForm):
                     'data-emi': field.split('_')[1]
                 })
 
-        # Enable only the current EMI fields if they can be edited
-        if next_emi and payment.can_edit_emi(next_emi):
+        # Find the next EMI to enable based on payment status
+        next_emi = payment.get_next_payable_emi()
+
+        # Enable fields for the next payable EMI
+        if next_emi:
+            # Enable fields for the current EMI
             self.fields[f'emi_{next_emi}_paid_amount'].disabled = False
             self.fields[f'emi_{next_emi}_paid_date'].disabled = False
             self.fields[f'emi_{next_emi}_proof'].disabled = False
@@ -182,6 +193,7 @@ class PaymentUpdateForm(forms.ModelForm):
             # Make enabled fields required
             self.fields[f'emi_{next_emi}_paid_amount'].required = True
             self.fields[f'emi_{next_emi}_paid_date'].required = True
+            self.fields[f'emi_{next_emi}_proof'].required = True
 
             # Set min/max for paid amount
             original_amount = getattr(payment, f'emi_{next_emi}_amount') or 0
@@ -208,33 +220,31 @@ class PaymentUpdateForm(forms.ModelForm):
                 self.add_error(f'emi_{next_emi}_paid_amount', 
                     f"Paid amount (₹{paid_amount}) cannot exceed the EMI amount (₹{original_amount})")
 
-            # Handle carry forward amount without modifying next EMI
+            # Handle carry forward amount
             if paid_amount < original_amount:
                 carry_forward = original_amount - paid_amount
                 next_emi_num = next_emi + 1
                 if next_emi_num <= 4 and getattr(payment, f'emi_{next_emi_num}_amount') is not None:
-                    self.add_error(None, 
-                        f"Note: Remaining ₹{carry_forward} must be paid with EMI {next_emi_num}")
+                    # Store carry-forward information in cleaned_data
+                    cleaned_data['carry_forward'] = {
+                        'amount': carry_forward,
+                        'from_emi': next_emi,
+                        'to_emi': next_emi_num
+                    }
+                    messages.info(self.request, 
+                        f"Remaining ₹{carry_forward} will be added to EMI {next_emi_num} amount")
                 else:
-                    self.add_error(None,
-                        f"Note: Remaining ₹{carry_forward} must be paid in the next payment")
+                    messages.info(self.request,
+                        f"Remaining ₹{carry_forward} must be paid in the next payment")
 
-            # Validate paid date
+            # Validate paid date only for future dates
             if paid_date:
                 today = timezone.now().date()
                 if paid_date > today:
                     self.add_error(f'emi_{next_emi}_paid_date', "Paid date cannot be in the future")
-                
-                emi_due_date = getattr(payment, f'emi_{next_emi}_date')
-                if emi_due_date:
-                    earliest_allowed = emi_due_date - relativedelta(months=1)
-                    if paid_date < earliest_allowed:
-                        self.add_error(f'emi_{next_emi}_paid_date', 
-                            f"Paid date must be within one month of due date ({emi_due_date.strftime('%d/%m/%Y')})")
 
             # Validate proof
-            if paid_amount > 0 and not proof and not getattr(payment, f'emi_{next_emi}_proof'):
+            if not proof and not getattr(payment, f'emi_{next_emi}_proof'):
                 self.add_error(f'emi_{next_emi}_proof', "Payment proof is required")
 
         return cleaned_data
-

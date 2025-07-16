@@ -80,14 +80,13 @@ def payment_list(request):
     }
     return render(request, 'paymentdb/payment_list.html', context)
 
-
 @login_required
 def payment_update(request, payment_id):
     payment = get_object_or_404(Payment, payment_id=payment_id)
     next_payable_emi = payment.get_next_payable_emi()
 
     if request.method == 'POST':
-        form = PaymentUpdateForm(request.POST, request.FILES, instance=payment)
+        form = PaymentUpdateForm(request.POST, request.FILES, instance=payment, request=request)
 
         if form.is_valid() and next_payable_emi and payment.can_edit_emi(next_payable_emi):
             try:
@@ -96,7 +95,6 @@ def payment_update(request, payment_id):
                     paid_amount = form.cleaned_data.get(f'emi_{next_payable_emi}_paid_amount')
                     paid_date = form.cleaned_data.get(f'emi_{next_payable_emi}_paid_date')
                     proof = form.cleaned_data.get(f'emi_{next_payable_emi}_proof')
-                    original_amount = getattr(payment, f'emi_{next_payable_emi}_amount')
 
                     # Update the payment fields
                     setattr(payment, f'emi_{next_payable_emi}_paid_amount', paid_amount)
@@ -104,24 +102,53 @@ def payment_update(request, payment_id):
                     if proof:
                         setattr(payment, f'emi_{next_payable_emi}_proof', proof)
 
-                    # Handle carry-forward if partial payment
+                    # Handle carry-forward amount
+                    original_amount = getattr(payment, f'emi_{next_payable_emi}_amount')
                     if paid_amount < original_amount:
                         carry_forward = original_amount - paid_amount
                         next_emi_num = next_payable_emi + 1
-
                         if next_emi_num <= 4 and getattr(payment, f'emi_{next_emi_num}_amount') is not None:
-                            # Store the carry-forward amount without modifying the next EMI's original amount
-                            messages.info(request, 
-                                f'₹{carry_forward} will be added to your next EMI {next_emi_num} payment')
+                            # Add carry-forward to next EMI's amount
+                            next_emi_amount = getattr(payment, f'emi_{next_emi_num}_amount')
+                            setattr(payment, f'emi_{next_emi_num}_amount', next_emi_amount + carry_forward)
+                            messages.info(request,
+                                f'₹{carry_forward} has been added to EMI {next_emi_num} amount')
+                        else:
+                            messages.info(request,
+                                f'₹{carry_forward} must be paid in the next payment')
+
+                    # Handle carry-forward amount if present
+                    carry_forward_data = form.cleaned_data.get('carry_forward')
+                    if carry_forward_data:
+                        to_emi = carry_forward_data['to_emi']
+                        current_amount = getattr(payment, f'emi_{to_emi}_amount') or 0
+                        setattr(payment, f'emi_{to_emi}_amount', current_amount + carry_forward_data['amount'])
 
                     payment.save()
                     messages.success(request, f'EMI {next_payable_emi} payment of ₹{paid_amount} recorded successfully.')
+                    
+                    # Refresh the payment instance and form
+                    payment.refresh_from_db()
+                    form = PaymentUpdateForm(instance=payment, request=request)
+                    
+                    # Check if there are more EMIs to pay
+                    next_emi = payment.get_next_payable_emi()
+                    
+                    if next_emi:
+                        return render(request, 'paymentdb/payment_update.html', {
+                            'form': form,
+                            'payment': payment,
+                            'next_payable_emi': next_emi,
+                            'total_fees': payment.total_fees,
+                            'amount_paid': payment.amount_paid,
+                            'total_pending': payment.calculate_total_pending()
+                        })
+                    
                     return redirect('payment_list')
-
             except Exception as e:
                 messages.error(request, f'Error updating payment: {str(e)}')
     else:
-        form = PaymentUpdateForm(instance=payment)
+        form = PaymentUpdateForm(instance=payment, request=request)
 
     context = {
         'form': form,
@@ -129,7 +156,7 @@ def payment_update(request, payment_id):
         'next_payable_emi': next_payable_emi,
         'total_fees': payment.total_fees,
         'amount_paid': payment.amount_paid,
-        'total_pending': payment.calculate_total_pending()
+        'total_pending': payment.calculate_total_pending(),
+        'initial_payment_proof': payment.initial_payment_proof
     }
-
     return render(request, 'paymentdb/payment_update.html', context)

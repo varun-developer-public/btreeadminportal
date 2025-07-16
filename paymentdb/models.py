@@ -52,11 +52,13 @@ class Payment(models.Model):
 
     def calculate_total_pending(self):
         """Calculate the total pending amount from unpaid EMIs."""
-        pending = 0
+        total_emi_amount = 0
+        total_paid_amount = self.amount_paid or 0
         for i in range(1, 5):
-                emi_amount = getattr(self, f'emi_{i}_amount') or 0
-                paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
-                pending += max(emi_amount - paid_amount, 0)
+            total_emi_amount += getattr(self, f'emi_{i}_amount') or 0
+            total_paid_amount += getattr(self, f'emi_{i}_paid_amount') or 0
+        
+        pending = self.total_fees - total_paid_amount
         return pending
 
     def save(self, *args, **kwargs):
@@ -78,20 +80,6 @@ class Payment(models.Model):
                     getattr(self, f'emi_{i}_proof').delete(save=False)
                 setattr(self, f'emi_{i}_proof', None)
 
-        # Calculate and carry forward unpaid balances
-        for i in range(1, 4):  # Only process EMIs 1-3 for carry forward
-            current_emi_amount = getattr(self, f'emi_{i}_amount')
-            current_paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
-            
-            if current_emi_amount and current_paid_amount and current_paid_amount < current_emi_amount:
-                unpaid_amount = current_emi_amount - current_paid_amount
-                next_emi_num = i + 1
-                
-                if next_emi_num <= max_emis:
-                    next_emi_amount = getattr(self, f'emi_{next_emi_num}_amount') or 0
-                    if next_emi_amount > 0:
-                        setattr(self, f'emi_{next_emi_num}_amount', next_emi_amount + unpaid_amount)
-
         # Update total pending amount
         self.total_pending_amount = self.calculate_total_pending()
         super().save(*args, **kwargs)
@@ -101,22 +89,22 @@ class Payment(models.Model):
 
     def get_next_payable_emi(self):
         """Returns the next EMI number that needs to be paid."""
-        previous_emi_paid = True  # First EMI doesn't need to check previous
-        
         for i in range(1, 5):
             amount = getattr(self, f'emi_{i}_amount')
             if not amount:  # Skip if this EMI doesn't exist
                 continue
                 
             paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
-            if not previous_emi_paid:  # If previous EMI is not fully paid
-                return None
-            
             if paid_amount < amount:  # If current EMI is not fully paid
-                return i
+                # For first EMI, return immediately
+                if i == 1:
+                    return 1
+                # For other EMIs, check if previous EMI is fully paid
+                prev_amount = getattr(self, f'emi_{i-1}_amount')
+                prev_paid = getattr(self, f'emi_{i-1}_paid_amount') or 0
+                if prev_amount and prev_paid >= prev_amount:
+                    return i
                 
-            previous_emi_paid = True  # Mark current EMI as paid for next iteration
-            
         return None  # All EMIs are paid
 
     def is_emi_fully_paid(self, emi_number):
