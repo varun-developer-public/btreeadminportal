@@ -220,22 +220,6 @@ class PaymentUpdateForm(forms.ModelForm):
                 self.add_error(f'emi_{next_emi}_paid_amount', 
                     f"Paid amount (₹{paid_amount}) cannot exceed the EMI amount (₹{original_amount})")
 
-            # Handle carry forward amount
-            if paid_amount < original_amount:
-                carry_forward = original_amount - paid_amount
-                next_emi_num = next_emi + 1
-                if next_emi_num <= 4 and getattr(payment, f'emi_{next_emi_num}_amount') is not None:
-                    # Store carry-forward information in cleaned_data
-                    cleaned_data['carry_forward'] = {
-                        'amount': carry_forward,
-                        'from_emi': next_emi,
-                        'to_emi': next_emi_num
-                    }
-                    messages.info(self.request, 
-                        f"Remaining ₹{carry_forward} will be added to EMI {next_emi_num} amount")
-                else:
-                    messages.info(self.request,
-                        f"Remaining ₹{carry_forward} must be paid in the next payment")
 
             # Validate paid date only for future dates
             if paid_date:

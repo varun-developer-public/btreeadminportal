@@ -52,16 +52,25 @@ class Payment(models.Model):
 
     def calculate_total_pending(self):
         """Calculate the total pending amount from unpaid EMIs."""
-        total_emi_amount = 0
-        total_paid_amount = self.amount_paid or 0
+        pending = self.total_fees - (self.amount_paid or 0)
         for i in range(1, 5):
-            total_emi_amount += getattr(self, f'emi_{i}_amount') or 0
-            total_paid_amount += getattr(self, f'emi_{i}_paid_amount') or 0
-        
-        pending = self.total_fees - total_paid_amount
+            pending -= getattr(self, f'emi_{i}_paid_amount') or 0
         return pending
 
     def save(self, *args, **kwargs):
+        # Handle carry-forward logic before saving
+        for i in range(1, 4):
+            emi_amount = getattr(self, f'emi_{i}_amount')
+            paid_amount = getattr(self, f'emi_{i}_paid_amount')
+            
+            if emi_amount and paid_amount and paid_amount < emi_amount:
+                carry_forward = emi_amount - paid_amount
+                next_emi_amount_field = f'emi_{i+1}_amount'
+                if getattr(self, next_emi_amount_field) is not None:
+                    current_next_emi_amount = getattr(self, next_emi_amount_field) or 0
+                    setattr(self, next_emi_amount_field, current_next_emi_amount + carry_forward)
+        
+        # Generate payment ID if not exists
         # Generate payment ID if not exists
         if not self.payment_id:
             last = Payment.objects.order_by('-id').first()
