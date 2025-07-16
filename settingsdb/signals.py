@@ -27,10 +27,24 @@ def json_serializable(data):
         if isinstance(value, (datetime, date)):
             return value.isoformat()
         elif isinstance(value, Decimal):
-            return float(value)  # or str(value) if you prefer
-        return value
+            return float(value)
+        elif hasattr(value, 'url'):
+            try:
+                return value.url if value and hasattr(value, 'file') and value.name else None
+            except ValueError:
+                return None
+        elif hasattr(value, 'name'):
+            return value.name
+        return str(value)
 
-    return {k: serialize_value(v) for k, v in data.items()}
+    result = {}
+    for k, v in data.items():
+        try:
+            result[k] = serialize_value(v)
+        except Exception as e:
+            result[k] = f"Unserializable: {str(e)}"
+    return result
+
 
 @receiver(pre_save)
 def capture_old_instance(sender, instance, **kwargs):

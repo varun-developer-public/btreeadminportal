@@ -4,14 +4,14 @@
 {% block content %}
 <h2>Create New Student</h2>
 
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
 
     <h4>Student Details</h4>
     <div class="card p-3 mb-4">
         {{ student_form.as_p }}
     </div>
-
+    <hr>
     <h4>Payment Details</h4>
     <div class="card p-3 mb-4">
         {{ payment_form.as_p }}

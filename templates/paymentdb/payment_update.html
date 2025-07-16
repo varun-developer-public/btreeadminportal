@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<h2>Update Payment - {{ payment.payment_id }} ({{ payment.student }})</h2>
+
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>EMI</th>
+                <th>Original Amount</th>
+                <th>Payment Date</th>
+                <th>Amount Paid</th>
+                <th>Proof Upload</th>
+                <th>Existing Proof</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for emi in emi_fields %}
+            <tr>
+                <td>{{ emi.label }}</td>
+                <td>
+                    {{ emi.amount.value|default:"-" }}
+                </td>
+                <td>
+                    <!-- Paid date is always readonly -->
+                    <input type="text" value="{{ emi.date.value|default:"-" }}" class="form-control" readonly>
+                </td>
+                <td>
+                    {% if emi.editable %}
+                        {{ emi.paid }}
+                    {% else %}
+                        <input type="text" value="{{ emi.paid.value|default:"-" }}" class="form-control" readonly>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if emi.editable %}
+                        {{ emi.proof }}
+                    {% else %}
+                        <input type="file" disabled>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if emi.proof_url %}
+                        <a href="{{ emi.proof_url }}" target="_blank">View Proof</a>
+                    {% else %}
+                        No proof uploaded
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="5" style="text-align: right;"><strong>Total Pending Amount:</strong></td>
+                <td><strong>{{ payment.total_pending_amount }}</strong></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a href="{% url 'payment_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}

@@ -14,7 +14,7 @@ from placementdb.models import Placement
 def create_student(request):
     if request.method == 'POST':
         student_form = StudentForm(request.POST)
-        payment_form = PaymentForm(request.POST)  # a separate form for payment fields
+        payment_form = PaymentForm(request.POST, request.FILES) 
 
         if student_form.is_valid() and payment_form.is_valid():
             # Save student first
