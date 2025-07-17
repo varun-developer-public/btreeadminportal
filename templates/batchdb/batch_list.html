@@ -4,12 +4,16 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Batch List</h2>
         <a href="{% url 'create_batch' %}" class="btn">+ Add Batch</a>
+        <a href="{% url 'import_batches' %}" class="btn btn-secondary" style="margin-left: 10px;">Import Batches</a>
     </div>
     <table>
     <thead>
         <tr>
             <th>Batch ID</th>
             <th>Trainer</th>
+            <th>Batch Name</th>
+            <th>Start Date</th>
+            <th>End Date</th>
             <th>Slot</th>
             <th>Students</th>
             <th>Actions</th>
@@ -19,18 +23,15 @@
         {% for batch in batches %}
         <tr>
             <td>{{ batch.batch_id }}</td>
-            <td>
-                {% if batch.trainer %}
-                    {{ batch.trainer.name }}
-                {% else %}
-                    —
-                {% endif %}
-            </td>
-            <td>{{ batch.slot_timings }}</td>
+            <td>{{ batch.trainer }}</td>
+            <td>{{ batch.batch_name }}</td>
+            <td>{{ batch.start_date }}</td>
+            <td>{{ batch.end_date }}</td>
+            <td>{{ batch.get_slot_display }}</td>
             <td>
                 {% if batch.students.all %}
                     {% for student in batch.students.all %}
-                        {{ student.first_name }} {{ student.last_name }}{% if not forloop.last %}, {% endif %}
+                        {{ student.student_id }}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                 {% else %}
                     No students assigned

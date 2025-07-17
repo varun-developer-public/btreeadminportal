@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Import Students{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Import Students</h2>
+    <p>Upload an Excel file with student data to create multiple students at once.</p>
+    
+    <div class="mb-3">
+        <a href="{% url 'download_student_template' %}" class="btn btn-secondary">Download Template</a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'import_students' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="excel_file" class="form-label">Upload Excel File</label>
+            <input type="file" name="excel_file" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Import Students</button>
+        <a href="{% url 'student_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

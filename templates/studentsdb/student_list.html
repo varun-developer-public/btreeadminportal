@@ -5,11 +5,13 @@
 {% if messages %}
 <div class="messages mb-4">
     {% for message in messages %}
-    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-times-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+        {% if 'student_message' in message.tags %}
+            <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+                <i class="fas {% if message.level_tag == 'success' %}fa-check-circle{% elif message.level_tag == 'error' %}fa-times-circle{% elif message.level_tag == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endif %}
     {% endfor %}
 </div>
 {% endif %}
@@ -20,9 +22,9 @@
         <a href="{% url 'create_student' %}" class="btn btn-primary">
             <i class="fas fa-plus me-2"></i>Add New Student
         </a>
-        <button type="button" class="btn btn-info text-white" data-bs-toggle="modal" data-bs-target="#importModal">
+        <a href="{% url 'import_students' %}" class="btn btn-info text-white">
             <i class="fas fa-file-import me-2"></i>Import from Excel
-        </button>
+        </a>
     </div>
 </div>
 
@@ -96,43 +98,4 @@
 
 </div><!-- Close table-responsive div -->
 
-<!-- Import Modal -->
-<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="importModalLabel">
-                    <i class="fas fa-file-import me-2"></i>Import Students from Excel
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <span>Upload an .xlsx file with student data. All columns are required.</span>
-                </div>
-                
-                <a href="{% url 'download_student_template' %}" class="btn btn-outline-primary mb-3">
-                    <i class="fas fa-download me-2"></i>Download Template
-                </a>
-                
-                <form action="{% url 'import_students' %}" method="post" enctype="multipart/form-data" class="mt-3">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="excelFile" class="form-label">Select Excel File</label>
-                        <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx" required>
-                    </div>
-                    <div class="text-end">
-                        <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
-                            <i class="fas fa-times me-2"></i>Cancel
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-upload me-2"></i>Upload & Process
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

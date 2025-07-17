@@ -14,7 +14,7 @@
             {% include 'includes/sidebar.html' %}
         </div>
         {% endif %}
-        <div class="content-container">
+        <div class="content-container" {% if not user.is_authenticated %}style="margin-left: 0;"{% endif %}>
             {% block content %}{% endblock %}
         </div>
     </div>

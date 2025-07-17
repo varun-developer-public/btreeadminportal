@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Import Batches{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Import Batches</h2>
+    <p>Upload an Excel file with batch data to create multiple batches at once.</p>
+    
+    <div class="mb-3">
+        <a href="{% url 'download_batch_template' %}" class="btn btn-secondary">Download Template</a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" action="{% url 'import_batches' %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="excel_file" class="form-label">Upload Excel File</label>
+            <input type="file" name="excel_file" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Import Batches</button>
+        <a href="{% url 'batch_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

@@ -42,7 +42,7 @@ def create_student(request):
             if student.pl_required:
                 Placement.objects.get_or_create(student=student)
 
-            messages.success(request, f"Student {student.student_id} created successfully.")
+            messages.success(request, f"Student {student.student_id} created successfully.", extra_tags='student_message')
             return redirect('student_list')
     else:
         student_form = StudentForm()
@@ -94,7 +94,7 @@ def update_student(request, student_id):
                 # Remove placement if exists
                 Placement.objects.filter(student=updated_student).delete()
 
-            messages.success(request, f"{updated_student.student_id} updated successfully.")
+            messages.success(request, f"{updated_student.student_id} updated successfully.", extra_tags='student_message')
             return redirect('student_list')
     else:
         form = StudentUpdateForm(instance=student)
@@ -111,7 +111,7 @@ def delete_student(request, student_id):
 
     if request.method == 'POST':
         student.delete()
-        messages.success(request, f"Student {student.student_id} deleted successfully.")
+        messages.success(request, f"Student {student.student_id} deleted successfully.", extra_tags='student_message')
         return redirect('student_list')
 
     return render(request, 'studentsdb/delete_student_confirm.html', {'student': student})
@@ -163,13 +163,13 @@ def import_students(request):
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
         if not excel_file:
-            messages.error(request, "No file was uploaded.")
+            messages.error(request, "No file was uploaded.", extra_tags='student_message')
             return redirect('student_list')
 
         try:
             df = pd.read_excel(excel_file)
         except Exception as e:
-            messages.error(request, f"Error reading Excel file: {e}")
+            messages.error(request, f"Error reading Excel file: {e}", extra_tags='student_message')
             return redirect('student_list')
 
         required_columns = [
@@ -180,7 +180,7 @@ def import_students(request):
             'emi_2_amount', 'emi_2_date', 'emi_3_amount', 'emi_3_date'
         ]
         if not all(col in df.columns for col in required_columns):
-            messages.error(request, f"Excel file must contain the following columns: {', '.join(required_columns)}")
+            messages.error(request, f"Excel file must contain the following columns: {', '.join(required_columns)}", extra_tags='student_message')
             return redirect('student_list')
 
         error_rows = []
@@ -282,13 +282,13 @@ def import_students(request):
 
         if error_rows:
             request.session['error_rows'] = error_rows
-            messages.warning(request, f"Successfully created {success_count} students. {len(error_rows)} records had errors.")
+            messages.warning(request, f"Successfully created {success_count} students. {len(error_rows)} records had errors.", extra_tags='student_message')
             return redirect('download_error_report')
         else:
-            messages.success(request, f"Successfully created {success_count} students.")
+            messages.success(request, f"Successfully created {success_count} students.", extra_tags='student_message')
             return redirect('student_list')
 
-    return redirect('student_list')
+    return render(request, 'studentsdb/import_students.html')
 
 
 @login_required
@@ -298,7 +298,7 @@ def download_error_report(request):
     """
     error_rows = request.session.get('error_rows', [])
     if not error_rows:
-        messages.error(request, "No error report to download.")
+        messages.error(request, "No error report to download.", extra_tags='student_message')
         return redirect('student_list')
 
     df = pd.DataFrame(error_rows)

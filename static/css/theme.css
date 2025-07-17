@@ -2,7 +2,7 @@
 @import url('https://fonts.cdnfonts.com/css/sf-pro-display');
 
 :root {
-    --primary-blue: #0066cc;
+    --primary-blue: #0056b3;
     --primary-light: #e6f0ff;
     --secondary-blue: #003d99;
     --text-primary: #333333;
@@ -134,13 +134,13 @@ select:focus {
 
 /* Buttons */
 button, input[type='submit'], .btn {
-    padding: 8px 8px;
-    background-color: #007bff; /* Primary blue */
+    padding: 6px 12px;
+    background-color: var(--primary-blue);
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     color: #fff;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
     transition: background-color 0.2s;
     display: inline-block;
