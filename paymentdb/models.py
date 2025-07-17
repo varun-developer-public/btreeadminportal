@@ -59,18 +59,29 @@ class Payment(models.Model):
 
     def save(self, *args, **kwargs):
         # Handle carry-forward logic before saving
-        for i in range(1, 4):
-            emi_amount = getattr(self, f'emi_{i}_amount')
-            paid_amount = getattr(self, f'emi_{i}_paid_amount')
-            
-            if emi_amount and paid_amount and paid_amount < emi_amount:
-                carry_forward = emi_amount - paid_amount
-                next_emi_amount_field = f'emi_{i+1}_amount'
-                if getattr(self, next_emi_amount_field) is not None:
-                    current_next_emi_amount = getattr(self, next_emi_amount_field) or 0
-                    setattr(self, next_emi_amount_field, current_next_emi_amount + carry_forward)
+        if self.pk:
+            original = type(self).objects.get(pk=self.pk)
+            for i in range(1, 4):
+                # Check if a payment was made for this specific EMI in this transaction
+                if (getattr(self, f'emi_{i}_paid_amount') or 0) > (getattr(original, f'emi_{i}_paid_amount') or 0):
+                    
+                    current_emi_amount = getattr(self, f'emi_{i}_amount') or 0
+                    current_paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
+
+                    # If it's underpaid, calculate deficit
+                    if current_paid_amount < current_emi_amount:
+                        deficit = current_emi_amount - current_paid_amount
+                        
+                        next_emi_field = f'emi_{i+1}_amount'
+                        next_emi_amount = getattr(self, next_emi_field)
+
+                        if next_emi_amount is not None:
+                            # To prevent re-adding on subsequent saves, we base the new amount
+                            # on the next EMI's amount as it was *before* this transaction.
+                            original_next_emi_amount = getattr(original, next_emi_field) or 0
+                            setattr(self, next_emi_field, original_next_emi_amount + deficit)
+                    break # Assume only one EMI is paid per transaction.
         
-        # Generate payment ID if not exists
         # Generate payment ID if not exists
         if not self.payment_id:
             last = Payment.objects.order_by('-id').first()

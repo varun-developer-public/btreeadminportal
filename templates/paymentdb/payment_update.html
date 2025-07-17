@@ -48,7 +48,7 @@
         <!-- EMI Details -->
         {% if payment.emi_type != 'NONE' %}
             {% if payment.emi_1_amount %}
-            <div class="emi-section {% if payment.is_emi_fully_paid.1 %}paid-emi{% elif next_payable_emi == 1 %}current-emi{% else %}pending-emi{% endif %}">
+            <div class="emi-section {% if payment.emi_1_paid_amount %}paid-emi{% elif not payment.emi_1_paid_amount and form.fields.emi_1_paid_amount.disabled == False %}current-emi{% else %}pending-emi{% endif %}">
                 <h3>EMI 1</h3>
                 <div class="emi-details">
                     <div class="emi-row">
@@ -87,7 +87,7 @@
             {% endif %}
 
             {% if payment.emi_2_amount %}
-            <div class="emi-section {% if payment.is_emi_fully_paid.2 %}paid-emi{% elif next_payable_emi == 2 %}current-emi{% else %}pending-emi{% endif %}">
+            <div class="emi-section {% if payment.emi_2_paid_amount %}paid-emi{% elif not payment.emi_2_paid_amount and form.fields.emi_2_paid_amount.disabled == False %}current-emi{% else %}pending-emi{% endif %}">
                 <h3>EMI 2</h3>
                 <div class="emi-details">
                     <div class="emi-row">
@@ -126,7 +126,7 @@
             {% endif %}
 
             {% if payment.emi_3_amount %}
-            <div class="emi-section {% if payment.is_emi_fully_paid.3 %}paid-emi{% elif next_payable_emi == 3 %}current-emi{% else %}pending-emi{% endif %}">
+            <div class="emi-section {% if payment.emi_3_paid_amount %}paid-emi{% elif not payment.emi_3_paid_amount and form.fields.emi_3_paid_amount.disabled == False %}current-emi{% else %}pending-emi{% endif %}">
                 <h3>EMI 3</h3>
                 <div class="emi-details">
                     <div class="emi-row">
@@ -165,7 +165,7 @@
             {% endif %}
 
             {% if payment.emi_4_amount %}
-            <div class="emi-section {% if payment.is_emi_fully_paid.4 %}paid-emi{% elif next_payable_emi == 4 %}current-emi{% else %}pending-emi{% endif %}">
+            <div class="emi-section {% if payment.emi_4_paid_amount %}paid-emi{% elif not payment.emi_4_paid_amount and form.fields.emi_4_paid_amount.disabled == False %}current-emi{% else %}pending-emi{% endif %}">
                 <h3>EMI 4</h3>
                 <div class="emi-details">
                     <div class="emi-row">

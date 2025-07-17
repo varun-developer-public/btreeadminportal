@@ -83,38 +83,28 @@ def payment_list(request):
 @login_required
 def payment_update(request, payment_id):
     payment = get_object_or_404(Payment, payment_id=payment_id)
-    next_payable_emi = payment.get_next_payable_emi()
 
     if request.method == 'POST':
-        form = PaymentUpdateForm(request.POST, request.FILES, instance=payment, request=request)
-
-        if form.is_valid() and next_payable_emi and payment.can_edit_emi(next_payable_emi):
+        form = PaymentUpdateForm(request.POST, request.FILES, instance=payment)
+        if form.is_valid():
             try:
                 with transaction.atomic():
-                    # Get the form data for the current EMI
-                    paid_amount = form.cleaned_data.get(f'emi_{next_payable_emi}_paid_amount')
-                    paid_date = form.cleaned_data.get(f'emi_{next_payable_emi}_paid_date')
-                    proof = form.cleaned_data.get(f'emi_{next_payable_emi}_proof')
-
-                    # Update the payment fields
-                    setattr(payment, f'emi_{next_payable_emi}_paid_amount', paid_amount)
-                    setattr(payment, f'emi_{next_payable_emi}_paid_date', paid_date)
-                    if proof:
-                        setattr(payment, f'emi_{next_payable_emi}_proof', proof)
-
-                    payment.save()
-                    messages.success(request, f'EMI {next_payable_emi} payment of ₹{paid_amount} recorded successfully.')
-                    
+                    form.save()
+                    # Find which EMI was just paid to show a nice message
+                    for i in range(1, 5):
+                        if f'emi_{i}_paid_amount' in form.changed_data:
+                            paid_amount = form.cleaned_data.get(f'emi_{i}_paid_amount')
+                            messages.success(request, f'EMI {i} payment of ₹{paid_amount} recorded successfully.')
+                            break
                     return redirect('payment_list')
             except Exception as e:
                 messages.error(request, f'Error updating payment: {str(e)}')
     else:
-        form = PaymentUpdateForm(instance=payment, request=request)
+        form = PaymentUpdateForm(instance=payment)
 
     context = {
         'form': form,
         'payment': payment,
-        'next_payable_emi': next_payable_emi,
         'total_fees': payment.total_fees,
         'amount_paid': payment.amount_paid,
         'total_pending': payment.calculate_total_pending(),

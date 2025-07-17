@@ -165,8 +165,7 @@ class PaymentUpdateForm(forms.ModelForm):
             'emi_4_paid_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
-    def __init__(self, *args, request=None, **kwargs):
-        self.request = request
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         payment = self.instance
 
@@ -174,61 +173,61 @@ class PaymentUpdateForm(forms.ModelForm):
         for field in self.fields:
             self.fields[field].disabled = True
             self.fields[field].required = False
-            if 'paid_amount' in field:
-                self.fields[field].widget.attrs.update({
-                    'class': 'emi-paid-amount',
-                    'data-emi': field.split('_')[1]
-                })
 
-        # Find the next EMI to enable based on payment status
-        next_emi = payment.get_next_payable_emi()
+        # Logic to enable the next EMI form
+        for i in range(1, 5):
+            is_paid = getattr(payment, f'emi_{i}_paid_amount') is not None
+            has_amount = getattr(payment, f'emi_{i}_amount') is not None
 
-        # Enable fields for the next payable EMI
-        if next_emi:
-            # Enable fields for the current EMI
-            self.fields[f'emi_{next_emi}_paid_amount'].disabled = False
-            self.fields[f'emi_{next_emi}_paid_date'].disabled = False
-            self.fields[f'emi_{next_emi}_proof'].disabled = False
-            
-            # Make enabled fields required
-            self.fields[f'emi_{next_emi}_paid_amount'].required = True
-            self.fields[f'emi_{next_emi}_paid_date'].required = True
-            self.fields[f'emi_{next_emi}_proof'].required = True
+            if has_amount and not is_paid:
+                # This is the next EMI to be paid.
+                # Enable fields for this EMI.
+                self.fields[f'emi_{i}_paid_amount'].disabled = False
+                self.fields[f'emi_{i}_paid_date'].disabled = False
+                self.fields[f'emi_{i}_proof'].disabled = False
+                
+                # Make enabled fields required
+                self.fields[f'emi_{i}_paid_amount'].required = True
+                self.fields[f'emi_{i}_paid_date'].required = True
+                # Proof is required only if one isn't already uploaded
+                if not getattr(payment, f'emi_{i}_proof'):
+                    self.fields[f'emi_{i}_proof'].required = True
 
-            # Set min/max for paid amount
-            original_amount = getattr(payment, f'emi_{next_emi}_amount') or 0
-            self.fields[f'emi_{next_emi}_paid_amount'].widget.attrs.update({
-                'max': original_amount,
-                'data-original': original_amount
-            })
+                # We only enable one EMI at a time.
+                break
 
     def clean(self):
         cleaned_data = super().clean()
         payment = self.instance
-        next_emi = payment.get_next_payable_emi()
+        
+        for i in range(1, 5):
+            paid_amount_field = f'emi_{i}_paid_amount'
+            
+            # Find which EMI is being paid in this submission
+            if paid_amount_field in cleaned_data and cleaned_data[paid_amount_field] is not None:
+                original_amount = getattr(payment, f'emi_{i}_amount') or 0
+                paid_amount = cleaned_data.get(paid_amount_field) or 0
+                paid_date = cleaned_data.get(f'emi_{i}_paid_date')
+                proof = cleaned_data.get(f'emi_{i}_proof')
 
-        if next_emi and payment.can_edit_emi(next_emi):
-            original_amount = getattr(payment, f'emi_{next_emi}_amount') or 0
-            paid_amount = cleaned_data.get(f'emi_{next_emi}_paid_amount') or 0
-            paid_date = cleaned_data.get(f'emi_{next_emi}_paid_date')
-            proof = cleaned_data.get(f'emi_{next_emi}_proof')
+                # Validate paid amount
+                if paid_amount <= 0:
+                    self.add_error(paid_amount_field, "Paid amount must be greater than 0")
+                elif paid_amount > original_amount:
+                    self.add_error(paid_amount_field,
+                        f"Paid amount (₹{paid_amount}) cannot exceed the EMI amount (₹{original_amount})")
 
-            # Validate paid amount
-            if paid_amount <= 0:
-                self.add_error(f'emi_{next_emi}_paid_amount', "Paid amount must be greater than 0")
-            elif paid_amount > original_amount:
-                self.add_error(f'emi_{next_emi}_paid_amount', 
-                    f"Paid amount (₹{paid_amount}) cannot exceed the EMI amount (₹{original_amount})")
+                # Validate paid date
+                if paid_date:
+                    today = timezone.now().date()
+                    if paid_date > today:
+                        self.add_error(f'emi_{i}_paid_date', "Paid date cannot be in the future")
 
-
-            # Validate paid date only for future dates
-            if paid_date:
-                today = timezone.now().date()
-                if paid_date > today:
-                    self.add_error(f'emi_{next_emi}_paid_date', "Paid date cannot be in the future")
-
-            # Validate proof
-            if not proof and not getattr(payment, f'emi_{next_emi}_proof'):
-                self.add_error(f'emi_{next_emi}_proof', "Payment proof is required")
-
+                # Validate proof
+                if not proof and not getattr(payment, f'emi_{i}_proof'):
+                    self.add_error(f'emi_{i}_proof', "Payment proof is required")
+                
+                # Since we found the EMI being paid, we can stop checking
+                break
+                
         return cleaned_data
