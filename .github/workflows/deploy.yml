@@ -3,7 +3,7 @@ name: 🚀 Deploy to VPS (btreeadminportal)
 on:
   push:
     branches:
-      - main  # Trigger only when pushing to main branch
+      - main
 
 jobs:
   deploy:
@@ -12,6 +12,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Create .ssh Directory
+        run: mkdir -p ~/.ssh
 
       - name: Add Server to Known Hosts
         run: ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
