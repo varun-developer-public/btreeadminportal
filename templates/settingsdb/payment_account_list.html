@@ -15,6 +15,7 @@
         <tr>
             <th>#</th>
             <th>Account Name</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -22,6 +23,9 @@
         <tr>
             <td>{{ forloop.counter }}</td>
             <td>{{ account.name }}</td>
+            <td>
+                <a href="{% url 'remove_payment_account' account.pk %}" onclick="return confirm('Are you sure you want to remove this account?');">Remove</a>
+            </td>
         </tr>
         {% empty %}
         <tr><td colspan="2">No payment accounts added yet.</td></tr>

@@ -70,7 +70,7 @@
                     <td>₹{{ payment.total_paid|floatformat:2 }}</td>
                     <td class="pending-amount">₹{{ payment.total_pending_amount|floatformat:2 }}</td>
                     
-                    <td class="emi-cell">
+                    <td class="emi-cell {% if date_from and date_to and payment.emi_1_date|date:'Y-m-d' >= date_from and payment.emi_1_date|date:'Y-m-d' <= date_to %}highlight-cell{% endif %}">
                         {% if payment.emi_1_amount %}
                             <div><strong>Due:</strong> ₹{{ payment.emi_1_amount|floatformat:2 }}</div>
                             <div><strong>Date:</strong> {{ payment.emi_1_date|date:"d M Y" }}</div>
@@ -83,7 +83,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td class="emi-cell">
+                    <td class="emi-cell {% if date_from and date_to and payment.emi_2_date|date:'Y-m-d' >= date_from and payment.emi_2_date|date:'Y-m-d' <= date_to %}highlight-cell{% endif %}">
                         {% if payment.emi_2_amount %}
                             <div><strong>Due:</strong> ₹{{ payment.emi_2_amount|floatformat:2 }}</div>
                             <div><strong>Date:</strong> {{ payment.emi_2_date|date:"d M Y" }}</div>
@@ -96,7 +96,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td class="emi-cell">
+                    <td class="emi-cell {% if date_from and date_to and payment.emi_3_date|date:'Y-m-d' >= date_from and payment.emi_3_date|date:'Y-m-d' <= date_to %}highlight-cell{% endif %}">
                         {% if payment.emi_3_amount %}
                             <div><strong>Due:</strong> ₹{{ payment.emi_3_amount|floatformat:2 }}</div>
                             <div><strong>Date:</strong> {{ payment.emi_3_date|date:"d M Y" }}</div>
@@ -109,7 +109,7 @@
                             -
                         {% endif %}
                     </td>
-                    <td class="emi-cell">
+                    <td class="emi-cell {% if date_from and date_to and payment.emi_4_date|date:'Y-m-d' >= date_from and payment.emi_4_date|date:'Y-m-d' <= date_to %}highlight-cell{% endif %}">
                         {% if payment.emi_4_amount %}
                             <div><strong>Due:</strong> ₹{{ payment.emi_4_amount|floatformat:2 }}</div>
                             <div><strong>Date:</strong> {{ payment.emi_4_date|date:"d M Y" }}</div>
@@ -227,6 +227,9 @@
     .highlight-paid {
         color: #28a745;
         font-weight: bold;
+    }
+    .highlight-cell {
+        background-color: #fff3cd;
     }
 </style>
 {% endblock %}

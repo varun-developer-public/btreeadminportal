@@ -17,11 +17,13 @@
         {{ payment_form.as_p }}
     </div>
 
-    <button type="submit" class="btn btn-success">Save Student</button>
-    <a href="{% url 'student_list' %}" class="btn btn-secondary">Back to Student List</a>
-    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#importModal">
-        Import from Excel
-    </button>
+    <div class="d-flex justify-content-start mb-3">
+        <button type="submit" class="btn btn-success mr-2">Save Student</button>
+        <a href="{% url 'student_list' %}" class="btn btn-secondary mr-2">Back to Student List</a>
+        <button type="button" class="btn btn-info" data-toggle="modal" data-target="#importModal">
+            Import from Excel
+        </button>
+    </div>
 </form>
 
 <!-- Import Modal -->

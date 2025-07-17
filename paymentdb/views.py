@@ -22,7 +22,8 @@ def payment_list(request):
     if search:
         payments = payments.filter(
             Q(student__student_id__icontains=search) |
-            Q(student__name__icontains=search) |
+            Q(student__first_name__icontains=search) |
+            Q(student__last_name__icontains=search) |
             Q(student__consultant__name__icontains=search) |
             Q(payment_id__icontains=search)
         )

@@ -15,6 +15,7 @@
         <tr>
             <th>#</th>
             <th>Source Name</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -22,6 +23,9 @@
         <tr>
             <td>{{ forloop.counter }}</td>
             <td>{{ source.name }}</td>
+            <td>
+                <a href="{% url 'remove_source' source.pk %}" onclick="return confirm('Are you sure you want to remove this source?');">Remove</a>
+            </td>
         </tr>
         {% empty %}
         <tr><td colspan="2">No sources added yet.</td></tr>

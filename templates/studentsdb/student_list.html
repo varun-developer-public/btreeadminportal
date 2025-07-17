@@ -62,10 +62,12 @@
 </table>
 
 <br>
-<a href="{% url 'create_student' %}">➕ Add New Student</a>
-<button type="button" data-toggle="modal" data-target="#importModal">
-    Import from Excel
-</button>
+<div class="d-flex justify-content-end mb-3">
+    <a href="{% url 'create_student' %}" class="btn btn-primary mr-2">➕ Add New Student</a>
+    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#importModal">
+        Import from Excel
+    </button>
+</div>
 
 <!-- Import Modal -->
 <div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">

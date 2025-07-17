@@ -1,5 +1,5 @@
 from django.contrib.admin.views.decorators import staff_member_required
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from .models import SourceOfJoining, PaymentAccount, TransactionLog
 from .forms import SourceForm, PaymentAccountForm
 import json
@@ -21,6 +21,12 @@ def source_list(request):
     return render(request, 'settingsdb/source_list.html', {'sources': sources, 'form': form})
 
 @staff_member_required
+def remove_source(request, pk):
+    source = get_object_or_404(SourceOfJoining, pk=pk)
+    source.delete()
+    return redirect('source_list')
+
+@staff_member_required
 def payment_account_list(request):
     accounts = PaymentAccount.objects.all()
     if request.method == 'POST':
@@ -31,6 +37,12 @@ def payment_account_list(request):
     else:
         form = PaymentAccountForm()
     return render(request, 'settingsdb/payment_account_list.html', {'accounts': accounts, 'form': form})
+
+@staff_member_required
+def remove_payment_account(request, pk):
+    account = get_object_or_404(PaymentAccount, pk=pk)
+    account.delete()
+    return redirect('payment_account_list')
 
 def clean_transaction_data(details_json):
     try:

@@ -1,4 +1,8 @@
 from django.shortcuts import render, redirect,get_object_or_404
+
+from consultantdb.models import Consultant
+from settingsdb.models import PaymentAccount, SourceOfJoining
+from trainersdb.models import Trainer
 from .forms import StudentForm
 from .models import Student
 from paymentdb.models import Payment
@@ -124,6 +128,14 @@ def download_student_template(request):
         'last_name': ['Doe', 'Smith', 'Jones', 'Parker'],
         'email': ['john.doe@example.com', 'jane.smith@example.com', 'invalid-email', 'john.doe@example.com'],
         'date_of_birth': ['1999-01-15', '2000-05-20', '2001-02-28', '2000-11-10'],
+        'pl_required': ['Yes', 'No', 'Yes', 'No'],
+        'source_of_joining': ['Website', 'Referral', 'Social Media', 'Website'],
+        'mode_of_class': ['ON', 'OFF', 'ON', 'ON'],
+        'week_type': ['WD', 'WE', 'WD', 'WE'],
+        'consultant': ['Consultant A', 'Consultant B', 'Consultant A', ''],
+        'trainer': ['Trainer A', 'Trainer B', 'Trainer A', 'Trainer B'],
+        'phone': ['1234567890', '0987654321', '1122334455', '5566778899'],
+        'payment_account': ['Account 1', 'Account 2', 'Account 1', 'Account 2'],
         'total_fees': [50000, 60000, 70000, 80000],
         'amount_paid': [10000, 20000, 30000, 40000],
         'emi_type': ['2', 'NONE', '3', 'NONE'],
@@ -162,6 +174,8 @@ def import_students(request):
 
         required_columns = [
             'student_id', 'first_name', 'last_name', 'email', 'date_of_birth',
+            'pl_required', 'source_of_joining', 'mode_of_class', 'week_type', 'consultant',
+            'trainer', 'phone', 'payment_account',
             'total_fees', 'amount_paid', 'emi_type', 'emi_1_amount', 'emi_1_date',
             'emi_2_amount', 'emi_2_date', 'emi_3_amount', 'emi_3_date'
         ]
@@ -183,9 +197,17 @@ def import_students(request):
                     total_fees = row['total_fees']
                     amount_paid = row['amount_paid']
                     emi_type = str(row['emi_type'])
+                    pl_required = row.get('pl_required', '').lower() == 'yes'
+                    source_of_joining_name = row.get('source_of_joining')
+                    mode_of_class = row.get('mode_of_class')
+                    week_type = row.get('week_type')
+                    consultant_name = row.get('consultant')
+                    trainer_name = row.get('trainer')
+                    phone = row.get('phone')
+                    payment_account_name = row.get('payment_account')
 
                     # Validation
-                    if not all([student_id, first_name, last_name, email, dob_str, total_fees, amount_paid]):
+                    if not all([student_id, first_name, last_name, email, dob_str, total_fees, amount_paid, source_of_joining_name, mode_of_class, week_type, trainer_name, phone, payment_account_name]):
                         raise ValueError("Missing required student or payment fields.")
 
                     try:
@@ -199,6 +221,14 @@ def import_students(request):
                     if Student.objects.filter(email=email).exists():
                         raise ValueError("Duplicate email.")
 
+                    # Get or create related objects
+                    source_of_joining, _ = SourceOfJoining.objects.get_or_create(name=source_of_joining_name)
+                    consultant = None
+                    if consultant_name:
+                        consultant, _ = Consultant.objects.get_or_create(name=consultant_name)
+                    trainer, _ = Trainer.objects.get_or_create(name=trainer_name)
+                    payment_account, _ = PaymentAccount.objects.get_or_create(name=payment_account_name)
+
                     # Create Student
                     student = Student.objects.create(
                         student_id=student_id,
@@ -206,17 +236,25 @@ def import_students(request):
                         last_name=last_name,
                         email=email,
                         date_of_birth=date_of_birth,
-                        # Set default values for other required fields
-                        mode_of_class='ON',
-                        week_type='WD',
+                        pl_required=pl_required,
+                        source_of_joining=source_of_joining,
+                        mode_of_class=mode_of_class,
+                        week_type=week_type,
+                        consultant=consultant,
+                        trainer=trainer,
+                        phone=phone,
                     )
+
+                    if pl_required:
+                        Placement.objects.get_or_create(student=student)
 
                     # Create Payment
                     payment = Payment(
                         student=student,
                         total_fees=total_fees,
                         amount_paid=amount_paid,
-                        emi_type=emi_type
+                        emi_type=emi_type,
+                        payment_account=payment_account
                     )
 
                     if emi_type != 'NONE':
