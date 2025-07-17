@@ -61,7 +61,10 @@
                     </div>
                     <div class="emi-row">
                         <label>Due Date:</label>
-                        <span>{{ payment.emi_1_date }}</span>
+                        <span class="emi-date" data-emi-field="emi_1_date">{{ payment.emi_1_date }}</span>
+                        {% if not payment.emi_1_paid_amount %}
+                        <i class="fas fa-edit edit-icon" style="cursor:pointer; margin-left: 10px;"></i>
+                        {% endif %}
                     </div>
                     {% if payment.emi_1_paid_amount %}
                     <div class="emi-row paid-amount">
@@ -100,7 +103,10 @@
                     </div>
                     <div class="emi-row">
                         <label>Due Date:</label>
-                        <span>{{ payment.emi_2_date }}</span>
+                        <span class="emi-date" data-emi-field="emi_2_date">{{ payment.emi_2_date }}</span>
+                        {% if not payment.emi_2_paid_amount %}
+                        <i class="fas fa-edit edit-icon" style="cursor:pointer; margin-left: 10px;"></i>
+                        {% endif %}
                     </div>
                     {% if payment.emi_2_paid_amount %}
                     <div class="emi-row paid-amount">
@@ -139,7 +145,10 @@
                     </div>
                     <div class="emi-row">
                         <label>Due Date:</label>
-                        <span>{{ payment.emi_3_date }}</span>
+                        <span class="emi-date" data-emi-field="emi_3_date">{{ payment.emi_3_date }}</span>
+                        {% if not payment.emi_3_paid_amount %}
+                        <i class="fas fa-edit edit-icon" style="cursor:pointer; margin-left: 10px;"></i>
+                        {% endif %}
                     </div>
                     {% if payment.emi_3_paid_amount %}
                     <div class="emi-row paid-amount">
@@ -178,7 +187,10 @@
                     </div>
                     <div class="emi-row">
                         <label>Due Date:</label>
-                        <span>{{ payment.emi_4_date }}</span>
+                        <span class="emi-date" data-emi-field="emi_4_date">{{ payment.emi_4_date }}</span>
+                        {% if not payment.emi_4_paid_amount %}
+                        <i class="fas fa-edit edit-icon" style="cursor:pointer; margin-left: 10px;"></i>
+                        {% endif %}
                     </div>
                     {% if payment.emi_4_paid_amount %}
                     <div class="emi-row paid-amount">
@@ -384,6 +396,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
+    });
+
+    // Script for editing EMI dates
+    document.querySelectorAll('.edit-icon').forEach(icon => {
+        icon.addEventListener('click', function() {
+            const dateSpan = this.previousElementSibling;
+            const currentText = dateSpan.textContent.trim();
+            const emiField = dateSpan.dataset.emiField;
+
+            // Create a date input
+            const dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            dateInput.value = new Date(currentText).toISOString().slice(0, 10);
+            
+            // Replace span with input
+            dateSpan.style.display = 'none';
+            this.style.display = 'none'; // Hide edit icon
+            dateSpan.parentNode.insertBefore(dateInput, dateSpan.nextSibling);
+
+            dateInput.focus();
+
+            // Handle date change
+            dateInput.addEventListener('blur', () => {
+                // Revert if input is empty
+                dateSpan.style.display = '';
+                this.style.display = '';
+                dateInput.remove();
+            });
+            
+            dateInput.addEventListener('change', function() {
+                const newDate = this.value;
+                const paymentId = '{{ payment.payment_id }}';
+                const url = `{% url 'update_emi_date' payment_id=payment.payment_id %}`;
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        emi_field: emiField,
+                        new_date: newDate,
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        dateSpan.textContent = new Date(newDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                        alert(data.message);
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An unexpected error occurred.');
+                })
+                .finally(() => {
+                    // Revert UI
+                    dateSpan.style.display = '';
+                    icon.style.display = '';
+                    dateInput.remove();
+                });
+            });
+        });
     });
 });
 </script>

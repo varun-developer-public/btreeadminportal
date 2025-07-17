@@ -3,6 +3,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import Q, F
+from django.http import JsonResponse
+import json
+from datetime import datetime
 
 from .models import Payment
 from studentsdb.models import Student
@@ -117,3 +120,43 @@ def payment_update(request, payment_id):
         'all_paid': all_paid,
     }
     return render(request, 'paymentdb/payment_update.html', context)
+
+@login_required
+def update_emi_date(request, payment_id):
+    if request.method == 'POST':
+        try:
+            payment = get_object_or_404(Payment, payment_id=payment_id)
+            data = json.loads(request.body)
+            emi_field_name = data.get('emi_field')
+            new_date_str = data.get('new_date')
+
+            if not emi_field_name or not new_date_str:
+                return JsonResponse({'status': 'error', 'message': 'Missing data'}, status=400)
+
+            # Validate emi_field_name to prevent arbitrary attribute setting
+            if not emi_field_name.startswith('emi_') or not emi_field_name.endswith('_date'):
+                return JsonResponse({'status': 'error', 'message': 'Invalid EMI field'}, status=400)
+
+            # Convert string to date object
+            try:
+                new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({'status': 'error', 'message': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
+
+            # Check if the EMI is already paid
+            emi_number = emi_field_name.split('_')[1]
+            paid_amount_field = f'emi_{emi_number}_paid_amount'
+            if getattr(payment, paid_amount_field) is not None:
+                return JsonResponse({'status': 'error', 'message': 'Cannot change the date of a paid EMI.'}, status=403)
+
+            setattr(payment, emi_field_name, new_date)
+            payment.save()
+
+            return JsonResponse({'status': 'success', 'message': 'EMI date updated successfully.'})
+
+        except Payment.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Payment not found.'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)

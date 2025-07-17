@@ -9,9 +9,11 @@
 <body>
     {% include 'includes/navbar.html' %}
     <div class="main-container">
+        {% if user.is_authenticated %}
         <div class="sidebar">
             {% include 'includes/sidebar.html' %}
         </div>
+        {% endif %}
         <div class="content-container">
             {% block content %}{% endblock %}
         </div>
