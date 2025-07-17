@@ -20,8 +20,8 @@ class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
         fields = [
-            'name', 'phone', 'alternative_phone', 'email',
-            'join_date', 'start_date', 'tentative_end_date',
+            'first_name', 'last_name', 'phone', 'alternative_phone', 'email',
+            'date_of_birth', 'join_date', 'start_date', 'tentative_end_date',
             'course_percentage', 'pl_required', 'source_of_joining',
             'mode_of_class', 'week_type', 'consultant'
         ]
@@ -46,10 +46,12 @@ class StudentUpdateForm(forms.ModelForm):
     class Meta:
         model = Student
         fields = [
-            'name',
+            'first_name',
+            'last_name',
             'phone',
             'alternative_phone',
             'email',
+            'date_of_birth',
             'tentative_end_date',
             'course_percentage',
             'pl_required',

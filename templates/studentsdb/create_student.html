@@ -19,7 +19,34 @@
 
     <button type="submit" class="btn btn-success">Save Student</button>
     <a href="{% url 'student_list' %}" class="btn btn-secondary">Back to Student List</a>
+    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#importModal">
+        Import from Excel
+    </button>
 </form>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">Import Students from Excel</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Upload an .xlsx file with student data. All columns are required.</p>
+                <a href="{% url 'download_student_template' %}">Download Template</a>
+                <form action="{% url 'import_students' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="file" name="excel_file" accept=".xlsx" required>
+                    <hr>
+                    <button type="submit" class="btn btn-primary">Upload & Process</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

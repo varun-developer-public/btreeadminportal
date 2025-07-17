@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from .forms import StudentForm
 from .models import Student
+from paymentdb.models import Payment
 from paymentdb.forms import PaymentForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -9,6 +10,10 @@ from .forms import StudentUpdateForm
 from dateutil.relativedelta import relativedelta
 from placementdb.models import Placement
 
+import pandas as pd
+from django.http import HttpResponse
+from django.db import transaction
+from datetime import datetime
 
 @login_required
 def create_student(request):
@@ -53,7 +58,8 @@ def student_list(request):
 
     if query:
         students = students.filter(
-            Q(name__icontains=query) |
+            Q(first_name__icontains=query) |
+            Q(last_name__icontains=query) |
             Q(email__icontains=query) |
             Q(phone__icontains=query)
         )
@@ -105,3 +111,164 @@ def delete_student(request, student_id):
         return redirect('student_list')
 
     return render(request, 'studentsdb/delete_student_confirm.html', {'student': student})
+
+
+@login_required
+def download_student_template(request):
+    """
+    Downloads an Excel template for bulk student creation.
+    """
+    data = {
+        'student_id': ['BTR0001', 'BTR0002', 'BTR0003', 'BTR0004'],
+        'first_name': ['John', 'Jane', '', 'Peter'],
+        'last_name': ['Doe', 'Smith', 'Jones', 'Parker'],
+        'email': ['john.doe@example.com', 'jane.smith@example.com', 'invalid-email', 'john.doe@example.com'],
+        'date_of_birth': ['1999-01-15', '2000-05-20', '2001-02-28', '2000-11-10'],
+        'total_fees': [50000, 60000, 70000, 80000],
+        'amount_paid': [10000, 20000, 30000, 40000],
+        'emi_type': ['2', 'NONE', '3', 'NONE'],
+        'emi_1_amount': [20000, '', 15000, ''],
+        'emi_1_date': ['2025-08-15', '', '2025-09-01', ''],
+        'emi_2_amount': [20000, '', 15000, ''],
+        'emi_2_date': ['2025-09-15', '', '2025-10-01', ''],
+        'emi_3_amount': ['', '', 10000, ''],
+        'emi_3_date': ['', '', '2025-11-01', '']
+    }
+    df = pd.DataFrame(data)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="student_template.xlsx"'
+    df.to_excel(response, index=False)
+
+    return response
+
+
+@login_required
+def import_students(request):
+    """
+    Imports students from an Excel file.
+    """
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if not excel_file:
+            messages.error(request, "No file was uploaded.")
+            return redirect('student_list')
+
+        try:
+            df = pd.read_excel(excel_file)
+        except Exception as e:
+            messages.error(request, f"Error reading Excel file: {e}")
+            return redirect('student_list')
+
+        required_columns = [
+            'student_id', 'first_name', 'last_name', 'email', 'date_of_birth',
+            'total_fees', 'amount_paid', 'emi_type', 'emi_1_amount', 'emi_1_date',
+            'emi_2_amount', 'emi_2_date', 'emi_3_amount', 'emi_3_date'
+        ]
+        if not all(col in df.columns for col in required_columns):
+            messages.error(request, f"Excel file must contain the following columns: {', '.join(required_columns)}")
+            return redirect('student_list')
+
+        error_rows = []
+        success_count = 0
+
+        with transaction.atomic():
+            for index, row in df.iterrows():
+                try:
+                    student_id = row['student_id']
+                    first_name = row['first_name']
+                    last_name = row['last_name']
+                    email = row['email']
+                    dob_str = str(row['date_of_birth']).split(' ')[0]
+                    total_fees = row['total_fees']
+                    amount_paid = row['amount_paid']
+                    emi_type = str(row['emi_type'])
+
+                    # Validation
+                    if not all([student_id, first_name, last_name, email, dob_str, total_fees, amount_paid]):
+                        raise ValueError("Missing required student or payment fields.")
+
+                    try:
+                        date_of_birth = datetime.strptime(dob_str, '%Y-%m-%d').date()
+                    except ValueError:
+                        raise ValueError("Invalid date_of_birth format. Use YYYY-MM-DD.")
+
+                    if Student.objects.filter(student_id=student_id).exists():
+                        raise ValueError("Duplicate student_id.")
+
+                    if Student.objects.filter(email=email).exists():
+                        raise ValueError("Duplicate email.")
+
+                    # Create Student
+                    student = Student.objects.create(
+                        student_id=student_id,
+                        first_name=first_name,
+                        last_name=last_name,
+                        email=email,
+                        date_of_birth=date_of_birth,
+                        # Set default values for other required fields
+                        mode_of_class='ON',
+                        week_type='WD',
+                    )
+
+                    # Create Payment
+                    payment = Payment(
+                        student=student,
+                        total_fees=total_fees,
+                        amount_paid=amount_paid,
+                        emi_type=emi_type
+                    )
+
+                    if emi_type != 'NONE':
+                        for i in range(1, int(emi_type) + 1):
+                            emi_amount = row.get(f'emi_{i}_amount')
+                            emi_date_str = str(row.get(f'emi_{i}_date')).split(' ')[0]
+
+                            if emi_amount and emi_date_str:
+                                try:
+                                    emi_date = datetime.strptime(emi_date_str, '%Y-%m-%d').date()
+                                    setattr(payment, f'emi_{i}_amount', emi_amount)
+                                    setattr(payment, f'emi_{i}_date', emi_date)
+                                except (ValueError, TypeError):
+                                     raise ValueError(f"Invalid date format for EMI {i}. Use YYYY-MM-DD.")
+                            else:
+                                raise ValueError(f"Missing amount or date for EMI {i}.")
+                    
+                    payment.save()
+                    success_count += 1
+
+                except Exception as e:
+                    error_row = row.to_dict()
+                    error_row['error_reason'] = str(e)
+                    error_rows.append(error_row)
+
+        if error_rows:
+            request.session['error_rows'] = error_rows
+            messages.warning(request, f"Successfully created {success_count} students. {len(error_rows)} records had errors.")
+            return redirect('download_error_report')
+        else:
+            messages.success(request, f"Successfully created {success_count} students.")
+            return redirect('student_list')
+
+    return redirect('student_list')
+
+
+@login_required
+def download_error_report(request):
+    """
+    Downloads a CSV file with the rows that failed during import.
+    """
+    error_rows = request.session.get('error_rows', [])
+    if not error_rows:
+        messages.error(request, "No error report to download.")
+        return redirect('student_list')
+
+    df = pd.DataFrame(error_rows)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="error_report.csv"'
+    df.to_csv(response, index=False)
+
+    # Clear the session variable
+    del request.session['error_rows']
+
+    return response
