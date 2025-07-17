@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Delete Consultant{% endblock %}
 {% block content %}
-<h2>Delete Consultant</h2>
-<p>Are you sure you want to delete {{ consultant.name }}?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Yes, Delete</button>
-    <a href="{% url 'consultant_list' %}">Cancel</a>
-</form>
+<div class="card">
+    <h2>Delete Consultant</h2>
+    <p>Are you sure you want to delete <strong>{{ consultant.name }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'consultant_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
 {% endblock %}

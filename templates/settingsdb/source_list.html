@@ -2,15 +2,16 @@
 {% block title %}Source of Joining{% endblock %}
 
 {% block content %}
-<h2>Source of Joining</h2>
-
-<form method="post" style="margin-bottom: 20px;">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Add Source</button>
-</form>
-
-<table border="1" cellpadding="5" cellspacing="0" style="width: 100%;">
+<div class="card">
+    <h2>Source of Joining</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Add Source</button>
+    </form>
+</div>
+<div class="card">
+    <table>
     <thead>
         <tr>
             <th>#</th>
@@ -24,14 +25,14 @@
             <td>{{ forloop.counter }}</td>
             <td>{{ source.name }}</td>
             <td>
-                <a href="{% url 'remove_source' source.pk %}" onclick="return confirm('Are you sure you want to remove this source?');">Remove</a>
+                <a href="{% url 'remove_source' source.pk %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to remove this source?');">Remove</a>
             </td>
         </tr>
         {% empty %}
         <tr><td colspan="2">No sources added yet.</td></tr>
         {% endfor %}
     </tbody>
-</table>
-
-<a href="{% url 'settings_dashboard' %}">Back to Settings Dashboard</a>
+    </table>
+</div>
+<a href="{% url 'settings_dashboard' %}" class="btn btn-secondary">Back to Settings Dashboard</a>
 {% endblock %}

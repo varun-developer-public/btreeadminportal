@@ -2,9 +2,10 @@
 {% block title %}Transaction Logs{% endblock %}
 
 {% block content %}
-<h2>Transaction Logs</h2>
-
-<table border="1" cellpadding="5" cellspacing="0" style="width: 100%; font-size: 14px;">
+<div class="card">
+    <h2>Transaction Logs</h2>
+    <div class="table-wrapper">
+        <table>
     <thead>
         <tr>
             <th>Timestamp</th>
@@ -33,7 +34,8 @@
         <tr><td colspan="4" style="text-align:center;">No transaction logs found.</td></tr>
         {% endfor %}
     </tbody>
-</table>
-
-<a href="{% url 'settings_dashboard' %}">Back to Settings Dashboard</a>
+        </table>
+    </div>
+</div>
+<a href="{% url 'settings_dashboard' %}" class="btn btn-secondary" style="margin-top: 20px;">Back to Settings Dashboard</a>
 {% endblock %}

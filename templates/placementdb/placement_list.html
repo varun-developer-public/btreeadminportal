@@ -2,9 +2,10 @@
 {% block title %}Placement Records{% endblock %}
 
 {% block content %}
-<h2>Placement Records</h2>
-
-<table border="1" cellpadding="5" cellspacing="0">
+<div class="card">
+    <h2>Placement Records</h2>
+    <div class="table-wrapper">
+        <table>
     <thead>
         <tr>
             <th>Student ID</th>
@@ -68,12 +69,14 @@
             <td>{{ placement.company_4 }}</td>
             <td>{{ placement.company_5 }}</td>
             <td>
-                <a href="{% url 'update_placement' placement.pk %}">✏️ Edit</a>
+                <a href="{% url 'update_placement' placement.pk %}" class="btn"><i class="fas fa-edit"></i> Edit</a>
             </td>
         </tr>
         {% empty %}
         <tr><td colspan="15">No placement records found.</td></tr>
         {% endfor %}
     </tbody>
-</table>
+        </table>
+    </div>
+</div>
 {% endblock %}

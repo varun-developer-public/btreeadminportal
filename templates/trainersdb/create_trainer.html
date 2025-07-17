@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Add New Trainer</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Add Trainer</button>
-    <a href="{% url 'trainer_list' %}">Back</a>
-</form>
+<div class="card">
+    <h2>Add New Trainer</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Add Trainer</button>
+        <a href="{% url 'trainer_list' %}" class="btn btn-secondary">Back</a>
+    </form>
+</div>
 {% endblock %}

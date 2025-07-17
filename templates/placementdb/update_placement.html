@@ -2,12 +2,13 @@
 {% block title %}Update Placement{% endblock %}
 
 {% block content %}
-<h2>Update Placement for {{ placement.student.student_id }} - {{ placement.student.name }}</h2>
-
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save Changes</button>
-    <a href="{% url 'placement_list' %}">Cancel</a>
-</form>
+<div class="card">
+    <h2>Update Placement for {{ placement.student.student_id }} - {{ placement.student.first_name }} {{ placement.student.last_name }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Save Changes</button>
+        <a href="{% url 'placement_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
 {% endblock %}

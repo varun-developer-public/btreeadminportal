@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Consultants{% endblock %}
 {% block content %}
-<div class="container">
-    <h2>Consultants</h2>
-    <a href="{% url 'create_consultant' %}" class="btn btn-primary mb-3">➕ Add Consultant</a>
-    <table class="table table-striped">
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Consultants</h2>
+        <a href="{% url 'create_consultant' %}" class="btn"><i class="fas fa-plus"></i> Add Consultant</a>
+    </div>
+    <table>
         <thead>
             <tr>
                 <th>ID</th>
@@ -28,8 +30,8 @@
                 <td>{{ consultant.date_of_birth|date:"d M Y"|default:'-' }}</td>
                 <td>{{ consultant.date_of_joining|date:"d M Y"|default:'-' }}</td>
                 <td>
-                    <a href="{% url 'update_consultant' consultant.pk %}" class="btn btn-sm btn-info">✏️ Update</a>
-                    <a href="{% url 'delete_consultant' consultant.pk %}" class="btn btn-sm btn-danger">🗑️ Delete</a>
+                    <a href="{% url 'update_consultant' consultant.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Update</a>
+                    <a href="{% url 'delete_consultant' consultant.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
                 </td>
             </tr>
             {% empty %}

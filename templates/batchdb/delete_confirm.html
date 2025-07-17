@@ -2,11 +2,12 @@
 {% block title %}Delete Batch{% endblock %}
 
 {% block content %}
-<h2>Are you sure you want to delete batch <strong>{{ batch.batch_id }}</strong>?</h2>
-
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Yes, Delete</button>
-    <a href="{% url 'batch_list' %}">Cancel</a>
-</form>
+<div class="card">
+    <h2>Are you sure you want to delete batch <strong>{{ batch.batch_id }}</strong>?</h2>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'batch_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
 {% endblock %}

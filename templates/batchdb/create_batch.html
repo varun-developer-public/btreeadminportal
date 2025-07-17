@@ -2,19 +2,17 @@
 {% block title %}Create Batch{% endblock %}
 
 {% block content %}
-<h2>Create New Batch</h2>
-
-<form method="post">
-    {% csrf_token %}
-
-    <p>
-        <label>Batch ID:</label>
-        <input type="text" value="{{ next_batch_id }}" readonly style="background-color: #eee; border: 1px solid #ccc;">
-    </p>
-
-    {{ form.as_p }}
-
-    <button type="submit">Create Batch</button>
-    <a href="{% url 'batch_list' %}">Cancel</a>
-</form>
+<div class="card">
+    <h2>Create New Batch</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div>
+            <label>Batch ID:</label>
+            <input type="text" value="{{ next_batch_id }}" readonly disabled>
+        </div>
+        {{ form.as_p }}
+        <button type="submit" class="btn">Create Batch</button>
+        <a href="{% url 'batch_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
 {% endblock %}

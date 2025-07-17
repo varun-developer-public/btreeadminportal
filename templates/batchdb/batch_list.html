@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Batch List</h2>
-<a href="{% url 'create_batch' %}">+ Add Batch</a>
-<table border="1" cellpadding="5" cellspacing="0">
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Batch List</h2>
+        <a href="{% url 'create_batch' %}" class="btn">+ Add Batch</a>
+    </div>
+    <table>
     <thead>
         <tr>
             <th>Batch ID</th>
@@ -34,11 +37,12 @@
                 {% endif %}
             </td>
             <td>
-                <a href="{% url 'update_batch' batch.pk %}">✏️ Edit</a> |
-                <a href="{% url 'delete_batch' batch.pk %}">🗑️ Delete</a>
+                <a href="{% url 'update_batch' batch.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
+                <a href="{% url 'delete_batch' batch.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
             </td>
         </tr>
         {% endfor %}
     </tbody>
-</table>
+    </table>
+</div>
 {% endblock %}

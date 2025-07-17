@@ -1,48 +1,124 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f9f9f9;
+/* Custom styles that complement theme.css */
+
+/* Sidebar link hover effect */
+.sidebar-nav {
+    padding: 16px 8px;
 }
 
-a {
-    text-decoration: none;
-    color: #333;
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin: 4px 0;
+    font-size: 0.95rem;
 }
 
-a:hover {
-    text-decoration: none;
+.sidebar-nav a:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-blue);
 }
 
-.sidebar a:hover {
-    background-color: #e0e0e0;
+.sidebar-nav a.active {
+    background-color: var(--primary-blue);
+    color: white;
 }
 
-button, input[type='submit'] {
+.sidebar-nav a i {
+    width: 20px;
+    margin-right: 12px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.sidebar-nav a span {
+    font-weight: 500;
+}
+
+/* Navbar styles */
+.navbar {
+    background-color: var(--background-light);
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 24px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+}
+
+.navbar-brand {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--primary-blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.welcome-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.welcome-text i {
+    color: var(--primary-blue);
+}
+
+.navbar .btn {
     padding: 8px 16px;
-    background-color: #f0f0f0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    color: #333;
-    transition: background-color 0.2s;
+    font-size: 0.9rem;
 }
 
-button:hover, input[type='submit']:hover {
-    background-color: #e0e0e0;
+.navbar .btn i {
+    margin-right: 6px;
 }
 
-input[type='text'], input[type='email'], input[type='password'], textarea, select {
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    width: 100%;
+/* Search form styles */
+.search-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.search-form input {
+    margin-bottom: 0;
     max-width: 300px;
-    margin-bottom: 10px;
 }
 
-form {
-    margin-bottom: 20px;
+/* Messages */
+.error-message {
+    padding: 12px;
+    border-radius: 6px;
+    background-color: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.2);
+    color: var(--danger-color);
+    margin-bottom: 16px;
+}
+
+.success-message {
+    padding: 12px;
+    border-radius: 6px;
+    background-color: rgba(40, 167, 69, 0.1);
+    border: 1px solid rgba(40, 167, 69, 0.2);
+    color: var(--success-color);
+    margin-bottom: 16px;
 }
 
 .search-form {
