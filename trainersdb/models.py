@@ -10,6 +10,9 @@ class Trainer(models.Model):
     name = models.CharField(max_length=100)
     phone = models.CharField(max_length=15)
     email = models.EmailField()
+    address = models.TextField(blank=True, null=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    date_of_joining = models.DateField(auto_now_add=True, null=True)
     trainer_type = models.CharField(max_length=2, choices=TRAINER_TYPE_CHOICES)
     stack = models.CharField(max_length=200)
 

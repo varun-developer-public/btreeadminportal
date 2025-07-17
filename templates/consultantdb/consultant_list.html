@@ -1,33 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Consultants{% endblock %}
 {% block content %}
-<h2>Consultants</h2>
-<a href="{% url 'create_consultant' %}">➕ Add Consultant</a>
-<table border="1" cellpadding="5" cellspacing="0">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for consultant in consultants %}
-        <tr>
-            <td>{{ consultant.consultant_id }}</td>
-            <td>{{ consultant.name }}</td>
-            <td>{{ consultant.phone_number }}</td>
-            <td>{{ consultant.email }}</td>
-            <td>
-                <a href="{% url 'update_consultant' consultant.pk %}">✏️Update</a>
-                <a href="{% url 'delete_consultant' consultant.pk %}">🗑️Delete</a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="5">No consultants found.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container">
+    <h2>Consultants</h2>
+    <a href="{% url 'create_consultant' %}" class="btn btn-primary mb-3">➕ Add Consultant</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Date of Birth</th>
+                <th>Date of Joining</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for consultant in consultants %}
+            <tr>
+                <td>{{ consultant.consultant_id }}</td>
+                <td>{{ consultant.name }}</td>
+                <td>{{ consultant.phone_number }}</td>
+                <td>{{ consultant.email }}</td>
+                <td>{{ consultant.address|default:'-' }}</td>
+                <td>{{ consultant.date_of_birth|date:"d M Y"|default:'-' }}</td>
+                <td>{{ consultant.date_of_joining|date:"d M Y"|default:'-' }}</td>
+                <td>
+                    <a href="{% url 'update_consultant' consultant.pk %}" class="btn btn-sm btn-info">✏️ Update</a>
+                    <a href="{% url 'delete_consultant' consultant.pk %}" class="btn btn-sm btn-danger">🗑️ Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8">No consultants found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

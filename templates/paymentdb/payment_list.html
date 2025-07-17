@@ -1,27 +1,16 @@
 {% extends "base.html" %}
-{% block title %}All Payments{% endblock %}
+{% block title %}Payment List{% endblock %}
 
 {% block content %}
-<div class="payment-list">
-    <h2>All Payments</h2>
+<div class="payment-list-container">
+    <h2>Payment Management</h2>
 
     <form method="get" class="filters">
         <div class="filter-row">
             <div class="filter-group">
                 <label for="search">Search:</label>
-                <input type="text" id="search" name="search" value="{{ search }}" placeholder="Student ID / Name / Consultant / Payment ID">
+                <input type="text" id="search" name="search" value="{{ search }}" placeholder="Student ID, Name, Consultant...">
             </div>
-
-            <div class="filter-group">
-                <label for="emi_type">EMI Type:</label>
-                <select name="emi_type" id="emi_type">
-                    <option value="">All EMI Types</option>
-                    {% for value, label in emi_types %}
-                        <option value="{{ value }}" {% if emi_type == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
             <div class="filter-group">
                 <label for="payment_status">Payment Status:</label>
                 <select name="payment_status" id="payment_status">
@@ -32,194 +21,212 @@
                 </select>
             </div>
         </div>
-
         <div class="filter-row">
             <div class="filter-group">
-                <label for="emi_number">EMI Number:</label>
-                <select name="emi_number" id="emi_number">
-                    <option value="">All EMIs</option>
-                    {% for value, label in emi_numbers %}
-                        <option value="{{ value }}" {% if emi_number == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="filter-group">
-                <label for="date_from">Due Date From:</label>
+                <label for="date_from">Pending From:</label>
                 <input type="date" id="date_from" name="date_from" value="{{ date_from }}">
             </div>
-
             <div class="filter-group">
-                <label for="date_to">Due Date To:</label>
+                <label for="date_to">Pending To:</label>
                 <input type="date" id="date_to" name="date_to" value="{{ date_to }}">
             </div>
         </div>
-
         <div class="filter-actions">
             <button type="submit" class="btn-primary">Apply Filters</button>
             <a href="{% url 'payment_list' %}" class="btn-secondary">Reset</a>
         </div>
     </form>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Student ID</th>
-                <th>Student Name</th>
-                <th>Consultant</th>
-                <th>Total Fees</th>
-                <th>Initial Payment</th>
-                <th>EMI 1</th>
-                <th>EMI 2</th>
-                <th>EMI 3</th>
-                <th>EMI 4</th>
-                <th>Total Pending</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-        {% if payments %}
-            {% for payment in payments %}
-            <tr>
-                <td>{{ payment.student.student_id }}</td>
-                <td>{{ payment.student.name }}</td>
-                <td>{{ payment.student.consultant.name }}</td>
-                <td>₹{{ payment.total_fees }}</td>
-                <td>₹{{ payment.amount_paid }}</td>
-                <td class="emi-cell">
-                    {% if payment.emi_1_amount %}
-                    <div>Amount: ₹{{ payment.emi_1_amount }}</div>
-                    <div>Due: {{ payment.emi_1_date|default:'-' }}</div>
-                    <div>Paid: ₹{{ payment.emi_1_paid_amount|default:'0' }}</div>
-                    {% else %}-{% endif %}
-                </td>
-                <td class="emi-cell">
-                    {% if payment.emi_2_amount %}
-                    <div>Amount: ₹{{ payment.emi_2_amount }}</div>
-                    <div>Due: {{ payment.emi_2_date|default:'-' }}</div>
-                    <div>Paid: ₹{{ payment.emi_2_paid_amount|default:'0' }}</div>
-                    {% else %}-{% endif %}
-                </td>
-                <td class="emi-cell">
-                    {% if payment.emi_3_amount %}
-                    <div>Amount: ₹{{ payment.emi_3_amount }}</div>
-                    <div>Due: {{ payment.emi_3_date|default:'-' }}</div>
-                    <div>Paid: ₹{{ payment.emi_3_paid_amount|default:'0' }}</div>
-                    {% else %}-{% endif %}
-                </td>
-                <td class="emi-cell">
-                    {% if payment.emi_4_amount %}
-                    <div>Amount: ₹{{ payment.emi_4_amount }}</div>
-                    <div>Due: {{ payment.emi_4_date|default:'-' }}</div>
-                    <div>Paid: ₹{{ payment.emi_4_paid_amount|default:'0' }}</div>
-                    {% else %}-{% endif %}
-                </td>
-                <td>₹{{ payment.total_pending_amount }}</td>
-                <td>
-                    <a href="{% url 'payment_update' payment_id=payment.payment_id %}">Update</a>
-                </td>
-            </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td colspan="11">No payment records found.</td>
-            </tr>
-        {% endif %}
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                    <th>Phone</th>
+                    <th>Consultant</th>
+                    <th>Status</th>
+                    <th>Total Fees</th>
+                    <th>Amount Paid</th>
+                    <th>Pending Amount</th>
+                    <th>EMI 1 Details</th>
+                    <th>EMI 2 Details</th>
+                    <th>EMI 3 Details</th>
+                    <th>EMI 4 Details</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr class="status-{{ payment.status|lower }}">
+                    <td>{{ payment.student.student_id }}</td>
+                    <td>{{ payment.student.name }}</td>
+                    <td>{{ payment.student.phone }}</td>
+                    <td>{{ payment.student.consultant.name|default:'N/A' }}</td>
+                    <td>
+                        <span class="status-badge">{{ payment.status }}</span>
+                    </td>
+                    <td>₹{{ payment.total_fees|floatformat:2 }}</td>
+                    <td>₹{{ payment.total_paid|floatformat:2 }}</td>
+                    <td class="pending-amount">₹{{ payment.total_pending_amount|floatformat:2 }}</td>
+                    
+                    <td class="emi-cell">
+                        {% if payment.emi_1_amount %}
+                            <div><strong>Due:</strong> ₹{{ payment.emi_1_amount|floatformat:2 }}</div>
+                            <div><strong>Date:</strong> {{ payment.emi_1_date|date:"d M Y" }}</div>
+                            {% with paid=payment.emi_1_paid_amount|default:0 due=payment.emi_1_amount %}
+                            <div class="{% if paid >= due %}highlight-paid{% else %}highlight-pending{% endif %}">
+                                <strong>Paid:</strong> ₹{{ paid|floatformat:2 }}
+                            </div>
+                            {% endwith %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="emi-cell">
+                        {% if payment.emi_2_amount %}
+                            <div><strong>Due:</strong> ₹{{ payment.emi_2_amount|floatformat:2 }}</div>
+                            <div><strong>Date:</strong> {{ payment.emi_2_date|date:"d M Y" }}</div>
+                            {% with paid=payment.emi_2_paid_amount|default:0 due=payment.emi_2_amount %}
+                            <div class="{% if paid >= due %}highlight-paid{% else %}highlight-pending{% endif %}">
+                                <strong>Paid:</strong> ₹{{ paid|floatformat:2 }}
+                            </div>
+                            {% endwith %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="emi-cell">
+                        {% if payment.emi_3_amount %}
+                            <div><strong>Due:</strong> ₹{{ payment.emi_3_amount|floatformat:2 }}</div>
+                            <div><strong>Date:</strong> {{ payment.emi_3_date|date:"d M Y" }}</div>
+                            {% with paid=payment.emi_3_paid_amount|default:0 due=payment.emi_3_amount %}
+                            <div class="{% if paid >= due %}highlight-paid{% else %}highlight-pending{% endif %}">
+                                <strong>Paid:</strong> ₹{{ paid|floatformat:2 }}
+                            </div>
+                            {% endwith %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td class="emi-cell">
+                        {% if payment.emi_4_amount %}
+                            <div><strong>Due:</strong> ₹{{ payment.emi_4_amount|floatformat:2 }}</div>
+                            <div><strong>Date:</strong> {{ payment.emi_4_date|date:"d M Y" }}</div>
+                            {% with paid=payment.emi_4_paid_amount|default:0 due=payment.emi_4_amount %}
+                            <div class="{% if paid >= due %}highlight-paid{% else %}highlight-pending{% endif %}">
+                                <strong>Paid:</strong> ₹{{ paid|floatformat:2 }}
+                            </div>
+                            {% endwith %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <a href="{% url 'payment_update' payment_id=payment.payment_id %}" class="btn-update">Update</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="13">No payment records found matching your criteria.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <style>
-.payment-list {
-    padding: 20px;
-}
+    .payment-list-container {
+        padding: 20px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .filters {
+        background: #f9f9f9;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .filter-row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 10px;
+    }
+    .filter-group {
+        flex: 1;
+    }
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    .filter-group input, .filter-group select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    .btn-primary, .btn-secondary, .btn-update {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        color: white;
+    }
+    .btn-primary { background-color: #007bff; }
+    .btn-secondary { background-color: #6c757d; }
+    .btn-update { background-color: #28a745; font-size: 0.9em; padding: 5px 10px;}
 
-.filters {
-    margin-bottom: 20px;
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 5px;
-}
-
-.filter-row {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-}
-
-.filter-group {
-    flex: 1;
-    min-width: 200px;
-}
-
-.filter-group label {
-    display: block;
-    margin-bottom: 5px;
-    font-weight: 500;
-}
-
-.filter-group input,
-.filter-group select {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-}
-
-.filter-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.btn-primary,
-.btn-secondary {
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: none;
-    cursor: pointer;
-}
-
-.btn-primary {
-    background-color: #007bff;
-    color: white;
-}
-
-.btn-secondary {
-    background-color: #6c757d;
-    color: white;
-    text-decoration: none;
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-
-th, td {
-    padding: 12px 8px;
-    border: 1px solid #ddd;
-    text-align: left;
-    font-size: 0.9em;
-}
-
-th {
-    background-color: #f5f5f5;
-    font-weight: 600;
-}
-
-.emi-cell {
-    font-size: 0.85em;
-    background-color: #fafafa;
-}
-
-.emi-cell div {
-    margin-bottom: 3px;
-}
-
-.emi-cell div:last-child {
-    margin-bottom: 0;
-}
+    .table-wrapper {
+        overflow-x: auto;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+    th, td {
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+        font-weight: 700;
+    }
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+    }
+    .status-paid .status-badge { background-color: #28a745; }
+    .status-partial .status-badge { background-color: #ffc107; color: #333; }
+    .status-pending .status-badge { background-color: #dc3545; }
+    
+    .pending-amount {
+        font-weight: 700;
+    }
+    .status-pending .pending-amount, .status-partial .pending-amount {
+        color: #dc3545;
+    }
+    .emi-cell {
+        min-width: 180px;
+    }
+    .highlight-pending {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .highlight-paid {
+        color: #28a745;
+        font-weight: bold;
+    }
 </style>
 {% endblock %}

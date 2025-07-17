@@ -1,25 +1,42 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Trainer List</h2>
-<a href="{% url 'create_trainer' %}">+ Add Trainer</a>
-<table border="1" cellpadding="5" cellspacing="0">
-    <tr>
-        <th>Trainer ID</th>
-        <th>Name</th>
-        <th>Phone</th>
-        <th>Email</th>
-        <th>Type</th>
-        <th>Stack</th>
-    </tr>
-    {% for trainer in trainers %}
-    <tr>
-        <td>{{ trainer.trainer_id }}</td>
-        <td>{{ trainer.name }}</td>
-        <td>{{ trainer.phone }}</td>
-        <td>{{ trainer.email }}</td>
-        <td>{{ trainer.get_trainer_type_display }}</td>
-        <td>{{ trainer.stack }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="container">
+    <h2>Trainer List</h2>
+    <a href="{% url 'create_trainer' %}" class="btn btn-primary mb-3">➕ Add Trainer</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Trainer ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Address</th>
+                <th>Date of Birth</th>
+                <th>Date of Joining</th>
+                <th>Type</th>
+                <th>Stack</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for trainer in trainers %}
+            <tr>
+                <td>{{ trainer.trainer_id }}</td>
+                <td>{{ trainer.name }}</td>
+                <td>{{ trainer.phone }}</td>
+                <td>{{ trainer.email }}</td>
+                <td>{{ trainer.address|default:'-' }}</td>
+                <td>{{ trainer.date_of_birth|date:"d M Y"|default:'-' }}</td>
+                <td>{{ trainer.date_of_joining|date:"d M Y"|default:'-' }}</td>
+                <td>{{ trainer.get_trainer_type_display }}</td>
+                <td>{{ trainer.stack }}</td>
+                <td>
+                    <a href="{% url 'update_trainer' trainer.pk %}" class="btn btn-sm btn-info">✏️ Update</a>
+                    <a href="{% url 'delete_trainer' trainer.pk %}" class="btn btn-sm btn-danger">🗑️ Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}
