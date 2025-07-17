@@ -1,4 +1,6 @@
 from django.db import models
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 class Payment(models.Model):
     EMI_CHOICES = [
@@ -58,10 +60,17 @@ class Payment(models.Model):
         return pending
 
     def save(self, *args, **kwargs):
+        # EMI overpayment validation
+        for i in range(1, 5):
+            emi_amount = getattr(self, f'emi_{i}_amount')
+            paid_amount = getattr(self, f'emi_{i}_paid_amount')
+            if emi_amount is not None and paid_amount is not None and paid_amount > emi_amount:
+                raise ValueError(f"Paid amount for EMI {i} cannot exceed the due amount.")
+
         # Handle carry-forward logic before saving
         if self.pk:
             original = type(self).objects.get(pk=self.pk)
-            for i in range(1, 4):
+            for i in range(1, 5): # Iterate up to EMI 4
                 # Check if a payment was made for this specific EMI in this transaction
                 if (getattr(self, f'emi_{i}_paid_amount') or 0) > (getattr(original, f'emi_{i}_paid_amount') or 0):
                     
@@ -72,14 +81,22 @@ class Payment(models.Model):
                     if current_paid_amount < current_emi_amount:
                         deficit = current_emi_amount - current_paid_amount
                         
-                        next_emi_field = f'emi_{i+1}_amount'
-                        next_emi_amount = getattr(self, next_emi_field)
-
-                        if next_emi_amount is not None:
-                            # To prevent re-adding on subsequent saves, we base the new amount
-                            # on the next EMI's amount as it was *before* this transaction.
+                        if i < 4: # Carry forward only if it's not EMI 4
+                            next_emi_field = f'emi_{i+1}_amount'
+                            next_emi_date_field = f'emi_{i+1}_date'
+                            
+                            # Get the original next EMI amount before any modifications
                             original_next_emi_amount = getattr(original, next_emi_field) or 0
+                            
+                            # Add the deficit to the next EMI
                             setattr(self, next_emi_field, original_next_emi_amount + deficit)
+
+                            # If the next EMI didn't exist, set its due date and update emi_type
+                            if not getattr(original, next_emi_field):
+                                setattr(self, next_emi_date_field, (getattr(self, f'emi_{i}_paid_date') or timezone.now().date()) + relativedelta(months=1))
+                                if i + 1 > int(self.emi_type):
+                                    self.emi_type = str(i + 1)
+                    
                     break # Assume only one EMI is paid per transaction.
         
         # Generate payment ID if not exists
@@ -92,13 +109,15 @@ class Payment(models.Model):
         max_emis = int(self.emi_type) if self.emi_type in ['2', '3', '4'] else 0
         for i in range(1, 5):
             if i > max_emis:
-                setattr(self, f'emi_{i}_amount', None)
-                setattr(self, f'emi_{i}_date', None)
-                setattr(self, f'emi_{i}_paid_amount', None)
-                setattr(self, f'emi_{i}_paid_date', None)
-                if getattr(self, f'emi_{i}_proof'):
-                    getattr(self, f'emi_{i}_proof').delete(save=False)
-                setattr(self, f'emi_{i}_proof', None)
+                # Don't clear fields if they are being set by carry-forward
+                if not getattr(self, f'emi_{i}_amount'):
+                    setattr(self, f'emi_{i}_amount', None)
+                    setattr(self, f'emi_{i}_date', None)
+                    setattr(self, f'emi_{i}_paid_amount', None)
+                    setattr(self, f'emi_{i}_paid_date', None)
+                    if getattr(self, f'emi_{i}_proof'):
+                        getattr(self, f'emi_{i}_proof').delete(save=False)
+                    setattr(self, f'emi_{i}_proof', None)
 
         # Update total pending amount
         self.total_pending_amount = self.calculate_total_pending()

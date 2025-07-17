@@ -31,8 +31,12 @@
             <span>₹{{ payment.total_fees }}</span>
         </div>
         <div class="summary-item">
+            <label>Total Paid:</label>
+            <span>₹{{ total_paid }}</span>
+        </div>
+        <div class="summary-item">
             <label>Total Pending:</label>
-            <span>₹{{ payment.calculate_total_pending }}</span>
+            <span>₹{{ total_pending }}</span>
         </div>
     </div>
 
@@ -205,8 +209,12 @@
         {% endif %}
 
         <div class="form-actions">
-            <button type="submit">Save Changes</button>
-            <a href="{% url 'payment_list' %}" class="cancel-button">Cancel</a>
+            {% if all_paid %}
+                <a href="{% url 'payment_list' %}" class="cancel-button">Back</a>
+            {% else %}
+                <button type="submit">Save Changes</button>
+                <a href="{% url 'payment_list' %}" class="cancel-button">Cancel</a>
+            {% endif %}
         </div>
     </form>
 </div>
@@ -333,4 +341,50 @@
     font-style: italic;
 }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // This script handles client-side validation for EMI payments.
+    const emiSections = document.querySelectorAll('.emi-section');
+    const submitButton = document.querySelector('button[type="submit"]');
+
+    emiSections.forEach(section => {
+        const originalAmountSpan = section.querySelector('span:not([class])');
+        const paidAmountInput = section.querySelector('input[name$="_paid_amount"]');
+        
+        if (paidAmountInput && !paidAmountInput.disabled) {
+            const originalAmount = parseFloat(originalAmountSpan.textContent.replace('₹', ''));
+
+            // Create a container for the error message
+            let errorDiv = document.createElement('div');
+            errorDiv.style.color = 'red';
+            errorDiv.style.fontSize = '0.9em';
+            errorDiv.style.marginTop = '5px';
+            paidAmountInput.parentNode.appendChild(errorDiv);
+
+            paidAmountInput.addEventListener('input', function() {
+                const paidAmount = parseFloat(this.value);
+                const isEmi4 = paidAmountInput.name.includes('emi_4');
+
+                if (isEmi4) {
+                    if (paidAmount !== originalAmount) {
+                        errorDiv.textContent = 'For EMI 4, the paid amount must exactly match the original amount.';
+                        submitButton.disabled = true;
+                    } else {
+                        errorDiv.textContent = '';
+                        submitButton.disabled = false;
+                    }
+                } else {
+                    if (paidAmount > originalAmount) {
+                        errorDiv.textContent = 'Paid amount cannot exceed the original amount.';
+                        submitButton.disabled = true;
+                    } else {
+                        errorDiv.textContent = '';
+                        submitButton.disabled = false;
+                    }
+                }
+            });
+        }
+    });
+});
+</script>
 {% endblock %}

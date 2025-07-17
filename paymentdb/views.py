@@ -97,17 +97,24 @@ def payment_update(request, payment_id):
                             messages.success(request, f'EMI {i} payment of ₹{paid_amount} recorded successfully.')
                             break
                     return redirect('payment_list')
+            except ValueError as e:
+                messages.error(request, str(e))
             except Exception as e:
-                messages.error(request, f'Error updating payment: {str(e)}')
+                messages.error(request, f'An unexpected error occurred: {str(e)}')
     else:
         form = PaymentUpdateForm(instance=payment)
+
+    total_pending = payment.calculate_total_pending()
+    all_paid = total_pending == 0
 
     context = {
         'form': form,
         'payment': payment,
         'total_fees': payment.total_fees,
         'amount_paid': payment.amount_paid,
-        'total_pending': payment.calculate_total_pending(),
-        'initial_payment_proof': payment.initial_payment_proof
+        'total_pending': total_pending,
+        'total_paid': payment.total_fees - total_pending,
+        'initial_payment_proof': payment.initial_payment_proof,
+        'all_paid': all_paid,
     }
     return render(request, 'paymentdb/payment_update.html', context)

@@ -213,9 +213,9 @@ class PaymentUpdateForm(forms.ModelForm):
                 # Validate paid amount
                 if paid_amount <= 0:
                     self.add_error(paid_amount_field, "Paid amount must be greater than 0")
-                elif paid_amount > original_amount:
-                    self.add_error(paid_amount_field,
-                        f"Paid amount (₹{paid_amount}) cannot exceed the EMI amount (₹{original_amount})")
+                
+                if i == 4 and paid_amount != original_amount:
+                    self.add_error(paid_amount_field, f"For EMI 4, the paid amount must be exactly ₹{original_amount}")
 
                 # Validate paid date
                 if paid_date:
