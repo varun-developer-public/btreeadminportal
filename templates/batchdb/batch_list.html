@@ -27,7 +27,7 @@
             <td>
                 {% if batch.students.all %}
                     {% for student in batch.students.all %}
-                        {{ student.name }}{% if not forloop.last %}, {% endif %}
+                        {{ student.first_name }} {{ student.last_name }}{% if not forloop.last %}, {% endif %}
                     {% endfor %}
                 {% else %}
                     No students assigned
