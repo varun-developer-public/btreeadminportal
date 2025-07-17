@@ -1,0 +1,65 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Python App to VPS
+
+# This workflow runs on every push to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    # Use the latest version of Ubuntu for the job runner
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout your repository code into the runner
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Setup Python environment on the runner (good practice)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10' # Change to your project's python version
+
+      # 3. Setup the SSH key to connect to your server
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+
+      # 4. Deploy the application to your server
+      - name: Deploy to Server
+        run: |
+          # Add your server's IP to the list of known hosts to avoid prompts
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+          # Connect to the server and execute deployment commands
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            # Navigate to your project directory
+            cd ${{ secrets.PROJECT_PATH }} &&
+            
+            # Pull the latest changes from the main branch
+            git pull &&
+            echo "✅ Code pulled successfully" &&
+
+            # Activate your virtual environment
+            # Make sure the path to your venv is correct
+            source venv/bin/activate &&
+            echo "✅ Virtual environment activated" &&
+
+            # Install or update Python dependencies
+            pip install -r requirements.txt &&
+            echo "✅ Dependencies installed" &&
+            
+            # Optional: Run database migrations (e.g., for Django)
+            # python manage.py migrate &&
+            # echo "✅ Database migrations ran" &&
+            
+            # Restart the Gunicorn service to apply changes
+            # This requires your user to have passwordless sudo permissions
+            sudo systemctl restart gunicorn &&
+            echo "🚀 Gunicorn service restarted successfully!"
+          '
