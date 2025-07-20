@@ -1,16 +1,30 @@
-<nav style="background-color: #ffffff; padding: 1.2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); position: fixed; width: 98%; top: 0; z-index: 1000; display: flex; justify-content: space-between; align-items: center;">
-    <div class="logo" style="font-size: 1.5rem; font-weight: bold;">
-        <a href="/" style="text-decoration: none; color: #333;">BTree Institute</a>
-    </div>
-    <div class="auth-buttons">
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+
+<nav class="navbar">
+    <a href="/" class="navbar-brand">
+        <i class="fas fa-graduation-cap"></i>
+        <span>BTree Institute</span>
+    </a>
+    <div class="navbar-right">
         {% if user.is_authenticated %}
-            <span style="margin-right: 1rem;">Welcome, {{ user.name }}</span>
-            {% if user.profile_picture %}
-                <img src="{{ user.profile_picture.url }}" alt="Profile Picture" style="width: 40px; height: 40px; border-radius: 50%; margin-right: 1rem;">
-            {% endif %}
-            <a href="{% url 'logout' %}" style="padding: 0.5rem 1rem; background-color: #f0f0f0; border-radius: 4px; color: #333; text-decoration: none;">Logout</a>
+            <div class="welcome-text">
+                <span>Welcome, {{ user.name }}</span>
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+                {% else %}
+                    <i class="fas fa-user-circle fa-2x"></i>
+                {% endif %}
+            </div>
+            <a href="{% url 'logout' %}" class="btn btn-secondary">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
         {% else %}
-            <a href="{% url 'login' %}" style="padding: 0.5rem 1rem; background-color: #f0f0f0; border-radius: 4px; color: #333; text-decoration: none;">Login</a>
+            <a href="{% url 'login' %}" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </a>
         {% endif %}
     </div>
 </nav>

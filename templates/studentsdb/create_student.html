@@ -1,186 +1,262 @@
 {% extends "base.html" %}
 {% block title %}Create Student{% endblock %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form.css' %}">
+{% endblock %}
 
 {% block content %}
-<style>
-    .form-group {
-        margin-bottom: 1rem;
-    }
-    .form-group label {
-        font-weight: 600;
-        display: block;
-        margin-bottom: .5rem;
-    }
-</style>
+<div class="student-form-container">
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                {% if 'student_message' in message.tags %}
+                    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+                        <i class="fas {% if message.level_tag == 'success' %}fa-check-circle{% elif message.level_tag == 'error' %}fa-times-circle{% elif message.level_tag == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    {% endif %}
 
-<div class="card">
-    <div class="card-header">
-        <h4 class="card-title mb-0">Create New Student</h4>
-    </div>
-    <div class="card-body">
-        {% if messages %}
-            <div class="messages mb-4">
-                {% for message in messages %}
-                    {% if 'student_message' in message.tags %}
-                        <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
-                            <i class="fas {% if message.level_tag == 'success' %}fa-check-circle{% elif message.level_tag == 'error' %}fa-times-circle{% elif message.level_tag == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <form method="post" enctype="multipart/form-data" class="student-form">
+        {% csrf_token %}
+
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5><i class="fas fa-user me-2"></i>Personal Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.first_name.label_tag }} {{ student_form.first_name }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.last_name.label_tag }} {{ student_form.last_name }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.phone.label_tag }} {{ student_form.phone }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.alternative_phone.label_tag }} {{ student_form.alternative_phone }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.email.label_tag }} {{ student_form.email }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_district">District</label>
+                            <select id="id_district" class="form-control"></select>
                         </div>
-                    {% endif %}
-                {% endfor %}
-            </div>
-        {% endif %}
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Personal Details</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.first_name.label_tag }} {{ student_form.first_name }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.last_name.label_tag }} {{ student_form.last_name }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.phone.label_tag }} {{ student_form.phone }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.alternative_phone.label_tag }} {{ student_form.alternative_phone }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.email.label_tag }} {{ student_form.email }}</div></div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="id_district">District</label>
-                                <select id="id_district" class="form-control"></select>
-                            </div>
-                            <div class="form-group" id="chennai_area_group" style="display: none;">
-                                <label for="id_chennai_area">Area in Chennai</label>
-                                <select id="id_chennai_area" class="form-control"></select>
-                            </div>
-                            {{ student_form.location }}
+                        <div class="form-group" id="chennai_area_group" style="display: none;">
+                            <label for="id_chennai_area">Area in Chennai</label>
+                            <select id="id_chennai_area" class="form-control"></select>
                         </div>
+                        {{ student_form.location }}
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Education Details</h5>
-                </div>
-                <div class="card-body">
-                    <h6>Undergraduate</h6>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.ugdegree.label_tag }} {{ student_form.ugdegree }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.ugbranch.label_tag }} {{ student_form.ugbranch }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.ugpassout.label_tag }} {{ student_form.ugpassout }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.ugpercentage.label_tag }} {{ student_form.ugpercentage }}</div></div>
-                    </div>
-                    <hr>
-                    <h6>Postgraduate</h6>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.pgdegree.label_tag }} {{ student_form.pgdegree }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.pgbranch.label_tag }} {{ student_form.pgbranch }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.pgpassout.label_tag }} {{ student_form.pgpassout }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.pgpercentage.label_tag }} {{ student_form.pgpercentage }}</div></div>
-                    </div>
-                </div>
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5><i class="fas fa-graduation-cap me-2"></i>Education Details</h5>
             </div>
+            <div class="form-section-body">
+                <div class="form-section-subtitle">Undergraduate</div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.ugdegree.label_tag }} {{ student_form.ugdegree }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.ugbranch.label_tag }} {{ student_form.ugbranch }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.ugpassout.label_tag }} {{ student_form.ugpassout }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.ugpercentage.label_tag }} {{ student_form.ugpercentage }}</div>
+                    </div>
+                </div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Course Details</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.course_category.label_tag }} {{ student_form.course_category }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.course.label_tag }} {{ student_form.course }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.enrollment_date.label_tag }} {{ student_form.enrollment_date }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.start_date.label_tag }} {{ student_form.start_date }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.end_date.label_tag }} {{ student_form.end_date }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.course_status.label_tag }} {{ student_form.course_status }}</div></div>
-                    </div>
-                     <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.mode_of_class.label_tag }} {{ student_form.mode_of_class }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.week_type.label_tag }} {{ student_form.week_type }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.working_status.label_tag }} {{ student_form.working_status }}</div></div>
-                        <div class="col-md-6" id="it_experience_group" style="display: none;"><div class="form-group">{{ student_form.it_experience.label_tag }} {{ student_form.it_experience }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.pl_required.label_tag }} {{ student_form.pl_required }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ student_form.source_of_joining.label_tag }} {{ student_form.source_of_joining }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ student_form.consultant.label_tag }} {{ student_form.consultant }}</div></div>
-                    </div>
-                </div>
-            </div>
+                <div class="form-section-divider"></div>
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Payment Details</h5>
+                <div class="form-section-subtitle">Postgraduate</div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.pgdegree.label_tag }} {{ student_form.pgdegree }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.pgbranch.label_tag }} {{ student_form.pgbranch }}</div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ payment_form.payment_account.label_tag }} {{ payment_form.payment_account }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ payment_form.total_fees.label_tag }} {{ payment_form.total_fees }}</div></div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.pgpassout.label_tag }} {{ student_form.pgpassout }}</div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ payment_form.amount_paid.label_tag }} {{ payment_form.amount_paid }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ payment_form.initial_payment_proof.label_tag }} {{ payment_form.initial_payment_proof }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group">{{ payment_form.gst_bill.label_tag }} {{ payment_form.gst_bill }}</div></div>
-                        <div class="col-md-6"><div class="form-group">{{ payment_form.emi_type.label_tag }} {{ payment_form.emi_type }}</div></div>
-                    </div>
-                    <hr>
-                    <h6>EMI Details</h6>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_1_amount_group">{{ payment_form.emi_1_amount.label_tag }} {{ payment_form.emi_1_amount }}</div></div>
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_1_date_group">{{ payment_form.emi_1_date.label_tag }} {{ payment_form.emi_1_date }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_2_amount_group">{{ payment_form.emi_2_amount.label_tag }} {{ payment_form.emi_2_amount }}</div></div>
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_2_date_group">{{ payment_form.emi_2_date.label_tag }} {{ payment_form.emi_2_date }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_3_amount_group">{{ payment_form.emi_3_amount.label_tag }} {{ payment_form.emi_3_amount }}</div></div>
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_3_date_group">{{ payment_form.emi_3_date.label_tag }} {{ payment_form.emi_3_date }}</div></div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_4_amount_group">{{ payment_form.emi_4_amount.label_tag }} {{ payment_form.emi_4_amount }}</div></div>
-                        <div class="col-md-6"><div class="form-group emi-field" id="emi_4_date_group">{{ payment_form.emi_4_date.label_tag }} {{ payment_form.emi_4_date }}</div></div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.pgpercentage.label_tag }} {{ student_form.pgpercentage }}</div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div class="d-flex gap-2 mt-4">
-                <button type="submit" class="btn btn-primary">Save Student</button>
-                <a href="{% url 'student_list' %}" class="btn btn-secondary">Back to Student List</a>
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5><i class="fas fa-book me-2"></i>Course Details</h5>
             </div>
-        </form>
-    </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.course_category.label_tag }} {{ student_form.course_category }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.course.label_tag }} {{ student_form.course }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.enrollment_date.label_tag }} {{ student_form.enrollment_date }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.start_date.label_tag }} {{ student_form.start_date }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.end_date.label_tag }} {{ student_form.end_date }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.course_status.label_tag }} {{ student_form.course_status }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.mode_of_class.label_tag }} {{ student_form.mode_of_class }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.week_type.label_tag }} {{ student_form.week_type }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.working_status.label_tag }} {{ student_form.working_status }}</div>
+                    </div>
+                    <div class="col-md-6" id="it_experience_group" style="display: none;">
+                        <div class="form-group">{{ student_form.it_experience.label_tag }} {{ student_form.it_experience }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.pl_required.label_tag }} {{ student_form.pl_required }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.source_of_joining.label_tag }} {{ student_form.source_of_joining }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ student_form.consultant.label_tag }} {{ student_form.consultant }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5><i class="fas fa-money-bill me-2"></i>Payment Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ payment_form.payment_account.label_tag }} {{ payment_form.payment_account }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ payment_form.total_fees.label_tag }} {{ payment_form.total_fees }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ payment_form.amount_paid.label_tag }} {{ payment_form.amount_paid }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ payment_form.initial_payment_proof.label_tag }} {{ payment_form.initial_payment_proof }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">{{ payment_form.gst_bill.label_tag }} {{ payment_form.gst_bill }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">{{ payment_form.emi_type.label_tag }} {{ payment_form.emi_type }}</div>
+                    </div>
+                </div>
+
+                <div class="form-section-divider"></div>
+
+                <div class="form-section-subtitle">EMI Details</div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_1_amount_group">{{ payment_form.emi_1_amount.label_tag }} {{ payment_form.emi_1_amount }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_1_date_group">{{ payment_form.emi_1_date.label_tag }} {{ payment_form.emi_1_date }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_2_amount_group">{{ payment_form.emi_2_amount.label_tag }} {{ payment_form.emi_2_amount }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_2_date_group">{{ payment_form.emi_2_date.label_tag }} {{ payment_form.emi_2_date }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_3_amount_group">{{ payment_form.emi_3_amount.label_tag }} {{ payment_form.emi_3_amount }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_3_date_group">{{ payment_form.emi_3_date.label_tag }} {{ payment_form.emi_3_date }}</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_4_amount_group">{{ payment_form.emi_4_amount.label_tag }} {{ payment_form.emi_4_amount }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_4_date_group">{{ payment_form.emi_4_date.label_tag }} {{ payment_form.emi_4_date }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Save Student
+            </button>
+            <a href="{% url 'student_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Student List
+            </a>
+        </div>
+    </form>
 </div>
 
+{% block extra_js %}
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    // Add 'form-control' class to all input, select, and textarea elements
-    document.querySelectorAll('input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea').forEach(function(el) {
-        el.classList.add('form-control');
-    });
-
     // Location script
     const locationInput = document.getElementById('id_location');
     if (locationInput) {
-        locationInput.style.display = 'none'; // Hide the original location input
+        locationInput.style.display = 'none';
     }
     
     const districtSelect = document.getElementById('id_district');
@@ -214,7 +290,6 @@ document.addEventListener("DOMContentLoaded", function () {
         locationInput.value = this.value ? `Chennai - ${this.value}` : 'Chennai';
     });
 
-
     // EMI script
     const emiType = document.getElementById("id_emi_type");
     if (emiType) {
@@ -244,47 +319,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         emiType.addEventListener("change", toggleEMIFields);
-        toggleEMIFields(); // Initial call
+        toggleEMIFields();
     }
 
-    // Cascading dropdown for courses
-    const categorySelect = document.getElementById("id_course_category");
-    const courseSelect = document.getElementById("id_course");
+    // Working status and IT experience toggle
+    const workingStatus = document.getElementById('id_working_status');
+    const itExperienceGroup = document.getElementById('it_experience_group');
 
-    if (categorySelect && courseSelect) {
-        categorySelect.addEventListener("change", function () {
-            const categoryId = this.value;
-            courseSelect.innerHTML = '<option value="">---------</option>'; // Clear existing options
-
-            if (categoryId) {
-                fetch(`/students/get-courses/?category_id=${categoryId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(course => {
-                            const option = new Option(course.name, course.id);
-                            courseSelect.add(option);
-                        });
-                    });
-            }
+    if (workingStatus && itExperienceGroup) {
+        workingStatus.addEventListener('change', function() {
+            itExperienceGroup.style.display = this.value === 'Working' ? 'block' : 'none';
         });
-    }
-
-    // Show/hide IT experience based on working status
-    const workingStatusSelect = document.getElementById("id_working_status");
-    const itExperienceGroup = document.getElementById("it_experience_group");
-
-    if (workingStatusSelect && itExperienceGroup) {
-        function toggleItExperience() {
-            if (workingStatusSelect.value === 'YES') {
-                itExperienceGroup.style.display = 'block';
-            } else {
-                itExperienceGroup.style.display = 'none';
-            }
-        }
-
-        workingStatusSelect.addEventListener("change", toggleItExperience);
-        toggleItExperience(); // Initial call
+        
+        // Initial check
+        itExperienceGroup.style.display = workingStatus.value === 'Working' ? 'block' : 'none';
     }
 });
 </script>
+{% endblock %}
 {% endblock %}

@@ -1,28 +1,89 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_form.css' %}">
+{% endblock %}
+
 {% block title %}Create User{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h4 class="card-title mb-0">Create New User</h4>
-    </div>
-    <div class="card-body">
-        <form method="post">
+<div class="user-form-container">
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <i class="fas fa-user-plus"></i>
+            <span>Create New User</span>
+        </div>
+        <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
-            {{ form.name.label_tag }} {{ form.name }}
-            {{ form.email.label_tag }} {{ form.email }}
-            {{ form.password.label_tag }} {{ form.password }}
-            {{ form.role.label_tag }} {{ form.role }}
-            {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
-            <div id="consultant_div" style="display: none;">
-                {{ form.consultant.label_tag }} {{ form.consultant }}
+            <div class="form-section-card">
+                <div class="form-section-header">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Basic Information</span>
+                </div>
+                <div class="form-group">
+                    {{ form.name.label_tag }}
+                    {{ form.name|attr:"class:form-control" }}
+                </div>
+                <div class="form-group">
+                    {{ form.email.label_tag }}
+                    {{ form.email|attr:"class:form-control" }}
+                </div>
+                <div class="form-group">
+                    {{ form.password.label_tag }}
+                    {{ form.password|attr:"class:form-control" }}
+                </div>
             </div>
-            <div id="permissions_div" style="display: none;">
-                {{ form.is_staff.label_tag }} {{ form.is_staff }}
-                {{ form.is_superuser.label_tag }} {{ form.is_superuser }}
+
+            <div class="form-section-card">
+                <div class="form-section-header">
+                    <i class="fas fa-user-shield"></i>
+                    <span>Role & Permissions</span>
+                </div>
+                <div class="form-group">
+                    {{ form.role.label_tag }}
+                    {{ form.role|attr:"class:form-control" }}
+                </div>
+                <div id="consultant_div" class="form-group hidden">
+                    {{ form.consultant.label_tag }}
+                    {{ form.consultant|attr:"class:form-control" }}
+                </div>
+                <div id="permissions_div" class="form-group hidden">
+                    <div class="form-group">
+                        {{ form.is_staff.label_tag }}
+                        {{ form.is_staff|attr:"class:form-control" }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.is_superuser.label_tag }}
+                        {{ form.is_superuser|attr:"class:form-control" }}
+                    </div>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Create User</button>
-            <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Cancel</a>
+
+            <div class="form-section-card">
+                <div class="form-section-header">
+                    <i class="fas fa-image"></i>
+                    <span>Profile Picture</span>
+                </div>
+                <div class="form-group">
+                    <div class="custom-file-input">
+                        {{ form.profile_picture.label_tag }}
+                        <label class="custom-file-label" for="{{ form.profile_picture.id_for_label }}">
+                            <i class="fas fa-upload"></i> Choose a file
+                        </label>
+                        {{ form.profile_picture }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Create User
+                </button>
+                <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            </div>
         </form>
     </div>
 </div>
@@ -32,19 +93,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('id_role');
     const permissionsDiv = document.getElementById('permissions_div');
     const consultantDiv = document.getElementById('consultant_div');
+    const fileInput = document.querySelector('input[type="file"]');
+    const fileLabel = document.querySelector('.custom-file-label');
 
     function toggleFields() {
         if (roleSelect.value === 'admin') {
-            permissionsDiv.style.display = 'block';
+            permissionsDiv.classList.remove('hidden');
         } else {
-            permissionsDiv.style.display = 'none';
+            permissionsDiv.classList.add('hidden');
         }
 
         if (roleSelect.value === 'consultant') {
-            consultantDiv.style.display = 'block';
+            consultantDiv.classList.remove('hidden');
         } else {
-            consultantDiv.style.display = 'none';
+            consultantDiv.classList.add('hidden');
         }
+    }
+
+    if (fileInput && fileLabel) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileLabel.innerHTML = `<i class="fas fa-file"></i> ${this.files[0].name}`;
+            } else {
+                fileLabel.innerHTML = `<i class="fas fa-upload"></i> Choose a file`;
+            }
+        });
     }
 
     roleSelect.addEventListener('change', toggleFields);
