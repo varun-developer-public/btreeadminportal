@@ -2,8 +2,77 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Welcome Admin, {{ user.name }}</h2>
-    <p>You have full access to manage the system.</p>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Students</h5>
+                    <p class="card-text">{{ total_students }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Pending Amount</h5>
+                    <p class="card-text">₹{{ total_pending_amount|floatformat:2 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Amounts by Month</h5>
+                    <canvas id="monthlyPendingChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Recent Activities</h5>
+                    <ul class="list-group">
+                        {% for log in recent_activities %}
+                            <li class="list-group-item">
+                                <strong>{{ log.get_action_display }}</strong> on {{ log.table_name }} by {{ log.user.name }} at {{ log.timestamp|date:"d M Y, H:i" }}
+                            </li>
+                        {% empty %}
+                            <li class="list-group-item">No recent activities.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('monthlyPendingChart').getContext('2d');
+    const monthlyPendingData = JSON.parse('{{ monthly_pending|escapejs }}');
+    const monthlyPendingChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: monthlyPendingData.map(item => item.month),
+            datasets: [{
+                label: 'Pending Amount',
+                data: monthlyPendingData.map(item => item.total),
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

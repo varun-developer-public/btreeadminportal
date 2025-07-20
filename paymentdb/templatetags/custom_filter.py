@@ -40,3 +40,10 @@ def subtract(value, arg):
         return float(value) - float(arg)
     except (ValueError, TypeError):
         return value
+
+@register.filter
+def format_name(value):
+    """Removes 'nan' from a string."""
+    if isinstance(value, str) and 'nan' in value.lower():
+        return value.lower().replace('nan', '').strip()
+    return value

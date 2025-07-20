@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Create User{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h4 class="card-title mb-0">Create New User</h4>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {{ form.name.label_tag }} {{ form.name }}
+            {{ form.email.label_tag }} {{ form.email }}
+            {{ form.password.label_tag }} {{ form.password }}
+            {{ form.role.label_tag }} {{ form.role }}
+            <div id="permissions_div" style="display: none;">
+                {{ form.is_staff.label_tag }} {{ form.is_staff }}
+                {{ form.is_superuser.label_tag }} {{ form.is_superuser }}
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Create User</button>
+            <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Cancel</a>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('id_role');
+    const permissionsDiv = document.getElementById('permissions_div');
+
+    function togglePermissions() {
+        if (roleSelect.value === 'admin') {
+            permissionsDiv.style.display = 'block';
+        } else {
+            permissionsDiv.style.display = 'none';
+        }
+    }
+
+    roleSelect.addEventListener('change', togglePermissions);
+    togglePermissions(); // Initial check
+});
+</script>
+{% endblock %}

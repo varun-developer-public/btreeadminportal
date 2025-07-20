@@ -123,6 +123,11 @@ class Payment(models.Model):
         self.total_pending_amount = self.calculate_total_pending()
         super().save(*args, **kwargs)
 
+    def get_payment_status(self):
+        if self.total_pending_amount > 0:
+            return "Pending"
+        return "Paid"
+
     def __str__(self):
         return f"{self.payment_id} - {self.student}"
 

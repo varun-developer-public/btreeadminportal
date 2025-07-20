@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Update Placement{% endblock %}
-
+{% load custom_filter %}
 {% block content %}
 <div class="card">
-    <h2>Update Placement for {{ placement.student.student_id }} - {{ placement.student.first_name }} {{ placement.student.last_name }}</h2>
+    <h2>Update Placement for {{ placement.student.student_id }} - {{ placement.student.first_name }} {{ placement.student.last_name|format_name }}</h2>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}

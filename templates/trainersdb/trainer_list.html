@@ -1,8 +1,20 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="container">
-    <h2>Trainer List</h2>
-    <a href="{% url 'create_trainer' %}" class="btn btn-primary mb-3">➕ Add Trainer</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Trainer List</h2>
+        <a href="{% url 'create_trainer' %}" class="btn btn-primary">➕ Add Trainer</a>
+    </div>
+
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" name="q" placeholder="Search by name, email, phone, or stack" value="{{ query }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Search
+            </button>
+        </div>
+    </form>
+
     <table class="table table-striped">
         <thead>
             <tr>
@@ -38,5 +50,23 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="pagination justify-content-center mt-4">
+        <span class="step-links">
+            {% if trainers.has_previous %}
+                <a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; first</a>
+                <a href="?page={{ trainers.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ trainers.number }} of {{ trainers.paginator.num_pages }}.
+            </span>
+
+            {% if trainers.has_next %}
+                <a href="?page={{ trainers.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
+                <a href="?page={{ trainers.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 </div>
 {% endblock %}

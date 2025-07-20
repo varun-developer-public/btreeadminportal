@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_filter %}
 {% block title %}Placement Records{% endblock %}
 
 {% block content %}
@@ -62,7 +63,7 @@
                             —
                         {% endif %}
                     </td>
-                    <td>{{ placement.student.first_name }} {{ placement.student.last_name }}</td>
+                    <td>{{ placement.student.first_name }} {{ placement.student.last_name|format_name }}</td>
                     <td>{{ placement.student.phone }}</td>
                     <td>{{ placement.student.email }}</td>
                     <td>
@@ -102,6 +103,25 @@
             </tbody>
         </table>
     </div>
+    {% if placements.has_other_pages %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if placements.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ placements.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ placements.number }} of {{ placements.paginator.num_pages }}.
+            </span>
+
+            {% if placements.has_next %}
+                <a href="?page={{ placements.next_page_number }}">next</a>
+                <a href="?page={{ placements.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
 </div>
 <style>
     .payment-list-container {

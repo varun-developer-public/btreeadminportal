@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import PlacementUpdateForm
 from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 def placement_list(request):
@@ -13,6 +14,8 @@ def placement_list(request):
     student_id = request.GET.get('student_id', '').strip()
     batch_id = request.GET.get('batch_id', '').strip()
     trainer_id = request.GET.get('trainer_id', '').strip()
+    
+    filters_active = any([search, student_id, batch_id, trainer_id])
 
     if search:
         placements = placements.filter(
@@ -29,6 +32,17 @@ def placement_list(request):
         
     if trainer_id:
         placements = placements.filter(student__batches__trainer__id__icontains=trainer_id)
+
+    if not filters_active:
+        paginator = Paginator(placements, 10)  # Show 10 placements per page
+        page = request.GET.get('page')
+
+        try:
+            placements = paginator.page(page)
+        except PageNotAnInteger:
+            placements = paginator.page(1)
+        except EmptyPage:
+            placements = paginator.page(paginator.num_pages)
 
     return render(request, 'placementdb/placement_list.html', {
         'placements': placements,

@@ -1,9 +1,28 @@
 {% extends "base.html" %}
+{% load custom_filter %}
 {% block title %}Payment List{% endblock %}
 
 {% block content %}
 <div class="payment-list-container">
-    <h2>Payment Management</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Payment Management</h2>
+        <div class="d-flex gap-3">
+            <div class="card text-white bg-danger mb-3" style="max-width: 18rem;">
+                <div class="card-header">Total Pending Amount</div>
+                <div class="card-body">
+                    <h5 class="card-title">₹{{ total_pending_amount|floatformat:2 }}</h5>
+                </div>
+            </div>
+            {% if date_from and date_to %}
+            <div class="card text-white bg-warning mb-3" style="max-width: 18rem;">
+                <div class="card-header">Filtered Pending Amount</div>
+                <div class="card-body">
+                    <h5 class="card-title">₹{{ filtered_pending_amount|floatformat:2 }}</h5>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
     <form method="get" class="filters">
         <div class="filter-row">
@@ -60,14 +79,14 @@
                 {% for payment in payments %}
                 <tr class="status-{{ payment.status|lower }}">
                     <td>{{ payment.student.student_id }}</td>
-                    <td>{{ payment.student.first_name }} {{ payment.student.last_name }}</td>
+                    <td>{{ payment.student.first_name }} {{ payment.student.last_name|format_name }}</td>
                     <td>{{ payment.student.phone }}</td>
                     <td>{{ payment.student.consultant.name|default:'N/A' }}</td>
                     <td>
                         <span class="status-badge">{{ payment.status }}</span>
                     </td>
                     <td>₹{{ payment.total_fees|floatformat:2 }}</td>
-                    <td>₹{{ payment.total_paid|floatformat:2 }}</td>
+                    <td>₹{{ payment.amount_paid|floatformat:2 }}</td>
                     <td class="pending-amount">₹{{ payment.total_pending_amount|floatformat:2 }}</td>
                     
                     <td class="emi-cell {% if date_from and date_to and payment.emi_1_date|date:'Y-m-d' >= date_from and payment.emi_1_date|date:'Y-m-d' <= date_to %}highlight-cell{% endif %}">
@@ -135,102 +154,24 @@
             </tbody>
         </table>
     </div>
+
+    <div class="pagination justify-content-center mt-4">
+        <span class="step-links">
+            {% if payments.has_previous %}
+                <a href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&laquo; first</a>
+                <a href="?page={{ payments.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ payments.number }} of {{ payments.paginator.num_pages }}.
+            </span>
+
+            {% if payments.has_next %}
+                <a href="?page={{ payments.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">next</a>
+                <a href="?page={{ payments.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 </div>
 
-<style>
-    .payment-list-container {
-        padding: 20px;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .filters {
-        background: #f9f9f9;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-    }
-    .filter-row {
-        display: flex;
-        gap: 20px;
-        margin-bottom: 10px;
-    }
-    .filter-group {
-        flex: 1;
-    }
-    .filter-group label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: 600;
-    }
-    .filter-group input, .filter-group select {
-        width: 100%;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-    }
-    .filter-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 15px;
-    }
-    .btn-primary, .btn-secondary, .btn-update {
-        padding: 10px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        text-decoration: none;
-        color: white;
-    }
-    .btn-primary { background-color: #007bff; }
-    .btn-secondary { background-color: #6c757d; }
-    .btn-update { background-color: #28a745; font-size: 0.9em; padding: 5px 10px;}
-
-    .table-wrapper {
-        overflow-x: scroll;
-        width: 100%;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        white-space: nowrap;
-    }
-    th, td {
-        padding: 12px 15px;
-        border: 1px solid #ddd;
-        text-align: left;
-    }
-    th {
-        background-color: #f2f2f2;
-        font-weight: 700;
-    }
-    .status-badge {
-        padding: 5px 10px;
-        border-radius: 12px;
-        color: white;
-        font-weight: 600;
-    }
-    .status-paid .status-badge { background-color: #28a745; }
-    .status-partial .status-badge { background-color: #ffc107; color: #333; }
-    .status-pending .status-badge { background-color: #dc3545; }
-    
-    .pending-amount {
-        font-weight: 700;
-    }
-    .status-pending .pending-amount, .status-partial .pending-amount {
-        color: #dc3545;
-    }
-    .emi-cell {
-        min-width: 180px;
-    }
-    .highlight-pending {
-        color: #dc8935;
-        font-weight: bold;
-    }
-    .highlight-paid {
-        color: #28a745;
-        font-weight: bold;
-    }
-    .highlight-cell {
-        background-color: #fff3cd;
-    }
-</style>
 {% endblock %}

@@ -10,6 +10,8 @@ from django.db import transaction
 from datetime import datetime
 from studentsdb.models import Student
 from trainersdb.models import Trainer
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def get_next_batch_id():
     last_batch = Batch.objects.order_by('-id').first()
@@ -19,8 +21,27 @@ def get_next_batch_id():
     return "BAT_001"
 
 def batch_list(request):
-    batches = Batch.objects.all()
-    return render(request, 'batchdb/batch_list.html', {'batches': batches})
+    query = request.GET.get('q')
+    batch_list = Batch.objects.all().order_by('-id')
+
+    if query:
+        batch_list = batch_list.filter(
+            Q(batch_name__icontains=query) |
+            Q(trainer__name__icontains=query) |
+            Q(students__student_id__icontains=query)
+        ).distinct()
+
+    paginator = Paginator(batch_list, 10)  # Show 10 batches per page
+    page = request.GET.get('page')
+
+    try:
+        batches = paginator.page(page)
+    except PageNotAnInteger:
+        batches = paginator.page(1)
+    except EmptyPage:
+        batches = paginator.page(paginator.num_pages)
+
+    return render(request, 'batchdb/batch_list.html', {'batches': batches, 'query': query})
 
 
 def create_batch(request):
@@ -89,7 +110,8 @@ def download_batch_template(request):
     Downloads an Excel template for bulk batch creation.
     """
     data = {
-        'batch_name': ['Morning Batch', 'Evening Batch'],
+        'batch_id': ['BAT_101', ''],  # Optional: Leave empty to auto-generate
+        'batch_name': ['FrontEnd', 'Sql'],
         'trainer': ['Trainer A', 'Trainer B'],
         'start_date': ['2025-08-01', '2025-08-01'],
         'end_date': ['2025-12-01', '2025-12-01'],
@@ -122,7 +144,7 @@ def import_batches(request):
             return redirect('batch_list')
 
         required_columns = [
-            'batch_name', 'trainer', 'start_date', 'end_date', 'slot', 'students'
+            'batch_id', 'batch_name', 'trainer', 'start_date', 'end_date', 'slot', 'students'
         ]
         if not all(col in df.columns for col in required_columns):
             messages.error(request, f"Excel file must contain the following columns: {', '.join(required_columns)}")
@@ -152,15 +174,23 @@ def import_batches(request):
 
                     trainer, _ = Trainer.objects.get_or_create(name=trainer_name)
                     
-                    batch_id = get_next_batch_id()
-                    batch = Batch.objects.create(
-                        batch_id=batch_id,
-                        batch_name=batch_name,
-                        trainer=trainer,
-                        start_date=start_date,
-                        end_date=end_date,
-                        slot=slot,
-                    )
+                    # Handle optional batch_id
+                    batch_id_from_sheet = row.get('batch_id')
+                    if pd.notna(batch_id_from_sheet) and str(batch_id_from_sheet).strip():
+                        batch_id = str(batch_id_from_sheet).strip()
+                        if Batch.objects.filter(batch_id=batch_id).exists():
+                            raise ValueError(f"Batch with ID '{batch_id}' already exists.")
+                        batch = Batch(batch_id=batch_id)
+                    else:
+                        # Let the model's save() method generate the ID
+                        batch = Batch()
+
+                    batch.batch_name = batch_name
+                    batch.trainer = trainer
+                    batch.start_date = start_date
+                    batch.end_date = end_date
+                    batch.slot = slot
+                    batch.save()
 
                     students = []
                     for student_id in student_ids:

@@ -2,7 +2,22 @@ from django.db import models
 from django.utils import timezone
 from consultantdb.models import Consultant
 from settingsdb.models import SourceOfJoining
+from .field_choices import DEGREE_CHOICES, BRANCH_CHOICES
+import datetime
 
+class CourseCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+class Course(models.Model):
+    code = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=100)
+    category = models.ForeignKey(CourseCategory, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
 class Student(models.Model):
     MODE_CHOICES = [
         ('ON', 'Online'),
@@ -17,14 +32,44 @@ class Student(models.Model):
     student_id = models.CharField(max_length=10, unique=True, blank=True)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    date_of_birth = models.DateField(null=True, blank=True)
-    phone = models.CharField(max_length=15)
+    phone = models.CharField(max_length=15, null=True, blank=True)
     alternative_phone = models.CharField(max_length=15, null=True, blank=True)
-    email = models.EmailField()
+    email = models.EmailField(null=True, blank=True)
+    location = models.CharField(max_length=100, null=True, blank=True)
+    
+    # UG Details
+    ugdegree = models.CharField(max_length=100, choices=DEGREE_CHOICES, null=True, blank=True)
+    ugbranch = models.CharField(max_length=100, choices=BRANCH_CHOICES, null=True, blank=True)
+    ugpassout = models.IntegerField(choices=[(r, r) for r in range(2014, datetime.date.today().year + 1)], null=True, blank=True)
+    ugpercentage = models.FloatField(null=True, blank=True)
+
+    # PG Details
+    pgdegree = models.CharField(max_length=100, choices=DEGREE_CHOICES, null=True, blank=True)
+    pgbranch = models.CharField(max_length=100, choices=BRANCH_CHOICES, null=True, blank=True)
+    pgpassout = models.IntegerField(choices=[(r, r) for r in range(2014, datetime.date.today().year + 1)], null=True, blank=True)
+    pgpercentage = models.FloatField(null=True, blank=True)
+
+    # Work Status
+    WORKING_STATUS_CHOICES = [('YES', 'Yes'), ('NO', 'No')]
+    working_status = models.CharField(max_length=3, choices=WORKING_STATUS_CHOICES, default='NO')
+    it_experience = models.CharField(max_length=10, choices=[('IT', 'IT'), ('NON-IT', 'Non-IT')], null=True, blank=True)
+    
+    # Course Status
+    COURSE_STATUS_CHOICES = [
+        ('YTS', 'Yet to Start'),
+        ('IP', 'In Progress'),
+        ('C', 'Completed'),
+        ('R', 'Refund'),
+        ('D', 'Discontinued'),
+        ('H', 'Hold'),
+        ('P', 'Placed')
+    ]
+    course_status = models.CharField(max_length=3, choices=COURSE_STATUS_CHOICES, default='YTS')
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
     trainer = models.ForeignKey('trainersdb.Trainer', on_delete=models.SET_NULL, null=True, blank=True)
-    join_date = models.DateField(default=timezone.now)
+    enrollment_date = models.DateField(default=timezone.now, editable=False)
     start_date = models.DateField(blank=True, null=True)
-    tentative_end_date = models.DateField(blank=True, null=True)
+    end_date = models.DateField(blank=True, null=True)
     course_percentage = models.FloatField(default=0)
     pl_required = models.BooleanField(default=False)
     source_of_joining = models.ForeignKey(SourceOfJoining, on_delete=models.SET_NULL, null=True, blank=True)

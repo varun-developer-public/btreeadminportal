@@ -3,9 +3,21 @@
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Batch List</h2>
-        <a href="{% url 'create_batch' %}" class="btn">+ Add Batch</a>
-        <a href="{% url 'import_batches' %}" class="btn btn-secondary" style="margin-left: 10px;">Import Batches</a>
+        <div>
+            <a href="{% url 'create_batch' %}" class="btn">+ Add Batch</a>
+            <a href="{% url 'import_batches' %}" class="btn btn-secondary" style="margin-left: 10px;">Import Batches</a>
+        </div>
     </div>
+
+    <form method="get" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" name="q" placeholder="Search by batch name, trainer, or student ID" value="{{ query }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search me-2"></i>Search
+            </button>
+        </div>
+    </form>
+
     <table>
     <thead>
         <tr>
@@ -45,5 +57,23 @@
         {% endfor %}
     </tbody>
     </table>
+
+    <div class="pagination justify-content-center mt-4">
+        <span class="step-links">
+            {% if batches.has_previous %}
+                <a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; first</a>
+                <a href="?page={{ batches.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ batches.number }} of {{ batches.paginator.num_pages }}.
+            </span>
+
+            {% if batches.has_next %}
+                <a href="?page={{ batches.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
+                <a href="?page={{ batches.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
 </div>
 {% endblock %}

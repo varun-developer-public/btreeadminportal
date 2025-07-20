@@ -1,46 +1,73 @@
 <div style="padding: 20px;"> 
     <h3 style="margin: 0 0 20px 0; color: #333;">Menu</h3>
     <ul style="list-style: none; padding: 0; margin: 0;">
+        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' or user.role == 'batch_coordination' %}
         <li style="margin-bottom: 15px;">
-            <a href="{% url 'student_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; text-decoration: none; transition: background-color 0.2s; {% if request.resolver_match.url_name == 'student_list' %}background-color: #ddd; font-weight: bold;{% else %}color: #333;{% endif %}">
+            <a href="{% url 'student_list' %}" class="nav-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}">
                 <span style="margin-right: 10px;">📘</span> Student DB
             </a>
         </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'placement' %}
         <li style="margin-bottom: 15px;">
-            <a href="{% url 'placement_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; text-decoration: none; transition: background-color 0.2s; {% if request.resolver_match.url_name == 'placement_list' %}background-color: #ddd; font-weight: bold;{% else %}color: #333;{% endif %}">
+            <a href="{% url 'placement_list' %}" class="nav-link {% if request.resolver_match.url_name == 'placement_list' %}active{% endif %}">
                 <span style="margin-right: 10px;">📋</span> Placement DB
             </a>
         </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' or user.role == 'trainer' %}
         <li style="margin-bottom: 15px;">
-            <a href="{% url 'batch_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; text-decoration: none; transition: background-color 0.2s; {% if request.resolver_match.url_name == 'batch_list' %}background-color: #ddd; font-weight: bold;{% else %}color: #333;{% endif %}">
+            <a href="{% url 'batch_list' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_list' %}active{% endif %}">
                 <span style="margin-right: 10px;">📅</span> Batch DB
             </a>
         </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' %}
         <li style="margin-bottom: 15px;">
-            <a href="{% url 'payment_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; text-decoration: none; transition: background-color 0.2s; {% if request.resolver_match.url_name == 'payment_list' %}background-color: #ddd; font-weight: bold;{% else %}color: #333;{% endif %}">
+            <a href="{% url 'payment_list' %}" class="nav-link {% if request.resolver_match.url_name == 'payment_list' %}active{% endif %}">
                 <span style="margin-right: 10px;">💳</span> Payment DB
             </a>
         </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' %}
         <li style="margin-bottom: 15px;">
-            <a href="{% url 'trainer_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; text-decoration: none; transition: background-color 0.2s; {% if request.resolver_match.url_name == 'trainer_list' %}background-color: #ddd; font-weight: bold;{% else %}color: #333;{% endif %}">
+            <a href="{% url 'trainer_list' %}" class="nav-link {% if request.resolver_match.url_name == 'trainer_list' %}active{% endif %}">
                 <span style="margin-right: 10px;">👨‍🏫</span> Trainers DB
             </a>
         </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' %}
         <li style="margin-bottom: 15px;">
-            <a href="{% url 'consultant_list' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; text-decoration: none; transition: background-color 0.2s; {% if request.resolver_match.url_name == 'consultant_list' %}background-color: #ddd; font-weight: bold;{% else %}color: #333;{% endif %}">
+            <a href="{% url 'consultant_list' %}" class="nav-link {% if request.resolver_match.url_name == 'consultant_list' %}active{% endif %}">
                 <span style="margin-right: 10px;">🤝</span> Consultant DB
             </a>
         </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' %}
         <li style="margin-bottom: 15px;">
-            <a href="{% url 'settings_dashboard' %}" style="display: flex; align-items: center; padding: 10px; border-radius: 4px; text-decoration: none; transition: background-color 0.2s; {% if request.resolver_match.url_name == 'settings_dashboard' %}background-color: #ddd; font-weight: bold;{% else %}color: #333;{% endif %}">
+            <a href="{% url 'settings_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'settings_dashboard' %}active{% endif %}">
                 <span style="margin-right: 10px;">⚙️</span> Settings
             </a>
         </li>
+        {% endif %}
     </ul>
 </div>
 
 <style>
-  a:hover {
+  .nav-link {
+    display: flex; 
+    align-items: center; 
+    padding: 10px; 
+    border-radius: 4px; 
+    text-decoration: none; 
+    transition: background-color 0.2s;
+    color: #333;
+  }
+  .nav-link.active {
+    background-color: #ddd; 
+    font-weight: bold;
+  }
+  .nav-link:hover {
     background-color: #eee;
     color: #000 !important;
   }

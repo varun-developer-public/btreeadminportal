@@ -7,9 +7,12 @@ from .views import (
     download_student_template,
     import_students,
     download_error_report,
+    delete_all_students,
+    get_courses,
 )
 
 urlpatterns = [
+    path('get-courses/', get_courses, name='get_courses'),
     path('', student_list, name='student_list'),
     path('create/', create_student, name='create_student'),
     path('<str:student_id>/update/', update_student, name='update_student'),
@@ -17,4 +20,5 @@ urlpatterns = [
     path('import/', import_students, name='import_students'),
     path('template/', download_student_template, name='download_student_template'),
     path('error-report/', download_error_report, name='download_error_report'),
+    path('delete-all/', delete_all_students, name='delete_all_students'),
 ]

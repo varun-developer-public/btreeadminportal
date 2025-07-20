@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Delete Student{% endblock %}
-
+{% load custom_filter %}
 {% block content %}
 <div class="card">
-    <h2>Are you sure you want to delete student {{ student.student_id }} - {{ student.first_name }} {{ student.last_name }}?</h2>
+    <h2>Are you sure you want to delete student {{ student.student_id }} - {{ student.first_name }} {{ student.last_name|format_name }}?</h2>
     <form method="post">
         {% csrf_token %}
         <button type="submit" class="btn btn-danger">Yes, Delete</button>

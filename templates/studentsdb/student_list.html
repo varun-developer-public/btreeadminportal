@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load custom_filter %}
 {% block title %}Student List{% endblock %}
 
 {% block content %}
@@ -16,38 +17,63 @@
 </div>
 {% endif %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student List</h2>
-    <div class="d-flex gap-2">
-        <a href="{% url 'create_student' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add New Student
-        </a>
-        <a href="{% url 'import_students' %}" class="btn btn-info text-white">
-            <i class="fas fa-file-import me-2"></i>Import from Excel
-        </a>
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Student List</h2>
+        <div class="d-flex gap-2">
+            <a href="{% url 'create_student' %}" class="btn-primary">
+                <i class="fas fa-plus me-2"></i>Add New Student
+            </a>
+            <a href="{% url 'import_students' %}" class="btn-secondary">
+                <i class="fas fa-file-import me-2"></i>Import from Excel
+            </a>
+        </div>
     </div>
-</div>
 
-<form method="get" class="mb-4">
-    <div class="input-group">
-        <input type="text" class="form-control" name="q" placeholder="Search by name, email or phone" value="{{ query }}">
-        <button type="submit" class="btn btn-primary">
-            <i class="fas fa-search me-2"></i>Search
-        </button>
-    </div>
-</form>
+    <form method="get" class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                {{ form.q.label_tag }}
+                {{ form.q }}
+            </div>
+            <div class="filter-group">
+                {{ form.course_category.label_tag }}
+                {{ form.course_category }}
+            </div>
+            <div class="filter-group">
+                {{ form.course.label_tag }}
+                {{ form.course }}
+            </div>
+            <div class="filter-group">
+                {{ form.course_status.label_tag }}
+                {{ form.course_status }}
+            </div>
+            <div class="filter-group">
+                {{ form.working_status.label_tag }}
+                {{ form.working_status }}
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filters</button>
+            <a href="{% url 'student_list' %}" class="btn-secondary">Reset</a>
+        </div>
+    </form>
 
-<div class="table-responsive">
-    <table class="table table-hover table-bordered">
+    <div class="table-wrapper">
+        <table>
     <thead>
         <tr>
             <th>ID</th>
             <th>Name</th>
             <th>Email</th>
             <th>Phone</th>
-            <th>Batch</th>
-            <th>Trainer</th>
-            <th>Join Date</th>
+            <th>Course Name</th>
+            <th>Location</th>
+            <th>UG Degree</th>
+            <th>PG Degree</th>
+            <th>Working Status</th>
+            <th>Course Status</th>
+            <th>Enrollment Date</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -55,47 +81,76 @@
     {% for student in students %}
         <tr>
             <td><span class="badge bg-secondary">{{ student.student_id }}</span></td>
-            <td>{{ student.first_name }} {{ student.last_name }}</td>
+            <td>{{ student.first_name }} {{ student.last_name|format_name }}</td>
             <td><a href="mailto:{{ student.email }}" class="text-decoration-none">{{ student.email }}</a></td>
             <td><a href="tel:{{ student.phone }}" class="text-decoration-none">{{ student.phone }}</a></td>
-            <td>
-            {% for batch in student.batches.all %}
-                {{ batch.batch_id }}{% if not forloop.last %}, {% endif %}
-            {% empty %}
-                —
-            {% endfor %}
-            </td>
-            <td>
-            {% for batch in student.batches.all %}
-                {% if batch.trainer %}
-                {{ batch.trainer.name }}{% if not forloop.last %}, {% endif %}
-                {% else %}
-                —{% if not forloop.last %}, {% endif %}
-                {% endif %}
-            {% empty %}
-                —
-            {% endfor %}
-            </td>
-            <td>{{ student.join_date }}</td>
+            <td>{{ student.course.name|default:"—" }}</td>
+            <td>{{ student.location|default:"—" }}</td>
+            <td>{{ student.ugdegree|default:"—" }}</td>
+            <td>{{ student.pgdegree|default:"—" }}</td>
+            <td>{{ student.get_working_status_display }}</td>
+            <td>{{ student.get_course_status_display }}</td>
+            <td>{{ student.enrollment_date }}</td>
             <td>
                 <div class="d-flex gap-2 justify-content-center">
-                    <a href="{% url 'update_student' student.student_id %}" class="btn btn-sm btn-warning text-white">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    <a href="{% url 'delete_student' student.student_id %}" class="btn btn-sm btn-danger">
-                        <i class="fas fa-trash"></i>
-                    </a>
+                    <a href="{% url 'update_student' student.student_id %}" class="btn-update"><i class="fas fa-edit"></i></a>
+                    <a href="{% url 'delete_student' student.student_id %}" class="btn-danger"><i class="fas fa-trash"></i></a>
                 </div>
             </td>
         </tr>
     {% empty %}
-        <tr><td colspan="9" class="text-center py-4 text-muted">
+        <tr><td colspan="11" class="text-center py-4 text-muted">
                 <i class="fas fa-user-slash me-2"></i>No students found.
             </td></tr>
     {% endfor %}
     </tbody>
 </table>
 
-</div><!-- Close table-responsive div -->
+</div>
 
+<div class="pagination">
+    <span class="step-links">
+        {% if students.has_previous %}
+            <a href="?page=1&{{ query_params }}">&laquo; first</a>
+            <a href="?page={{ students.previous_page_number }}&{{ query_params }}">previous</a>
+        {% endif %}
+
+        <span class="current">
+            Page {{ students.number }} of {{ students.paginator.num_pages }}.
+        </span>
+
+        {% if students.has_next %}
+            <a href="?page={{ students.next_page_number }}&{{ query_params }}">next</a>
+            <a href="?page={{ students.paginator.num_pages }}&{{ query_params }}">last &raquo;</a>
+        {% endif %}
+    </span>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const categorySelect = document.getElementById("id_course_category");
+    const courseSelect = document.getElementById("id_course");
+
+    if (categorySelect && courseSelect) {
+        categorySelect.addEventListener("change", function () {
+            const categoryId = this.value;
+            courseSelect.innerHTML = '<option value="">All Courses</option>'; // Clear existing options
+
+            if (categoryId) {
+                fetch(`/students/get-courses/?category_id=${categoryId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(course => {
+                            const option = new Option(course.name, course.id);
+                            courseSelect.add(option);
+                        });
+                    });
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

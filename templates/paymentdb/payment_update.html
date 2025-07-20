@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load custom_filter %}
 {% block title %}Update Payment{% endblock %}
 
 {% block content %}
 <div class="payment-update">
-    <h2>Update Payment - {{ payment.student.first_name }} {{ payment.student.last_name }} ({{ payment.student.student_id }})</h2>
+    <h2>Update Payment - {{ payment.student.first_name }} {{ payment.student.last_name|format_name }} ({{ payment.student.student_id }})</h2>
 
     <!-- Initial Payment Details -->
     <div class="initial-payment-section">

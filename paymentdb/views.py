@@ -2,7 +2,8 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import Q, F
+from django.db.models import Q, F, Sum
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import JsonResponse
 import json
 from datetime import datetime
@@ -13,7 +14,7 @@ from .forms import PaymentForm, PaymentUpdateForm
 
 @login_required
 def payment_list(request):
-    payments = Payment.objects.select_related('student', 'student__consultant')
+    payments = Payment.objects.select_related('student', 'student__consultant').order_by('-id')
 
     # Enhanced filtering logic
     search = request.GET.get('search', '').strip()
@@ -33,6 +34,7 @@ def payment_list(request):
     if emi_type in ['NONE', '2', '3', '4']:
         payments = payments.filter(emi_type=emi_type)
 
+    filtered_pending_amount = 0
     # Filter by pending EMI date range if specified
     if date_from and date_to:
         pending_emi_query = Q()
@@ -45,33 +47,51 @@ def payment_list(request):
                 Q(**{f'emi_{i}_paid_amount__isnull': True}) | Q(**{f'emi_{i}_paid_amount__lt': F(f'emi_{i}_amount')})
             )
             pending_emi_query |= is_pending_in_range
-        payments = payments.filter(pending_emi_query).distinct()
+        
+        filtered_payments = payments.filter(pending_emi_query).distinct()
+        
+        # Calculate the pending amount for the filtered date range
+        for payment in filtered_payments:
+            for i in range(1, 5):
+                emi_date = getattr(payment, f'emi_{i}_date')
+                if emi_date and date_from <= emi_date.strftime('%Y-%m-%d') <= date_to:
+                    emi_amount = getattr(payment, f'emi_{i}_amount') or 0
+                    paid_amount = getattr(payment, f'emi_{i}_paid_amount') or 0
+                    filtered_pending_amount += emi_amount - paid_amount
 
-    # Process payments to include total pending amount and status
+        payments = filtered_payments
+
+    # Calculate total pending amount
+    total_pending_amount = Payment.objects.filter(total_pending_amount__gt=0).aggregate(Sum('total_pending_amount'))['total_pending_amount__sum'] or 0
+
+    # Process payments to include status
     processed_payments = []
     for payment in payments:
-        payment.total_pending_amount = payment.calculate_total_pending()
-        payment.total_paid = payment.total_fees - payment.total_pending_amount
-        if payment.total_pending_amount <= 0:
-            payment.status = 'PAID'
-        elif payment.total_pending_amount >= payment.total_fees:
-            payment.status = 'PENDING'
-        else:
-            payment.status = 'PARTIAL'
+        payment.status = payment.get_payment_status()
         processed_payments.append(payment)
 
     # Filter by payment status if specified
     if payment_status:
-        # This filtering should happen on the processed list
         processed_payments = [p for p in processed_payments if p.status == payment_status]
 
+    paginator = Paginator(processed_payments, 10)  # Show 10 payments per page
+    page = request.GET.get('page')
+
+    try:
+        payments_page = paginator.page(page)
+    except PageNotAnInteger:
+        payments_page = paginator.page(1)
+    except EmptyPage:
+        payments_page = paginator.page(paginator.num_pages)
+
     context = {
-        'payments': processed_payments,
+        'payments': payments_page,
+        'total_pending_amount': total_pending_amount,
+        'filtered_pending_amount': filtered_pending_amount,
         'emi_types': Payment.EMI_CHOICES,
         'payment_statuses': [
-            ('PENDING', 'Pending'),
-            ('PARTIAL', 'Partially Paid'),
-            ('PAID', 'Fully Paid'),
+            ('Pending', 'Pending'),
+            ('Paid', 'Fully Paid'),
         ],
         'search': search,
         'emi_type': emi_type,

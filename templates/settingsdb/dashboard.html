@@ -5,10 +5,49 @@
 <div class="card">
     <h2>Admin Settings Dashboard</h2>
     <ul style="list-style:none; padding-left: 0;">
+        <li style="margin-bottom: 10px;"><a href="{% url 'user_list' %}" class="btn">Manage Users</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'source_list' %}" class="btn">Manage Source of Joining</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'payment_account_list' %}" class="btn">Manage Payment Accounts</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'transaction_log' %}" class="btn">View Transaction Logs</a></li>
+        <li style="margin-bottom: 10px;">
+            <form id="delete-all-students-form" action="{% url 'delete_all_students' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="button" class="btn btn-danger" onclick="confirmDeletion()">Delete All Students</button>
+            </form>
+        </li>
+        <li style="margin-bottom: 10px;">
+            <form id="delete-all-trainers-form" action="{% url 'delete_all_trainers' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="button" class="btn btn-danger" onclick="confirmTrainerDeletion()">Delete All Trainers</button>
+            </form>
+        </li>
+        <li style="margin-bottom: 10px;">
+            <form id="delete-all-consultants-form" action="{% url 'delete_all_consultants' %}" method="post" style="display: inline;">
+                {% csrf_token %}
+                <button type="button" class="btn btn-danger" onclick="confirmConsultantDeletion()">Delete All Consultants</button>
+            </form>
+        </li>
     </ul>
     <a href="{% url 'admin:index' %}" class="btn btn-secondary">Go to Django Admin</a>
 </div>
+
+<script>
+function confirmDeletion() {
+    if (confirm("Are you sure you want to delete all students? This action cannot be undone.")) {
+        document.getElementById('delete-all-students-form').submit();
+    }
+}
+
+function confirmTrainerDeletion() {
+    if (confirm("Are you sure you want to delete all trainers? This action cannot be undone.")) {
+        document.getElementById('delete-all-trainers-form').submit();
+    }
+}
+
+function confirmConsultantDeletion() {
+    if (confirm("Are you sure you want to delete all consultants? This action cannot be undone.")) {
+        document.getElementById('delete-all-consultants-form').submit();
+    }
+}
+</script>
 {% endblock %}
