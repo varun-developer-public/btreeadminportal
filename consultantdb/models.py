@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Consultant(models.Model):
     consultant_id = models.CharField(max_length=10, unique=True, blank=True)
@@ -9,15 +10,16 @@ class Consultant(models.Model):
     date_of_birth = models.DateField(blank=True, null=True)
     date_of_joining = models.DateField(auto_now_add=True, null=True)
 
+    class Meta:
+        managed = False
+        db_table = 'consultantdb_consultant'
+
     def __str__(self):
         return f"{self.name} - {self.consultant_id}"
 
-    def save(self, *args, **kwargs):
-        if not self.consultant_id:
-            last_consultant = Consultant.objects.order_by('-id').first()
-            if last_consultant and last_consultant.consultant_id:
-                last_id = int(last_consultant.consultant_id.replace('CNS', ''))
-                self.consultant_id = f'CNS{last_id + 1:03d}'
-            else:
-                self.consultant_id = 'CNS001'
-        super().save(*args, **kwargs)
+class ConsultantProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='consultant_profile')
+    consultant = models.OneToOneField(Consultant, on_delete=models.CASCADE, db_constraint=False)
+
+    def __str__(self):
+        return f"Profile of {self.user.name}"

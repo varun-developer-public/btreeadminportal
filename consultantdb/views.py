@@ -69,3 +69,33 @@ def delete_all_consultants(request):
         except Exception as e:
             messages.error(request, f"An error occurred while deleting consultants: {e}")
     return redirect('consultant_list')
+
+from django.views.generic.edit import UpdateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from .models import Consultant, ConsultantProfile
+from .forms import ConsultantProfileForm
+from django.urls import reverse_lazy
+
+class ConsultantProfileUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Consultant
+    form_class = ConsultantProfileForm
+    template_name = 'consultantdb/consultant_profile_form.html'
+    success_url = reverse_lazy('consultant_profile')
+
+    def test_func(self):
+        return self.request.user.role == 'consultant'
+
+    def get_object(self, queryset=None):
+        profile = get_object_or_404(ConsultantProfile, user=self.request.user)
+        return get_object_or_404(Consultant, pk=profile.consultant.pk)
+
+    def form_valid(self, form):
+        form.save()
+        messages.success(self.request, "Your profile has been updated successfully.")
+        return super().form_valid(form)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method == 'POST':
+            kwargs['files'] = self.request.FILES
+        return kwargs

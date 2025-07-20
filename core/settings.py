@@ -55,6 +55,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'settingsdb.middleware.CaptureUserMiddleware',
+    'accounts.middleware.RolePermissionsMiddleware',
+    'accounts.middleware.RoleBasedRedirectMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -89,6 +91,18 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+# Production PostgreSQL configuration for consultantdb
+# DATABASES['consultantdb'] = {
+#     'ENGINE': 'django.db.backends.postgresql',
+#     'NAME': 'consultantdb',
+#     'USER': 'consultant_user',
+#     'PASSWORD': 'password',
+#     'HOST': 'localhost',
+#     'PORT': '5432',
+# }
+
+# DATABASE_ROUTERS = ['core.routers.DatabaseRouter']
 
 # production db (postgree)
 

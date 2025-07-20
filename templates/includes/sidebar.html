@@ -43,6 +43,13 @@
             </a>
         </li>
         {% endif %}
+        {% if user.role == 'consultant' %}
+        <li style="margin-bottom: 15px;">
+            <a href="{% url 'consultant_profile' %}" class="nav-link {% if request.resolver_match.url_name == 'consultant_profile' %}active{% endif %}">
+                <span style="margin-right: 10px;">👤</span> My Profile
+            </a>
+        </li>
+        {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' %}
         <li style="margin-bottom: 15px;">
             <a href="{% url 'settings_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'settings_dashboard' %}active{% endif %}">
