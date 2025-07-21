@@ -91,25 +91,12 @@ select.form-control {
     transition: all 0.2s ease;
 }
 
-.btn-primary {
-    background: var(--primary-color);
-    border: none;
-    color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-dark);
-}
-
 .btn-secondary {
     background: var(--secondary-bg);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
 }
 
-.btn-secondary:hover {
-    background: var(--border-color);
-}
 
 /* File input styling */
 .form-control[type="file"] {
@@ -165,6 +152,13 @@ select.form-control {
     
     .form-section-body {
         padding: 1rem;
+    }
+    
+    .error-message {
+        color: var(--danger-text);
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        display: none; /* Hidden by default */
     }
     
     .row {

@@ -240,12 +240,13 @@
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">
+            <button type="submit" id="submit-button" class="btn btn-primary">
                 <i class="fas fa-save me-2"></i>Save Student
             </button>
             <a href="{% url 'student_list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to Student List
             </a>
+            <span id="emi-error-message" class="error-message"></span>
         </div>
     </form>
 </div>
@@ -263,16 +264,19 @@ document.addEventListener("DOMContentLoaded", function () {
     const chennaiAreaGroup = document.getElementById('chennai_area_group');
     const chennaiAreaSelect = document.getElementById('id_chennai_area');
 
-    const districts = ["", "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
-    const chennaiAreas = ["", "Adyar", "Alandur", "Anna Nagar", "Ashok Nagar", "Besant Nagar", "Egmore", "Guindy", "Kodambakkam", "Mylapore", "Nungambakkam", "Perambur", "T. Nagar", "Tambaram", "Vadapalani", "Velachery"];
+    if (districtSelect.options.length <= 1) {
+        const districts = ["", "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
+        districts.forEach(d => {
+            districtSelect.add(new Option(d, d));
+        });
+    }
 
-    districts.forEach(d => {
-        districtSelect.add(new Option(d, d));
-    });
-
-    chennaiAreas.forEach(a => {
-        chennaiAreaSelect.add(new Option(a, a));
-    });
+    if (chennaiAreaSelect.options.length <= 1) {
+        const chennaiAreas = ["", "Adyar", "Alandur", "Anna Nagar", "Ashok Nagar", "Besant Nagar", "Egmore", "Guindy", "Kodambakkam", "Mylapore", "Nungambakkam", "Perambur", "T. Nagar", "Tambaram", "Vadapalani", "Velachery"];
+        chennaiAreas.forEach(a => {
+            chennaiAreaSelect.add(new Option(a, a));
+        });
+    }
 
     districtSelect.addEventListener('change', function() {
         if (this.value === 'Chennai') {
@@ -290,6 +294,27 @@ document.addEventListener("DOMContentLoaded", function () {
         locationInput.value = this.value ? `Chennai - ${this.value}` : 'Chennai';
     });
 
+    // Course filtering
+    const categorySelect = document.getElementById("id_course_category");
+    const courseSelect = document.getElementById("id_course");
+
+    if (categorySelect && courseSelect) {
+        categorySelect.addEventListener("change", function () {
+            const categoryId = this.value;
+            courseSelect.innerHTML = '<option value="">Select Course</option>'; // Clear existing options
+
+            if (categoryId) {
+                fetch(`/students/get-courses/?category_id=${categoryId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(course => {
+                            const option = new Option(course.name, course.id);
+                            courseSelect.add(option);
+                        });
+                    });
+            }
+        });
+    }
     // EMI script
     const emiType = document.getElementById("id_emi_type");
     if (emiType) {
@@ -328,12 +353,66 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (workingStatus && itExperienceGroup) {
         workingStatus.addEventListener('change', function() {
-            itExperienceGroup.style.display = this.value === 'Working' ? 'block' : 'none';
+            itExperienceGroup.style.display = this.value === 'YES' ? 'block' : 'none';
         });
         
         // Initial check
-        itExperienceGroup.style.display = workingStatus.value === 'Working' ? 'block' : 'none';
+        itExperienceGroup.style.display = workingStatus.value === 'YES' ? 'block' : 'none';
     }
+
+    // EMI Calculation
+    const totalFeesInput = document.getElementById('id_total_fees');
+    const amountPaidInput = document.getElementById('id_amount_paid');
+    const emiTypeSelect = document.getElementById('id_emi_type');
+    const emiAmountInputs = {
+        '1': document.getElementById('id_emi_1_amount'),
+        '2': document.getElementById('id_emi_2_amount'),
+        '3': document.getElementById('id_emi_3_amount'),
+        '4': document.getElementById('id_emi_4_amount'),
+    };
+    const submitButton = document.getElementById('submit-button');
+    const emiErrorMessage = document.getElementById('emi-error-message');
+
+    function validateEMI() {
+        const totalFees = parseFloat(totalFeesInput.value) || 0;
+        const amountPaid = parseFloat(amountPaidInput.value) || 0;
+        const emiType = parseInt(emiTypeSelect.value, 10) || 0;
+
+        if (emiType === 0) {
+            submitButton.disabled = false;
+            emiErrorMessage.style.display = 'none';
+            return;
+        }
+
+        let emiSum = 0;
+        for (let i = 1; i <= emiType; i++) {
+            emiSum += parseFloat(emiAmountInputs[i].value) || 0;
+        }
+
+        const remainingBalance = totalFees - amountPaid;
+        
+        if (emiSum !== remainingBalance) {
+            submitButton.disabled = true;
+            emiErrorMessage.textContent = `Sum of EMIs (${emiSum}) must equal the remaining balance (${remainingBalance}).`;
+            emiErrorMessage.style.display = 'inline';
+        } else {
+            submitButton.disabled = false;
+            emiErrorMessage.style.display = 'none';
+        }
+    }
+
+    [totalFeesInput, amountPaidInput, emiTypeSelect].forEach(input => {
+        input.addEventListener('input', validateEMI);
+    });
+
+    for (const key in emiAmountInputs) {
+        if (emiAmountInputs.hasOwnProperty(key)) {
+            emiAmountInputs[key].addEventListener('input', validateEMI);
+        }
+    }
+
+    // Initial validation check
+    validateEMI();
 });
 </script>
 {% endblock %}

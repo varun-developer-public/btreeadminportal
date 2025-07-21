@@ -27,13 +27,13 @@ URL_ROLE_MAPPINGS = {
         'consultant_profile',
         'student_list',
         'payment_list', 'payment_update',
-        'create_student', 'update_student',
+        'create_student', 'update_student', 'get_courses',
     ]
 }
 
 # URLs accessible to all authenticated users
 PUBLIC_URLS = [
-    'home', 'logout', 'admin_dashboard', 'staff_dashboard', 'login',
+    'home', 'logout', 'staff_dashboard', 'login',
     'password_change', 'password_change_done'
 ]
 

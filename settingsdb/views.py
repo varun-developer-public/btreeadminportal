@@ -2,6 +2,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.shortcuts import get_object_or_404, render, redirect
 from .models import SourceOfJoining, PaymentAccount, TransactionLog
 from .forms import SourceForm, PaymentAccountForm
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import json
 
 @staff_member_required
@@ -60,7 +61,19 @@ def clean_transaction_data(details_json):
 
 @staff_member_required
 def transaction_log(request):
-    logs = TransactionLog.objects.select_related('user').order_by('-timestamp')
+    log_list = TransactionLog.objects.select_related('user').order_by('-timestamp')
+    
+    # Pagination
+    paginator = Paginator(log_list, 20)  # Show 20 logs per page
+    page = request.GET.get('page')
+    try:
+        logs = paginator.page(page)
+    except PageNotAnInteger:
+        logs = paginator.page(1)
+    except EmptyPage:
+        logs = paginator.page(paginator.num_pages)
+
     for log in logs:
         log.cleaned_details = clean_transaction_data(log.changes)
+        
     return render(request, 'settingsdb/transaction_log.html', {'logs': logs})

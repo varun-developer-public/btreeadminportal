@@ -41,7 +41,10 @@ class StudentForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        # Pop the request object before calling super()
+        request = kwargs.pop('request', None)
         super().__init__(*args, **kwargs)
+        
         today = timezone.now().date()
         self.fields['start_date'].initial = today
         self.fields['end_date'].initial = today + relativedelta(months=4)
@@ -52,9 +55,21 @@ class StudentForm(forms.ModelForm):
                 category_id = int(self.data.get('course_category'))
                 self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('name')
             except (ValueError, TypeError):
-                pass  # invalid input from the client; ignore and fallback to empty queryset
+                pass
         elif self.instance.pk and self.instance.course:
             self.fields['course'].queryset = self.instance.course.category.course_set.order_by('name')
+
+        # Filter consultants based on user role
+        if request:
+            user = request.user
+            if not user.is_superuser:
+                try:
+                    consultant = user.consultant_profile.consultant
+                    self.fields['consultant'].queryset = Consultant.objects.filter(pk=consultant.pk)
+                    self.fields['consultant'].initial = consultant
+                    self.fields['consultant'].widget.attrs['readonly'] = True
+                except (Consultant.DoesNotExist, AttributeError):
+                    self.fields['consultant'].queryset = Consultant.objects.none()
 
 
 class StudentUpdateForm(forms.ModelForm):

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load log_filters %}
 {% block title %}Transaction Logs{% endblock %}
 
 {% block content %}
@@ -6,35 +7,53 @@
     <h2>Transaction Logs</h2>
     <div class="table-wrapper">
         <table>
-    <thead>
-        <tr>
-            <th>Timestamp</th>
-            <th>User</th>
-            <th>Action</th>
-            <th>Changed Data</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for log in logs %}
-        <tr>
-            <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
-            <td>
-            {% if log.user and log.user.name %}
-                {{ log.user.name }}
-            {% else %}
-                Unknown
-            {% endif %}
-            </td>
-            <td>{{ log.get_action_display }}</td>
-            <td>
-                <pre style="white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{{ log.changes|safe }}</pre>
-            </td>
-        </tr>
-        {% empty %}
-        <tr><td colspan="4" style="text-align:center;">No transaction logs found.</td></tr>
-        {% endfor %}
-    </tbody>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>User</th>
+                    <th>Action</th>
+                    <th>Changed Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.timestamp|date:"Y-m-d H:i:s" }}</td>
+                    <td>
+                        {% if log.user and log.user.name %}
+                            {{ log.user.name }}
+                        {% else %}
+                            Unknown
+                        {% endif %}
+                    </td>
+                    <td>{{ log.get_action_display }}</td>
+                    <td>
+                        <pre style="white-space: pre-wrap; max-height: 150px; overflow-y: auto;">{{ log.changes|format_changes|safe }}</pre>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" style="text-align:center;">No transaction logs found.</td></tr>
+                {% endfor %}
+            </tbody>
         </table>
+    </div>
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if logs.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ logs.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ logs.number }} of {{ logs.paginator.num_pages }}.
+            </span>
+
+            {% if logs.has_next %}
+                <a href="?page={{ logs.next_page_number }}">next</a>
+                <a href="?page={{ logs.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
     </div>
 </div>
 <a href="{% url 'settings_dashboard' %}" class="btn btn-secondary" style="margin-top: 20px;">Back to Settings Dashboard</a>

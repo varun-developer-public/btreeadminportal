@@ -23,8 +23,8 @@ from datetime import datetime
 @login_required
 def create_student(request):
     if request.method == 'POST':
-        student_form = StudentForm(request.POST)
-        payment_form = PaymentForm(request.POST, request.FILES) 
+        student_form = StudentForm(request.POST, request=request)
+        payment_form = PaymentForm(request.POST, request.FILES)
 
         if student_form.is_valid() and payment_form.is_valid():
             # Save student first
@@ -54,7 +54,7 @@ def create_student(request):
                 for error in errors:
                     messages.error(request, f"{payment_form.fields[field].label}: {error}", extra_tags='student_message')
     else:
-        student_form = StudentForm()
+        student_form = StudentForm(request=request)
         payment_form = PaymentForm()
 
     context = {
@@ -71,6 +71,7 @@ def student_list(request):
 
     if form.is_valid():
         query = form.cleaned_data.get('q')
+        course_category = form.cleaned_data.get('course_category')
         course = form.cleaned_data.get('course')
         course_status = form.cleaned_data.get('course_status')
         working_status = form.cleaned_data.get('working_status')
@@ -82,6 +83,8 @@ def student_list(request):
                 Q(email__icontains=query) |
                 Q(phone__icontains=query)
             )
+        if course_category:
+            student_list = student_list.filter(course__category=course_category)
         if course:
             student_list = student_list.filter(course=course)
         if course_status:
@@ -269,8 +272,25 @@ def import_students(request):
                     payment_account_name = row.get('payment_account')
 
                     # Validation
-                    if not all([student_id, first_name, last_name, total_fees, amount_paid, source_of_joining_name, mode_of_class, week_type, trainer_name, payment_account_name]):
-                        raise ValueError("Missing required student or payment fields.")
+                    # Enhanced Validation
+                    required_fields = {
+                        'student_id': student_id,
+                        'first_name': first_name,
+                        'total_fees': total_fees,
+                        'amount_paid': amount_paid,
+                        'mode_of_class': mode_of_class,
+                        'week_type': week_type,
+                        'payment_account': payment_account_name
+                    }
+
+                    missing_fields = []
+                    for field, value in required_fields.items():
+                        # Check for None, NaN, or empty strings
+                        if pd.isna(value) or (isinstance(value, str) and not value.strip()):
+                            missing_fields.append(field)
+                    
+                    if missing_fields:
+                        raise ValueError(f"Missing required fields: {', '.join(missing_fields)}")
 
                     if Student.objects.filter(student_id=student_id).exists():
                         raise ValueError("Duplicate student_id.")
@@ -279,11 +299,17 @@ def import_students(request):
                         raise ValueError("Duplicate email.")
 
                     # Get or create related objects
-                    source_of_joining, _ = SourceOfJoining.objects.get_or_create(name=source_of_joining_name)
+                    source_of_joining = None
+                    if pd.notna(source_of_joining_name) and str(source_of_joining_name).strip():
+                        source_of_joining, _ = SourceOfJoining.objects.get_or_create(name=source_of_joining_name)
+                    
                     consultant = None
                     if pd.notna(consultant_name) and consultant_name:
                         consultant, _ = Consultant.objects.get_or_create(name=consultant_name)
-                    trainer, _ = Trainer.objects.get_or_create(name=trainer_name)
+
+                    trainer = None
+                    if pd.notna(trainer_name) and str(trainer_name).strip():
+                        trainer, _ = Trainer.objects.get_or_create(name=trainer_name)
                     payment_account, _ = PaymentAccount.objects.get_or_create(name=payment_account_name)
                     course = None
                     if pd.notna(course_name) and str(course_name).strip():

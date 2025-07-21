@@ -47,3 +47,15 @@ def format_name(value):
     if isinstance(value, str) and 'nan' in value.lower():
         return value.lower().replace('nan', '').strip()
     return value
+
+@register.filter(name='attr')
+def attr(field, css):
+    attrs = {}
+    definition = css.split(',')
+
+    for d in definition:
+        if ':' in d:
+            key, val = d.split(':')
+            attrs[key.strip()] = val.strip()
+
+    return field.as_widget(attrs=attrs)

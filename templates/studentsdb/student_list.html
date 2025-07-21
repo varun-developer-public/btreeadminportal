@@ -24,9 +24,11 @@
             <a href="{% url 'create_student' %}" class="btn-primary">
                 <i class="fas fa-plus me-2"></i>Add New Student
             </a>
+            {% if request.user.role != 'consultant' %}
             <a href="{% url 'import_students' %}" class="btn-secondary">
                 <i class="fas fa-file-import me-2"></i>Import from Excel
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -94,7 +96,9 @@
             <td>
                 <div class="d-flex gap-2 justify-content-center">
                     <a href="{% url 'update_student' student.student_id %}" class="btn-update"><i class="fas fa-edit"></i></a>
+                    {% if request.user.role != 'consultant' %}
                     <a href="{% url 'delete_student' student.student_id %}" class="btn-danger"><i class="fas fa-trash"></i></a>
+                    {% endif %}
                 </div>
             </td>
         </tr>

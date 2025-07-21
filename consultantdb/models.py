@@ -17,6 +17,16 @@ class Consultant(models.Model):
     def __str__(self):
         return f"{self.name} - {self.consultant_id}"
 
+    def save(self, *args, **kwargs):
+        if not self.consultant_id:
+            last_consultant = Consultant.objects.order_by('id').last()
+            if last_consultant and last_consultant.consultant_id and last_consultant.consultant_id.startswith('CON'):
+                last_id = int(last_consultant.consultant_id.replace('CON', ''))
+                self.consultant_id = f'CON{last_id + 1:04d}'
+            else:
+                self.consultant_id = 'CON0001'
+        super().save(*args, **kwargs)
+
 class ConsultantProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='consultant_profile')
     consultant = models.OneToOneField(Consultant, on_delete=models.CASCADE, db_constraint=False)
