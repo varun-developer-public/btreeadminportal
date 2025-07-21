@@ -14,7 +14,11 @@ from .forms import PaymentForm, PaymentUpdateForm
 
 @login_required
 def payment_list(request):
-    payments = Payment.objects.select_related('student', 'student__consultant').order_by('-id')
+    user = request.user
+    if hasattr(user, 'consultant_profile'):
+        payments = Payment.objects.filter(student__consultant=user.consultant_profile.consultant).select_related('student', 'student__consultant').order_by('-id')
+    else:
+        payments = Payment.objects.select_related('student', 'student__consultant').order_by('-id')
 
     # Enhanced filtering logic
     search = request.GET.get('search', '').strip()

@@ -38,20 +38,55 @@
     gap: 1.5rem;
 }
 
-.welcome-text {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
+.profile-button {
+    background: none;
+    border: none;
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.profile-button:hover {
+    background-color: var(--background-grey);
 }
 
 .profile-picture {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--primary-light);
+}
+
+.dropdown-menu {
+    padding: 0.5rem 0;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-width: 200px;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: var(--background-grey);
+    color: var(--primary-blue);
+}
+
+.dropdown-item i {
+    color: var(--text-secondary);
+    width: 20px;
+}
+
+.dropdown-item:hover i {
+    color: var(--primary-blue);
 }
 
 .navbar .btn {
@@ -97,7 +132,7 @@
         display: none;
     }
 
-    .welcome-text span {
+    .profile-button span {
         display: none;
     }
 

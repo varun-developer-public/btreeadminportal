@@ -59,3 +59,16 @@ def attr(field, css):
             attrs[key.strip()] = val.strip()
 
     return field.as_widget(attrs=attrs)
+
+@register.filter
+def intcomma(value):
+    """
+    Converts an integer to a string containing commas every three digits.
+    For example, 3000 becomes '3,000' and 45000 becomes '45,000'.
+    """
+    try:
+        if isinstance(value, (int, float)):
+            return "{:,}".format(value)
+    except (ValueError, TypeError):
+        pass
+    return value

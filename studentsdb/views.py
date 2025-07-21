@@ -67,7 +67,11 @@ def create_student(request):
 @login_required
 def student_list(request):
     form = StudentFilterForm(request.GET)
-    student_list = Student.objects.all().order_by('-id')
+    user = request.user
+    if hasattr(user, 'consultant_profile'):
+        student_list = Student.objects.filter(consultant=user.consultant_profile.consultant).order_by('-id')
+    else:
+        student_list = Student.objects.all().order_by('-id')
 
     if form.is_valid():
         query = form.cleaned_data.get('q')

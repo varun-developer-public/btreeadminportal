@@ -8,18 +8,23 @@
     </a>
     <div class="navbar-right">
         {% if user.is_authenticated %}
-            <div class="welcome-text">
-                <span>Welcome, {{ user.name }}</span>
-                {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
-                {% else %}
-                    <i class="fas fa-user-circle fa-2x"></i>
-                {% endif %}
+            <div class="dropdown">
+                <button class="profile-button" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="me-2">{{ user.name }}</span>
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+                    {% else %}
+                        <i class="fas fa-user-circle"></i>
+                    {% endif %}
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                    {% if user.role == 'admin' %}
+                    <li><a class="dropdown-item" href="{% url 'update_user' pk=user.pk %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                </ul>
             </div>
-            <a href="{% url 'logout' %}" class="btn btn-secondary">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
         {% else %}
             <a href="{% url 'login' %}" class="btn btn-primary">
                 <i class="fas fa-sign-in-alt"></i>

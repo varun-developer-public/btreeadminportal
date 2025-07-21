@@ -17,10 +17,39 @@ from paymentdb.models import Payment
 from settingsdb.models import TransactionLog
 from datetime import datetime
 
+from django.utils import timezone
+from datetime import timedelta
+from trainersdb.models import Trainer
+from django.db.models import Count
+
 @login_required
 def admin_dashboard(request):
+    # Basic Statistics
     total_students = Student.objects.count()
     total_pending_amount = Payment.objects.aggregate(total_pending=Sum('total_pending_amount'))['total_pending'] or 0
+    active_trainers = Trainer.objects.count()  # Count all trainers since there's no active status
+
+    # Get placement rate using course_status field
+    total_completed = Student.objects.filter(course_status='C').count()
+    total_placed = Student.objects.filter(course_status='P').count()
+    placement_rate = (total_placed / total_completed * 100) if total_completed > 0 else 0
+
+    # Monthly student enrollment
+    now = timezone.now()
+    six_months_ago = now - timedelta(days=180)
+    monthly_enrollments = (
+        Student.objects
+        .filter(enrollment_date__gte=six_months_ago)
+        .annotate(month=TruncMonth('enrollment_date'))
+        .values('month')
+        .annotate(count=Count('id'))
+        .order_by('month')
+    )
+
+    enrollment_data = [
+        {'month': item['month'].strftime('%Y-%m'), 'count': item['count']}
+        for item in monthly_enrollments
+    ]
 
     # Monthly pending amounts
     monthly_pending = (
@@ -31,22 +60,36 @@ def admin_dashboard(request):
         .order_by('month')
     )
 
-    import json
-    from django.core.serializers.json import DjangoJSONEncoder
-
-    # Convert month to string for template
     monthly_pending_data = [
-        {'month': item['month'].strftime('%Y-%m'), 'total': float(item['total'])}
+        {'month': item['month'].strftime('%Y-%m'), 'amount': float(item['total'])}
         for item in monthly_pending if item['month']
     ]
 
+    # Weekly Statistics
+    one_week_ago = now - timedelta(days=7)
+    weekly_students = Student.objects.filter(enrollment_date__gte=one_week_ago).count()
+    weekly_payments = Payment.objects.filter(student__enrollment_date__gte=one_week_ago).aggregate(
+        total=Sum('amount_paid')
+    )['total'] or 0
+
+    # Recent Activities and Students
     recent_activities = TransactionLog.objects.order_by('-timestamp')[:10]
+    recent_students = Student.objects.order_by('-enrollment_date')[:5]
+
+    import json
+    from django.core.serializers.json import DjangoJSONEncoder
 
     context = {
         'total_students': total_students,
         'total_pending_amount': total_pending_amount,
+        'active_trainers': active_trainers,
+        'placement_rate': round(placement_rate, 1),
+        'weekly_students': weekly_students,
+        'weekly_payments': weekly_payments,
         'monthly_pending': json.dumps(monthly_pending_data, cls=DjangoJSONEncoder),
+        'enrollment_data': json.dumps(enrollment_data, cls=DjangoJSONEncoder),
         'recent_activities': recent_activities,
+        'recent_students': recent_students,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 
