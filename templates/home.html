@@ -1,11 +1,12 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Welcome to BTree Institute{% endblock %}
 
 {% block content %}
 <div class="home-container">
     <div class="hero-section">
-        <i class="fas fa-graduation-cap hero-icon"></i>
+        <img src="{% static 'images/logo.png' %}" alt="BTree Logo" class="hero-icon" style="height: 80px; margin-bottom: 1.5rem;">
         <h1>Welcome to BTree Systems Admin Portal</h1>
         <p>Your Gateway to Professional Excellence</p>
         {% if not user.is_authenticated %}
@@ -43,9 +44,7 @@
 }
 
 .hero-icon {
-    font-size: 4rem;
     color: var(--primary-blue);
-    margin-bottom: 1.5rem;
 }
 
 .hero-section h1 {

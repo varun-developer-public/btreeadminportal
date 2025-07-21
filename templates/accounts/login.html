@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Login - BTree Institute{% endblock %}
 
@@ -6,7 +7,7 @@
 <div class="login-container">
     <div class="login-card">
         <div class="login-header">
-            <i class="fas fa-graduation-cap login-icon"></i>
+            <img src="{% static 'images/logo.png' %}" alt="BTree Logo" class="login-icon" style="height: 60px; margin-bottom: 1rem;">
             <h2>Welcome Back</h2>
             <p>Login to access your portal</p>
         </div>
@@ -68,9 +69,7 @@
 }
 
 .login-icon {
-    font-size: 3rem;
     color: var(--primary-blue);
-    margin-bottom: 1rem;
 }
 
 .login-header h2 {
