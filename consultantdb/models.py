@@ -33,3 +33,22 @@ class ConsultantProfile(models.Model):
 
     def __str__(self):
         return f"Profile of {self.user.name}"
+
+class Goal(models.Model):
+    consultant = models.ForeignKey(Consultant, on_delete=models.CASCADE, related_name='goals')
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    target_date = models.DateField()
+    is_achieved = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.title
+
+class Achievement(models.Model):
+    consultant = models.ForeignKey(Consultant, on_delete=models.CASCADE, related_name='achievements')
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    date_achieved = models.DateField()
+
+    def __str__(self):
+        return self.title

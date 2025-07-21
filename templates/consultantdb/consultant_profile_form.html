@@ -1,12 +1,78 @@
 {% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_form.css' %}">
+{% endblock %}
 
 {% block content %}
-  <h2>Update Your Profile</h2>
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Save Changes</button>
-  </form>
-  <br>
-  <a href="{% url 'password_change' %}">Change Password</a>
+<div class="user-form-container">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <i class="fas fa-user-edit"></i>
+                <h3>Update Your Profile</h3>
+            </div>
+
+            <div class="form-group">
+                {{ form.name.label_tag }}
+                {{ form.name }}
+            </div>
+
+            <div class="form-group">
+                {{ form.phone_number.label_tag }}
+                {{ form.phone_number }}
+            </div>
+
+            <div class="form-group">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+            </div>
+
+            <div class="form-group">
+                {{ form.address.label_tag }}
+                {{ form.address }}
+            </div>
+
+            <div class="form-group">
+                {{ form.date_of_birth.label_tag }}
+                {{ form.date_of_birth }}
+            </div>
+
+            <div class="form-group">
+                {{ form.profile_picture.label_tag }}
+                <div class="custom-file-input">
+                    {{ form.profile_picture }}
+                    <label class="custom-file-label" for="{{ form.profile_picture.id_for_label }}">
+                        <i class="fas fa-cloud-upload-alt"></i> Choose a new profile picture
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <a href="{% url 'consultant_dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-times-circle"></i> Cancel
+            </a>
+        </div>
+    </form>
+    <div class="text-center mt-3">
+        <a href="{% url 'password_change' %}">Change Password</a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add form-control class to all input, select, and textarea elements
+    const formElements = document.querySelectorAll('input, select, textarea');
+    formElements.forEach(el => {
+        if (el.type !== 'checkbox' && el.type !== 'file') {
+            el.classList.add('form-control');
+        }
+    });
+});
+</script>
 {% endblock %}

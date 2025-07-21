@@ -5,9 +5,14 @@ from django.urls import reverse, resolve
 # Define role-based access control mappings
 URL_ROLE_MAPPINGS = {
     'staff': [
-        'student_list', 'create_student', 'update_student', 'delete_student',
-        'batch_list', 'create_batch', 'update_batch', 'delete_batch',
-        'payment_list', 'payment_update',
+        'staff_dashboard', 'student_list', 'create_student', 'update_student', 'import_students', 'download_student_template', 'download_error_report',
+        'batch_list', 'create_batch', 'update_batch', 'import_batches', 'download_batch_template', 'download_error_report_batch',
+        'payment_list', 'payment_update', 'update_emi_date',
+        'placement_list', 'update_placement',
+        'consultant_list', 'create_consultant', 'update_consultant',
+        'settings_dashboard', 'source_list', 'payment_account_list', 'remove_source', 'remove_payment_account',
+        'user_list', 'create_user', 'update_user',
+        'get_courses',
     ],
     'placement': [
         'placement_list', 'update_placement',
@@ -27,13 +32,13 @@ URL_ROLE_MAPPINGS = {
         'consultant_profile',
         'student_list',
         'payment_list', 'payment_update',
-        'create_student', 'update_student', 'get_courses',
+        'create_student', 'update_student', 'get_courses','consultant_dashboard'
     ]
 }
 
 # URLs accessible to all authenticated users
 PUBLIC_URLS = [
-    'home', 'logout', 'staff_dashboard', 'login',
+    'home', 'logout', 'login',
     'password_change', 'password_change_done'
 ]
 
@@ -50,7 +55,7 @@ class RolePermissionsMiddleware:
             current_url_name = resolve(request.path_info).url_name
 
             # Bypass for public URLs and admin users
-            if current_url_name in PUBLIC_URLS or request.user.role == 'admin':
+            if current_url_name in PUBLIC_URLS or request.user.role in ['admin', 'staff']:
                 return self.get_response(request)
 
             # Check permissions for other roles

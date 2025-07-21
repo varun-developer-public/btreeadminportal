@@ -1,29 +1,73 @@
 {% extends "base.html" %}
 {% block title %}Update User{% endblock %}
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_form.css' %}">
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h4 class="card-title mb-0">Update User: {{ user.name }}</h4>
-    </div>
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.name.label_tag }} {{ form.name }}
-            {{ form.email.label_tag }} {{ form.email }}
-            {{ form.role.label_tag }} {{ form.role }}
-            {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
-            <div id="consultant_div" style="display: none;">
-                {{ form.consultant.label_tag }} {{ form.consultant }}
+<div class="user-form-container">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <i class="fas fa-user-edit"></i>
+                <h3>Update User: {{ user.name }}</h3>
             </div>
-            <div id="permissions_div" style="display: none;">
-                {{ form.is_staff.label_tag }} {{ form.is_staff }}
-                {{ form.is_superuser.label_tag }} {{ form.is_superuser }}
+
+            <div class="form-group">
+                {{ form.name.label_tag }}
+                {{ form.name }}
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Update User</button>
-            <a href="{% url 'user_list' %}" class="btn btn-secondary mt-3">Cancel</a>
-        </form>
-    </div>
+
+            <div class="form-group">
+                {{ form.email.label_tag }}
+                {{ form.email }}
+            </div>
+
+            <div class="form-group">
+                {{ form.role.label_tag }}
+                {{ form.role }}
+            </div>
+
+            <div class="form-group">
+                {{ form.profile_picture.label_tag }}
+                <div class="custom-file-input">
+                    {{ form.profile_picture }}
+                    <label class="custom-file-label" for="{{ form.profile_picture.id_for_label }}">
+                        <i class="fas fa-cloud-upload-alt"></i> Choose a new profile picture
+                    </label>
+                </div>
+            </div>
+
+            <div id="consultant_div" class="form-group hidden">
+                {{ form.consultant.label_tag }}
+                {{ form.consultant }}
+            </div>
+
+            <div id="permissions_div" class="hidden">
+                <div class="form-group">
+                    <label class="form-check-label">
+                        {{ form.is_staff }} Staff status
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="form-check-label">
+                        {{ form.is_superuser }} Superuser status
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update User
+            </button>
+            <a href="{% url 'user_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times-circle"></i> Cancel
+            </a>
+        </div>
+    </form>
 </div>
 
 <script>
@@ -32,17 +76,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const permissionsDiv = document.getElementById('permissions_div');
     const consultantDiv = document.getElementById('consultant_div');
 
+    // Add form-control class to all input, select, and textarea elements
+    const formElements = document.querySelectorAll('input, select, textarea');
+    formElements.forEach(el => {
+        if (el.type !== 'checkbox' && el.type !== 'file') {
+            el.classList.add('form-control');
+        }
+    });
+
     function toggleFields() {
         if (roleSelect.value === 'admin') {
-            permissionsDiv.style.display = 'block';
+            permissionsDiv.classList.remove('hidden');
         } else {
-            permissionsDiv.style.display = 'none';
+            permissionsDiv.classList.add('hidden');
         }
 
         if (roleSelect.value === 'consultant') {
-            consultantDiv.style.display = 'block';
+            consultantDiv.classList.remove('hidden');
         } else {
-            consultantDiv.style.display = 'none';
+            consultantDiv.classList.add('hidden');
         }
     }
 
