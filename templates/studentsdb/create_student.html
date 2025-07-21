@@ -32,23 +32,38 @@
             <div class="form-section-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.first_name.label_tag }} {{ student_form.first_name }}</div>
+                        <div class="form-group">
+                            {{ student_form.first_name.label_tag }}
+                            {{ student_form.first_name }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.last_name.label_tag }} {{ student_form.last_name }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.phone.label_tag }} {{ student_form.phone }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.alternative_phone.label_tag }} {{ student_form.alternative_phone }}</div>
+                        <div class="form-group">
+                            {{ student_form.last_name.label_tag }}
+                            {{ student_form.last_name }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.email.label_tag }} {{ student_form.email }}</div>
+                        <div class="form-group">
+                            {{ student_form.phone.label_tag }}
+                            {{ student_form.phone }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.alternative_phone.label_tag }}
+                            {{ student_form.alternative_phone }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.email.label_tag }}
+                            {{ student_form.email }}
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
@@ -59,7 +74,9 @@
                             <label for="id_chennai_area">Area in Chennai</label>
                             <select id="id_chennai_area" class="form-control"></select>
                         </div>
-                        {{ student_form.location }}
+                        <div class="form-group">
+                            {{ student_form.location }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -73,18 +90,30 @@
                 <div class="form-section-subtitle">Undergraduate</div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.ugdegree.label_tag }} {{ student_form.ugdegree }}</div>
+                        <div class="form-group">
+                            {{ student_form.ugdegree.label_tag }}
+                            {{ student_form.ugdegree }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.ugbranch.label_tag }} {{ student_form.ugbranch }}</div>
+                        <div class="form-group">
+                            {{ student_form.ugbranch.label_tag }}
+                            {{ student_form.ugbranch }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.ugpassout.label_tag }} {{ student_form.ugpassout }}</div>
+                        <div class="form-group">
+                            {{ student_form.ugpassout.label_tag }}
+                            {{ student_form.ugpassout }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.ugpercentage.label_tag }} {{ student_form.ugpercentage }}</div>
+                        <div class="form-group">
+                            {{ student_form.ugpercentage.label_tag }}
+                            {{ student_form.ugpercentage }}
+                        </div>
                     </div>
                 </div>
 
@@ -93,18 +122,30 @@
                 <div class="form-section-subtitle">Postgraduate</div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.pgdegree.label_tag }} {{ student_form.pgdegree }}</div>
+                        <div class="form-group">
+                            {{ student_form.pgdegree.label_tag }}
+                            {{ student_form.pgdegree }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.pgbranch.label_tag }} {{ student_form.pgbranch }}</div>
+                        <div class="form-group">
+                            {{ student_form.pgbranch.label_tag }}
+                            {{ student_form.pgbranch }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.pgpassout.label_tag }} {{ student_form.pgpassout }}</div>
+                        <div class="form-group">
+                            {{ student_form.pgpassout.label_tag }}
+                            {{ student_form.pgpassout }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.pgpercentage.label_tag }} {{ student_form.pgpercentage }}</div>
+                        <div class="form-group">
+                            {{ student_form.pgpercentage.label_tag }}
+                            {{ student_form.pgpercentage }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -117,55 +158,96 @@
             <div class="form-section-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.course_category.label_tag }} {{ student_form.course_category }}</div>
+                        <div class="form-group">
+                            {{ student_form.course_category.label_tag }}
+                            {{ student_form.course_category }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.course.label_tag }} {{ student_form.course }}</div>
+                        <div class="form-group">
+                            {{ student_form.course.label_tag }}
+                            {{ student_form.course }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.start_date.label_tag }}
+                            {{ student_form.start_date }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.end_date.label_tag }}
+                            {{ student_form.end_date }}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.mode_of_class.label_tag }}
+                            {{ student_form.mode_of_class }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.week_type.label_tag }}
+                            {{ student_form.week_type }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.enrollment_date.label_tag }} {{ student_form.enrollment_date }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.start_date.label_tag }} {{ student_form.start_date }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.end_date.label_tag }} {{ student_form.end_date }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.course_status.label_tag }} {{ student_form.course_status }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.mode_of_class.label_tag }} {{ student_form.mode_of_class }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.week_type.label_tag }} {{ student_form.week_type }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">{{ student_form.working_status.label_tag }} {{ student_form.working_status }}</div>
+                        <div class="form-group">
+                            {{ student_form.working_status.label_tag }}
+                            {{ student_form.working_status }}
+                        </div>
                     </div>
                     <div class="col-md-6" id="it_experience_group" style="display: none;">
-                        <div class="form-group">{{ student_form.it_experience.label_tag }} {{ student_form.it_experience }}</div>
+                        <div class="form-group">
+                            {{ student_form.it_experience.label_tag }}
+                            {{ student_form.it_experience }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.pl_required.label_tag }} {{ student_form.pl_required }}</div>
+                        <div class="form-group">
+                            {{ student_form.pl_required.label_tag }}
+                            {{ student_form.pl_required }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.source_of_joining.label_tag }} {{ student_form.source_of_joining }}</div>
+                        <div class="form-group">
+                            {{ student_form.source_of_joining.label_tag }}
+                            {{ student_form.source_of_joining }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ student_form.consultant.label_tag }} {{ student_form.consultant }}</div>
+                        <div class="form-group">
+                            {{ student_form.consultant.label_tag }}
+                            {{ student_form.consultant }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.enrollment_date.label_tag }}
+                            {{ student_form.enrollment_date }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.course_status.label_tag }}
+                            {{ student_form.course_status }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -178,26 +260,44 @@
             <div class="form-section-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ payment_form.payment_account.label_tag }} {{ payment_form.payment_account }}</div>
+                        <div class="form-group">
+                            {{ payment_form.payment_account.label_tag }}
+                            {{ payment_form.payment_account }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ payment_form.total_fees.label_tag }} {{ payment_form.total_fees }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">{{ payment_form.amount_paid.label_tag }} {{ payment_form.amount_paid }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">{{ payment_form.initial_payment_proof.label_tag }} {{ payment_form.initial_payment_proof }}</div>
+                        <div class="form-group">
+                            {{ payment_form.total_fees.label_tag }}
+                            {{ payment_form.total_fees }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">{{ payment_form.gst_bill.label_tag }} {{ payment_form.gst_bill }}</div>
+                        <div class="form-group">
+                            {{ payment_form.amount_paid.label_tag }}
+                            {{ payment_form.amount_paid }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">{{ payment_form.emi_type.label_tag }} {{ payment_form.emi_type }}</div>
+                        <div class="form-group">
+                            {{ payment_form.initial_payment_proof.label_tag }}
+                            {{ payment_form.initial_payment_proof }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ payment_form.gst_bill.label_tag }}
+                            {{ payment_form.gst_bill }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ payment_form.emi_type.label_tag }}
+                            {{ payment_form.emi_type }}
+                        </div>
                     </div>
                 </div>
 
@@ -206,34 +306,58 @@
                 <div class="form-section-subtitle">EMI Details</div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_1_amount_group">{{ payment_form.emi_1_amount.label_tag }} {{ payment_form.emi_1_amount }}</div>
+                        <div class="form-group emi-field" id="emi_1_amount_group">
+                            {{ payment_form.emi_1_amount.label_tag }}
+                            {{ payment_form.emi_1_amount }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_1_date_group">{{ payment_form.emi_1_date.label_tag }} {{ payment_form.emi_1_date }}</div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_2_amount_group">{{ payment_form.emi_2_amount.label_tag }} {{ payment_form.emi_2_amount }}</div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_2_date_group">{{ payment_form.emi_2_date.label_tag }} {{ payment_form.emi_2_date }}</div>
+                        <div class="form-group emi-field" id="emi_1_date_group">
+                            {{ payment_form.emi_1_date.label_tag }}
+                            {{ payment_form.emi_1_date }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_3_amount_group">{{ payment_form.emi_3_amount.label_tag }} {{ payment_form.emi_3_amount }}</div>
+                        <div class="form-group emi-field" id="emi_2_amount_group">
+                            {{ payment_form.emi_2_amount.label_tag }}
+                            {{ payment_form.emi_2_amount }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_3_date_group">{{ payment_form.emi_3_date.label_tag }} {{ payment_form.emi_3_date }}</div>
+                        <div class="form-group emi-field" id="emi_2_date_group">
+                            {{ payment_form.emi_2_date.label_tag }}
+                            {{ payment_form.emi_2_date }}
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_4_amount_group">{{ payment_form.emi_4_amount.label_tag }} {{ payment_form.emi_4_amount }}</div>
+                        <div class="form-group emi-field" id="emi_3_amount_group">
+                            {{ payment_form.emi_3_amount.label_tag }}
+                            {{ payment_form.emi_3_amount }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group emi-field" id="emi_4_date_group">{{ payment_form.emi_4_date.label_tag }} {{ payment_form.emi_4_date }}</div>
+                        <div class="form-group emi-field" id="emi_3_date_group">
+                            {{ payment_form.emi_3_date.label_tag }}
+                            {{ payment_form.emi_3_date }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_4_amount_group">
+                            {{ payment_form.emi_4_amount.label_tag }}
+                            {{ payment_form.emi_4_amount }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group emi-field" id="emi_4_date_group">
+                            {{ payment_form.emi_4_date.label_tag }}
+                            {{ payment_form.emi_4_date }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -294,6 +418,18 @@ document.addEventListener("DOMContentLoaded", function () {
         locationInput.value = this.value ? `Chennai - ${this.value}` : 'Chennai';
     });
 
+    function setupNumericInput(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+        }
+    }
+
+    setupNumericInput('id_phone');
+    setupNumericInput('id_alternative_phone');
+    
     // Course filtering
     const categorySelect = document.getElementById("id_course_category");
     const courseSelect = document.getElementById("id_course");

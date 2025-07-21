@@ -2,8 +2,8 @@
     --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     --transition-speed: 0.3s;
     --border-radius: 12px;
-    --stat-card-height: 140px;
-    --primary-blue: #4a90e2;
+    --stat-card-height: 158px;
+    --primary-blue-new: #4a90e2;
     --primary-light: rgba(74, 144, 226, 0.1);
     --success-color: #2ecc71;
     --danger-color: #e74c3c;
@@ -47,7 +47,7 @@
 .quick-action-btn i {
     font-size: 1.25rem;
     margin-right: 1rem;
-    color: var(--primary-blue);
+    color: var(--primary-blue-new);
 }
 
 /* Stats Overview Section */
@@ -61,7 +61,7 @@
 .stat-card {
     background: var(--background-light);
     border-radius: var(--border-radius);
-    padding: 1.5rem;
+    padding: 0.5rem 1.5rem;
     box-shadow: var(--card-shadow);
     height: var(--stat-card-height);
     display: flex;
@@ -83,7 +83,7 @@
 
 .stat-icon {
     font-size: 1.5rem;
-    color: var(--primary-blue);
+    color: var(--primary-blue-new);
     background: var(--primary-light);
     padding: 0.75rem;
     border-radius: 50%;
@@ -131,6 +131,7 @@
     border-radius: var(--border-radius);
     padding: 1.5rem;
     box-shadow: var(--card-shadow);
+    margin-bottom: 50px;
 }
 
 .chart-header {
@@ -183,11 +184,11 @@
 }
 
 .info-title i {
-    color: var(--primary-blue);
+    color: var(--primary-blue-new);
 }
 
 .view-all {
-    color: var(--primary-blue);
+    color: var(--primary-blue-new);
     text-decoration: none;
     font-size: 0.875rem;
     transition: opacity var(--transition-speed);
@@ -258,7 +259,7 @@
 
 .activity-icon i {
     font-size: 1rem;
-    color: var(--primary-blue);
+    color: var(--primary-blue-new);
 }
 
 .activity-content {

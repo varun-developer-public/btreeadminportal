@@ -32,22 +32,28 @@
 }
 
 .form-group {
+    position: relative;
     margin-bottom: 1.25rem;
+    padding-top: 1.5rem;
 }
 
 .form-group label {
+    position: absolute;
+    top: 0;
+    left: 0;
     color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
-    margin-bottom: 0.5rem;
 }
 
 .form-control {
+    width: 100%;
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 0.625rem 1rem;
     font-size: 0.95rem;
     transition: all 0.2s ease;
+    box-sizing: border-box;
 }
 
 .form-control:focus {

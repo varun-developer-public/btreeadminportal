@@ -1,5 +1,4 @@
-{% load static %}
-<link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+
 
 <nav class="navbar">
     <a href="/" class="navbar-brand">
@@ -26,10 +25,7 @@
                 </ul>
             </div>
         {% else %}
-            <a href="{% url 'login' %}" class="btn btn-primary">
-                <i class="fas fa-sign-in-alt"></i>
-                <span>Login</span>
-            </a>
+    
         {% endif %}
     </div>
 </nav>
