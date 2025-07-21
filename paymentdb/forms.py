@@ -189,6 +189,7 @@ class PaymentUpdateForm(forms.ModelForm):
                 # Make enabled fields required
                 self.fields[f'emi_{i}_paid_amount'].required = True
                 self.fields[f'emi_{i}_paid_date'].required = True
+                self.fields[f'emi_{i}_paid_date'].initial = timezone.now().date()
                 # Proof is required only if one isn't already uploaded
                 if not getattr(payment, f'emi_{i}_proof'):
                     self.fields[f'emi_{i}_proof'].required = True

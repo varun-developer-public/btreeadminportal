@@ -110,7 +110,12 @@ def payment_update(request, payment_id):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    form.save()
+                    payment = form.save(commit=False)
+                    for i in range(1, 5):
+                        if f'emi_{i}_paid_amount' in form.changed_data:
+                            setattr(payment, f'emi_{i}_updated_by', request.user)
+                            break
+                    payment.save()
                     # Find which EMI was just paid to show a nice message
                     for i in range(1, 5):
                         if f'emi_{i}_paid_amount' in form.changed_data:

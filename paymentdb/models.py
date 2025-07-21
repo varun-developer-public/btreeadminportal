@@ -28,6 +28,7 @@ class Payment(models.Model):
     emi_1_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_1_paid_date = models.DateField(blank=True, null=True)
     emi_1_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_1_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_1')
 
     # EMI 2
     emi_2_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -35,6 +36,7 @@ class Payment(models.Model):
     emi_2_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_2_paid_date = models.DateField(blank=True, null=True)
     emi_2_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_2_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_2')
 
     # EMI 3
     emi_3_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -42,6 +44,7 @@ class Payment(models.Model):
     emi_3_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_3_paid_date = models.DateField(blank=True, null=True)
     emi_3_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_3_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_3')
 
     # EMI 4
     emi_4_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -49,6 +52,7 @@ class Payment(models.Model):
     emi_4_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_4_paid_date = models.DateField(blank=True, null=True)
     emi_4_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_4_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_4')
 
     total_pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 

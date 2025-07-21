@@ -75,6 +75,9 @@
                         {% if payment.emi_1_proof %}
                             <a href="{{ payment.emi_1_proof.url }}" target="_blank" class="proof-link">View Proof</a>
                         {% endif %}
+                        {% if payment.emi_1_updated_by %}
+                            <span class="updated-by">(Updated by: {{ payment.emi_1_updated_by.name }})</span>
+                        {% endif %}
                     </div>
                     {% else %}
                     <div class="emi-row">
@@ -116,6 +119,9 @@
                         <span class="paid-date">(Paid on: {{ payment.emi_2_paid_date }})</span>
                         {% if payment.emi_2_proof %}
                             <a href="{{ payment.emi_2_proof.url }}" target="_blank" class="proof-link">View Proof</a>
+                        {% endif %}
+                        {% if payment.emi_2_updated_by %}
+                            <span class="updated-by">(Updated by: {{ payment.emi_2_updated_by.name }})</span>
                         {% endif %}
                     </div>
                     {% else %}
@@ -159,6 +165,9 @@
                         {% if payment.emi_3_proof %}
                             <a href="{{ payment.emi_3_proof.url }}" target="_blank" class="proof-link">View Proof</a>
                         {% endif %}
+                        {% if payment.emi_3_updated_by %}
+                            <span class="updated-by">(Updated by: {{ payment.emi_3_updated_by.name }})</span>
+                        {% endif %}
                     </div>
                     {% else %}
                     <div class="emi-row">
@@ -200,6 +209,9 @@
                         <span class="paid-date">(Paid on: {{ payment.emi_4_paid_date }})</span>
                         {% if payment.emi_4_proof %}
                             <a href="{{ payment.emi_4_proof.url }}" target="_blank" class="proof-link">View Proof</a>
+                        {% endif %}
+                        {% if payment.emi_4_updated_by %}
+                            <span class="updated-by">(Updated by: {{ payment.emi_4_updated_by.name }})</span>
                         {% endif %}
                     </div>
                     {% else %}
@@ -361,7 +373,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submitButton = document.querySelector('button[type="submit"]');
 
     emiSections.forEach(section => {
-        const originalAmountSpan = section.querySelector('span:not([class])');
+        const originalAmountSpan = section.querySelector('.emi-row:first-child span');
         const paidAmountInput = section.querySelector('input[name$="_paid_amount"]');
         
         if (paidAmountInput && !paidAmountInput.disabled) {
@@ -374,8 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
             errorDiv.style.marginTop = '5px';
             paidAmountInput.parentNode.appendChild(errorDiv);
 
-            paidAmountInput.addEventListener('input', function() {
-                const paidAmount = parseFloat(this.value);
+            const validate = () => {
+                const paidAmount = parseFloat(paidAmountInput.value);
                 const isEmi4 = paidAmountInput.name.includes('emi_4');
 
                 if (isEmi4) {
@@ -395,7 +407,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         submitButton.disabled = false;
                     }
                 }
-            });
+            };
+
+            paidAmountInput.addEventListener('input', validate);
+            validate(); // Initial check
+        }
+    });
+
+    // Script to set today's date for the enabled paid date field
+    const paidDateInputs = document.querySelectorAll('input[name$="_paid_date"]');
+    paidDateInputs.forEach(input => {
+        if (!input.disabled) {
+            const today = new Date().toISOString().split('T')[0];
+            input.value = today;
+            input.readOnly = true;
         }
     });
 
