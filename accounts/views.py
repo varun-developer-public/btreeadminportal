@@ -191,7 +191,7 @@ def user_list(request):
 @user_passes_test(is_admin)
 def create_user(request):
     if request.method == 'POST':
-        form = UserForm(request.POST)
+        form = UserForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, "User created successfully.")
@@ -216,14 +216,14 @@ def update_user(request, pk):
             return redirect('login') # Fallback
 
     if request.method == 'POST':
-        form = UserUpdateForm(request.POST, request.FILES, instance=user_to_update)
+        form = UserUpdateForm(request.POST, request.FILES, instance=user_to_update, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully.")
             # Redirect back to the same page to show changes
             return redirect('update_user', pk=pk)
     else:
-        form = UserUpdateForm(instance=user_to_update)
+        form = UserUpdateForm(instance=user_to_update, user=request.user)
 
     # Flag to check if the user is editing their own profile
     is_editing_own_profile = request.user.pk == user_to_update.pk

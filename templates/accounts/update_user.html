@@ -34,6 +34,12 @@
 
             <div class="form-group">
                 {{ form.profile_picture.label_tag }}
+                {% if user.profile_picture %}
+                    <div class="current-profile-picture">
+                        <img src="{{ user.profile_picture.url }}" alt="Current profile picture" style="max-width: 150px; max-height: 150px; border-radius: 50%;">
+                        <p>Current picture</p>
+                    </div>
+                {% endif %}
                 <div class="custom-file-input">
                     {{ form.profile_picture }}
                     <label class="custom-file-label" for="{{ form.profile_picture.id_for_label }}">

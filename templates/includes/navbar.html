@@ -11,7 +11,7 @@
                 <button class="profile-button" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="me-2">{{ user.name }}</span>
                     {% if user.profile_picture %}
-                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-picture">
+                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture" class="profile-picture" height="20px">
                     {% else %}
                         <i class="fas fa-user-circle"></i>
                     {% endif %}

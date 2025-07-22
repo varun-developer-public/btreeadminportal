@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
+from core.utils import profile_pics_upload_to
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, name, role, password=None, is_staff=False, is_superuser=False, **extra_fields):
@@ -36,7 +37,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=100)
     role = models.CharField(max_length=30, choices=ROLE_CHOICES)
-    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to=profile_pics_upload_to, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)

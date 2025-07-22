@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from dateutil.relativedelta import relativedelta
+from core.utils import timestamp_upload_to
 
 class Payment(models.Model):
     EMI_CHOICES = [
@@ -18,7 +19,7 @@ class Payment(models.Model):
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     emi_type = models.CharField(max_length=4, choices=EMI_CHOICES, default='NONE')
 
-    initial_payment_proof = models.ImageField(upload_to='payment_proofs/', null=True)
+    initial_payment_proof = models.ImageField(upload_to=timestamp_upload_to, null=True)
     
     # EMI fields with payment tracking
 
@@ -27,7 +28,7 @@ class Payment(models.Model):
     emi_1_date = models.DateField(blank=True, null=True)
     emi_1_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_1_paid_date = models.DateField(blank=True, null=True)
-    emi_1_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_1_proof = models.ImageField(upload_to=timestamp_upload_to, blank=True, null=True)
     emi_1_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_1')
 
     # EMI 2
@@ -35,7 +36,7 @@ class Payment(models.Model):
     emi_2_date = models.DateField(blank=True, null=True)
     emi_2_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_2_paid_date = models.DateField(blank=True, null=True)
-    emi_2_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_2_proof = models.ImageField(upload_to=timestamp_upload_to, blank=True, null=True)
     emi_2_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_2')
 
     # EMI 3
@@ -43,7 +44,7 @@ class Payment(models.Model):
     emi_3_date = models.DateField(blank=True, null=True)
     emi_3_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_3_paid_date = models.DateField(blank=True, null=True)
-    emi_3_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_3_proof = models.ImageField(upload_to=timestamp_upload_to, blank=True, null=True)
     emi_3_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_3')
 
     # EMI 4
@@ -51,7 +52,7 @@ class Payment(models.Model):
     emi_4_date = models.DateField(blank=True, null=True)
     emi_4_paid_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     emi_4_paid_date = models.DateField(blank=True, null=True)
-    emi_4_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
+    emi_4_proof = models.ImageField(upload_to=timestamp_upload_to, blank=True, null=True)
     emi_4_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='updated_emi_4')
 
     total_pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
