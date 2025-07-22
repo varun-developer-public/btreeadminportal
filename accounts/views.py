@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import CustomUser
-from .forms import UserForm, UserUpdateForm
+from .forms import UserForm, UserUpdateForm, PasswordChangeForm
 
 def is_admin(user):
     return user.is_authenticated and user.role == 'admin'
@@ -200,18 +200,40 @@ def create_user(request):
         form = UserForm()
     return render(request, 'accounts/create_user.html', {'form': form})
 
-@user_passes_test(is_admin)
+@login_required
 def update_user(request, pk):
-    user = get_object_or_404(CustomUser, pk=pk)
+    user_to_update = get_object_or_404(CustomUser, pk=pk)
+    
+    # Admins can edit any user, other roles can only edit their own profile
+    if not request.user.role == 'admin' and request.user.pk != user_to_update.pk:
+        messages.error(request, "You don't have permission to edit this profile.")
+        # Redirect to a safe page, e.g., their own dashboard
+        if request.user.role == 'staff':
+            return redirect('staff_dashboard')
+        elif request.user.role == 'consultant':
+            return redirect('consultant_dashboard')
+        else:
+            return redirect('login') # Fallback
+
     if request.method == 'POST':
-        form = UserUpdateForm(request.POST, request.FILES, instance=user)
+        form = UserUpdateForm(request.POST, request.FILES, instance=user_to_update)
         if form.is_valid():
             form.save()
-            messages.success(request, "User updated successfully.")
-            return redirect('user_list')
+            messages.success(request, "Profile updated successfully.")
+            # Redirect back to the same page to show changes
+            return redirect('update_user', pk=pk)
     else:
-        form = UserUpdateForm(instance=user)
-    return render(request, 'accounts/update_user.html', {'form': form, 'user': user})
+        form = UserUpdateForm(instance=user_to_update)
+
+    # Flag to check if the user is editing their own profile
+    is_editing_own_profile = request.user.pk == user_to_update.pk
+
+    context = {
+        'form': form,
+        'user': user_to_update,
+        'is_editing_own_profile': is_editing_own_profile
+    }
+    return render(request, 'accounts/update_user.html', context)
 
 @user_passes_test(is_admin)
 def delete_user(request, pk):
@@ -252,3 +274,15 @@ def logout_view(request):
     logout(request)
     messages.success(request, "You have been logged out successfully.")
     return redirect('login')
+
+@login_required
+def password_change(request):
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your password has been changed successfully.")
+            return redirect('login')
+    else:
+        form = PasswordChangeForm(request.user)
+    return render(request, 'accounts/password_change.html', {'form': form})

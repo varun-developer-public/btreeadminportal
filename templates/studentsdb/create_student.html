@@ -27,7 +27,7 @@
 
         <div class="form-section-card">
             <div class="form-section-header">
-                <h5><i class="fas fa-user me-2"></i>Personal Details</h5>
+                <h5><i class="fas fa-user me-2"></i>Student Personal Details</h5>
             </div>
             <div class="form-section-body">
                 <div class="row">
@@ -370,53 +370,74 @@
             <a href="{% url 'student_list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to Student List
             </a>
-            <span id="emi-error-message" class="error-message"></span>
+            <span id="emi-error-message" class="error-message" style="display: none;"></span>
         </div>
     </form>
 </div>
 
 {% block extra_js %}
 <script>
-document.addEventListener("DOMContentLoaded", function () {
-    // Location script
-    const locationInput = document.getElementById('id_location');
-    if (locationInput) {
-        locationInput.style.display = 'none';
-    }
-    
-    const districtSelect = document.getElementById('id_district');
-    const chennaiAreaGroup = document.getElementById('chennai_area_group');
-    const chennaiAreaSelect = document.getElementById('id_chennai_area');
+$(document).ready(function () {
+    // Initialize Select2 on all select elements first
+    $('select').select2({
+        width: '100%' // Ensures the dropdowns are responsive
+    });
 
-    if (districtSelect.options.length <= 1) {
+    // Location script
+    const locationInput = $('#id_location');
+    if (locationInput.length) {
+        locationInput.hide();
+    }
+
+    const $districtSelect = $('#id_district');
+    const $chennaiAreaGroup = $('#chennai_area_group');
+    const $chennaiAreaSelect = $('#id_chennai_area');
+
+    // Populate districts if not already populated
+    if ($districtSelect.find('option').length <= 1) {
         const districts = ["", "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
         districts.forEach(d => {
-            districtSelect.add(new Option(d, d));
+            $districtSelect.append(new Option(d, d));
         });
     }
 
-    if (chennaiAreaSelect.options.length <= 1) {
-        const chennaiAreas = ["", "Adyar", "Alandur", "Anna Nagar", "Ashok Nagar", "Besant Nagar", "Egmore", "Guindy", "Kodambakkam", "Mylapore", "Nungambakkam", "Perambur", "T. Nagar", "Tambaram", "Vadapalani", "Velachery"];
+    // Populate Chennai areas if not already populated
+    if ($chennaiAreaSelect.find('option').length <= 1) {
+        const chennaiAreas = ["", "Adyar", "Alwarpet", "Ambattur", "Anna Salai (Mount Road)", "Ashok Nagar", "Avadi", "Besant Nagar", "Choolaimedu", "Chrompet", "Egmore", "Ennore", "Guindy", "Iyyappanthangal", "Karapakkam", "Kelambakkam", "KK Nagar", "Kodambakkam", "Korukkupet", "Koyambedu", "Madhavaram", "Madipakkam", "Manali", "Medavakkam", "Mogappair", "Mylapore", "Navalur", "Nungambakkam", "Palavakkam", "Pallikaranai", "Perambur", "Perungudi", "Poonamallee", "Porur", "Royapettah", "Royapuram", "Saidapet", "Santhome", "Selaiyur", "Sholinganallur", "Siruseri", "Sowcarpet", "T. Nagar (Thyagaraya Nagar)", "Tambaram", "Teynampet", "Thiruvanmiyur", "Thoraipakkam", "Tondiarpet", "Triplicane", "Vadapalani", "Valasaravakkam", "Velachery", "Virugambakkam", "Vyasarpadi", "Washermanpet"];
         chennaiAreas.forEach(a => {
-            chennaiAreaSelect.add(new Option(a, a));
+            $chennaiAreaSelect.append(new Option(a, a));
         });
     }
 
-    districtSelect.addEventListener('change', function() {
-        if (this.value === 'Chennai') {
-            chennaiAreaGroup.style.display = 'block';
-            chennaiAreaSelect.value = '';
-            locationInput.value = '';
+    function updateLocationView() {
+        const district = $districtSelect.val();
+        if (district === 'Chennai') {
+            $chennaiAreaGroup.show();
         } else {
-            chennaiAreaGroup.style.display = 'none';
-            chennaiAreaSelect.value = '';
-            locationInput.value = this.value;
+            $chennaiAreaGroup.hide();
         }
+        
+        const area = $chennaiAreaSelect.val();
+        if (district === 'Chennai') {
+            locationInput.val(area ? `Chennai - ${area}` : 'Chennai');
+        } else {
+            locationInput.val(district);
+        }
+    }
+
+    $districtSelect.on('change', function() {
+        if ($(this).val() !== 'Chennai') {
+            $chennaiAreaSelect.val('').trigger('change.select2');
+        }
+        updateLocationView();
     });
 
-    chennaiAreaSelect.addEventListener('change', function() {
-        locationInput.value = this.value ? `Chennai - ${this.value}` : 'Chennai';
+    $chennaiAreaSelect.on('change', function() {
+        updateLocationView();
     });
+
+    updateLocationView();
+
 
     function setupNumericInput(inputId) {
         const input = document.getElementById(inputId);
@@ -431,124 +452,103 @@ document.addEventListener("DOMContentLoaded", function () {
     setupNumericInput('id_alternative_phone');
     
     // Course filtering
-    const categorySelect = document.getElementById("id_course_category");
-    const courseSelect = document.getElementById("id_course");
+    const $categorySelect = $("#id_course_category");
+    const $courseSelect = $("#id_course");
 
-    if (categorySelect && courseSelect) {
-        categorySelect.addEventListener("change", function () {
+    if ($categorySelect.length && $courseSelect.length) {
+        let lastCategoryId = null;
+
+        $categorySelect.on("change", function () {
             const categoryId = this.value;
-            courseSelect.innerHTML = '<option value="">Select Course</option>'; // Clear existing options
 
-            if (categoryId) {
+            if (categoryId && categoryId !== lastCategoryId) {
+                lastCategoryId = categoryId;
+                $courseSelect.html('<option value="">Select Course</option>').trigger('change');
+
                 fetch(`/students/get-courses/?category_id=${categoryId}`)
-                    .then(response => response.json())
+                    .then(response => response.ok ? response.json() : Promise.reject('Network response was not ok'))
                     .then(data => {
-                        data.forEach(course => {
-                            const option = new Option(course.name, course.id);
-                            courseSelect.add(option);
-                        });
+                        if ($categorySelect.val() === categoryId) {
+                            data.forEach(course => {
+                                if (!$courseSelect.find(`option[value="${course.id}"]`).length) {
+                                    $courseSelect.append(new Option(course.name, course.id));
+                                }
+                            });
+                            $courseSelect.trigger('change');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        lastCategoryId = null;
                     });
+            } else if (!categoryId) {
+                $courseSelect.html('<option value="">Select Course</option>').trigger('change');
+                lastCategoryId = null;
             }
         });
     }
+    
     // EMI script
-    const emiType = document.getElementById("id_emi_type");
-    if (emiType) {
-        const emiFieldGroups = {
-            '1': [document.getElementById("emi_1_amount_group"), document.getElementById("emi_1_date_group")],
-            '2': [document.getElementById("emi_2_amount_group"), document.getElementById("emi_2_date_group")],
-            '3': [document.getElementById("emi_3_amount_group"), document.getElementById("emi_3_date_group")],
-            '4': [document.getElementById("emi_4_amount_group"), document.getElementById("emi_4_date_group")]
-        };
+    const $emiType = $("#id_emi_type");
+    const emiFieldGroups = {
+        '1': [$("#emi_1_amount_group"), $("#emi_1_date_group")],
+        '2': [$("#emi_2_amount_group"), $("#emi_2_date_group")],
+        '3': [$("#emi_3_amount_group"), $("#emi_3_date_group")],
+        '4': [$("#emi_4_amount_group"), $("#emi_4_date_group")]
+    };
 
-        function toggleEMIFields() {
-            let selectedType = parseInt(emiType.value, 10) || 0;
-            
-            const allEmiGroups = [].concat(...Object.values(emiFieldGroups));
-
-            allEmiGroups.forEach(group => {
-                if (group) group.style.display = 'none';
-            });
-
-            for (let i = 1; i <= selectedType; i++) {
-                if(emiFieldGroups[i]) {
-                    emiFieldGroups[i].forEach(group => {
-                        if (group) group.style.display = 'block';
-                    });
-                }
+    function toggleEMIFields() {
+        let selectedType = parseInt($emiType.val(), 10) || 0;
+        
+        for (let i = 1; i <= 4; i++) {
+            const isVisible = i <= selectedType;
+            if (emiFieldGroups[i]) {
+                emiFieldGroups[i].forEach($group => {
+                    if ($group.length) {
+                        $group.toggle(isVisible);
+                        $group.find('input').prop('required', isVisible);
+                    }
+                });
             }
         }
-
-        emiType.addEventListener("change", toggleEMIFields);
-        toggleEMIFields();
     }
 
-    // Working status and IT experience toggle
-    const workingStatus = document.getElementById('id_working_status');
-    const itExperienceGroup = document.getElementById('it_experience_group');
+    $emiType.on('change', toggleEMIFields);
+    toggleEMIFields();
 
-    if (workingStatus && itExperienceGroup) {
-        workingStatus.addEventListener('change', function() {
-            itExperienceGroup.style.display = this.value === 'YES' ? 'block' : 'none';
-        });
-        
-        // Initial check
-        itExperienceGroup.style.display = workingStatus.value === 'YES' ? 'block' : 'none';
-    }
-
-    // EMI Calculation
-    const totalFeesInput = document.getElementById('id_total_fees');
-    const amountPaidInput = document.getElementById('id_amount_paid');
-    const emiTypeSelect = document.getElementById('id_emi_type');
-    const emiAmountInputs = {
-        '1': document.getElementById('id_emi_1_amount'),
-        '2': document.getElementById('id_emi_2_amount'),
-        '3': document.getElementById('id_emi_3_amount'),
-        '4': document.getElementById('id_emi_4_amount'),
-    };
-    const submitButton = document.getElementById('submit-button');
-    const emiErrorMessage = document.getElementById('emi-error-message');
-
-    function validateEMI() {
-        const totalFees = parseFloat(totalFeesInput.value) || 0;
-        const amountPaid = parseFloat(amountPaidInput.value) || 0;
-        const emiType = parseInt(emiTypeSelect.value, 10) || 0;
-
-        if (emiType === 0) {
-            submitButton.disabled = false;
-            emiErrorMessage.style.display = 'none';
-            return;
-        }
-
-        let emiSum = 0;
-        for (let i = 1; i <= emiType; i++) {
-            emiSum += parseFloat(emiAmountInputs[i].value) || 0;
-        }
-
-        const remainingBalance = totalFees - amountPaid;
-        
-        if (emiSum !== remainingBalance) {
-            submitButton.disabled = true;
-            emiErrorMessage.textContent = `Sum of EMIs (${emiSum}) must equal the remaining balance (${remainingBalance}).`;
-            emiErrorMessage.style.display = 'inline';
+    // Working status script
+    const $workingStatusSelect = $('#id_working_status');
+    const $itExperienceGroup = $('#it_experience_group');
+    
+    function toggleItExperience() {
+        if ($workingStatusSelect.val() === 'YES') {
+            $itExperienceGroup.show();
         } else {
-            submitButton.disabled = false;
-            emiErrorMessage.style.display = 'none';
+            $itExperienceGroup.hide();
         }
     }
 
-    [totalFeesInput, amountPaidInput, emiTypeSelect].forEach(input => {
-        input.addEventListener('input', validateEMI);
+    $workingStatusSelect.on('change', toggleItExperience);
+    toggleItExperience();
+
+    // Form submission validation
+    $('.student-form').on('submit', function(e) {
+        const totalFees = parseFloat($('#id_total_fees').val()) || 0;
+        const amountPaid = parseFloat($('#id_amount_paid').val()) || 0;
+        let emiTotal = 0;
+        let selectedType = parseInt($emiType.val(), 10) || 0;
+
+        for (let i = 1; i <= selectedType; i++) {
+            emiTotal += parseFloat($(`#id_emi_${i}_amount`).val()) || 0;
+        }
+
+        if (totalFees !== (amountPaid + emiTotal)) {
+            e.preventDefault();
+            $('#emi-error-message').text('Error: Total fees must be equal to the sum of amount paid and all EMI amounts.').show();
+        } else {
+            $('#emi-error-message').hide();
+        }
     });
-
-    for (const key in emiAmountInputs) {
-        if (emiAmountInputs.hasOwnProperty(key)) {
-            emiAmountInputs[key].addEventListener('input', validateEMI);
-        }
-    }
-
-    // Initial validation check
-    validateEMI();
 });
 </script>
 {% endblock %}

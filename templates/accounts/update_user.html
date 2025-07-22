@@ -25,10 +25,12 @@
                 {{ form.email }}
             </div>
 
+            {% if not is_editing_own_profile %}
             <div class="form-group">
                 {{ form.role.label_tag }}
                 {{ form.role }}
             </div>
+            {% endif %}
 
             <div class="form-group">
                 {{ form.profile_picture.label_tag }}
@@ -45,6 +47,7 @@
                 {{ form.consultant }}
             </div>
 
+            {% if request.user.pk != user.pk or not request.user.is_superuser %}
             <div id="permissions_div" class="hidden">
                 <div class="form-group">
                     <label class="form-check-label">
@@ -57,6 +60,7 @@
                     </label>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <div class="btn-group">

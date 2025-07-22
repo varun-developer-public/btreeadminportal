@@ -55,12 +55,9 @@
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
-select.form-control {
+.select2-container {
     appearance: none;
-    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23555' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.75rem center;
-    background-size: 12px;
+    padding: 6px;
     padding-right: 2rem;
 }
 

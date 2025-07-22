@@ -50,26 +50,25 @@ class StudentForm(forms.ModelForm):
         self.fields['end_date'].initial = today + relativedelta(months=4)
         self.fields['course'].queryset = Course.objects.none()
 
-        if 'course_category' in self.data:
-            try:
-                category_id = int(self.data.get('course_category'))
-                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('name')
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk and self.instance.course:
-            self.fields['course'].queryset = self.instance.course.category.course_set.order_by('name')
-
         # Filter consultants based on user role
         if request:
             user = request.user
-            if not user.is_superuser:
+            # If the user is a consultant, restrict the list to their own profile
+            if hasattr(user, 'consultant_profile'):
                 try:
                     consultant = user.consultant_profile.consultant
                     self.fields['consultant'].queryset = Consultant.objects.filter(pk=consultant.pk)
                     self.fields['consultant'].initial = consultant
                     self.fields['consultant'].widget.attrs['readonly'] = True
                 except (Consultant.DoesNotExist, AttributeError):
+                    # This case might happen if the profile is not set up correctly
                     self.fields['consultant'].queryset = Consultant.objects.none()
+            # For staff and superusers, they should see all consultants
+            elif user.is_staff or user.is_superuser:
+                self.fields['consultant'].queryset = Consultant.objects.all()
+            # For any other case, hide the field
+            else:
+                self.fields['consultant'].queryset = Consultant.objects.none()
 
 
 class StudentUpdateForm(forms.ModelForm):
@@ -84,7 +83,7 @@ class StudentUpdateForm(forms.ModelForm):
             'course_percentage',
             'pl_required',
             'mode_of_class',
-            'week_type',
+            'week_type','consultant', 'source_of_joining'
         ]
         widgets = {
             'end_date': forms.DateInput(attrs={'type': 'date'}),

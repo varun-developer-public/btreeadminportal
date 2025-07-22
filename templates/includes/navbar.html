@@ -3,7 +3,7 @@
 <nav class="navbar">
     <a href="/" class="navbar-brand">
         <img src="{% static 'images/logo.png' %}" alt="BTree Logo" style="height: 40px; margin-right: 10px;">
-        <span>BTree Systems Portal</span>
+        <span>BTRS Portal</span>
     </a>
     <div class="navbar-right">
         {% if user.is_authenticated %}
@@ -17,7 +17,7 @@
                     {% endif %}
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-                    {% if user.role == 'admin' %}
+                    {% if user.role == 'admin' or user.role == 'staff' %}
                     <li><a class="dropdown-item" href="{% url 'update_user' pk=user.pk %}"><i class="fas fa-user me-2"></i>Profile</a></li>
                     {% endif %}
                     <li><hr class="dropdown-divider"></li>

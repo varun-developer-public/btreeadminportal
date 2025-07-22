@@ -91,3 +91,11 @@ class EmailAuthenticationForm(AuthenticationForm):
         label="Email",
         widget=forms.EmailInput(attrs={'autofocus': True})
     )
+
+from django.contrib.auth.forms import PasswordChangeForm as AuthPasswordChangeForm
+
+class PasswordChangeForm(AuthPasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})
