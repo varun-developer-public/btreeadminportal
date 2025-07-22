@@ -81,7 +81,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# Database - Production (PostgreSQL)
+# Database
+# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+# production db (postgree)
+
+# DEBUG = False
+# ALLOWED_HOSTS = ['btrees.in','admin.btrees.in']
+# STATIC_ROOT = BASE_DIR / 'static'
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
