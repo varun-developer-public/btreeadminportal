@@ -1,6 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Update Student{% endblock %}
-
+{% load static %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form.css' %}">
+{% endblock %}
 {% block content %}
 <div class="card">
     <h2>Update Student - {{ student.student_id }}</h2>

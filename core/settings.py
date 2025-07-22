@@ -29,19 +29,19 @@ SECRET_KEY = 'django-insecure-g7ccbck23uiam(r(*0-&^57v#94(2^kt#buh!mn$fbq)l8+=$$
 STATIC_URL = 'static/'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-ALLOWED_HOSTS = ['*']
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),
-]
+# DEBUG = True
+# ALLOWED_HOSTS = ['*']
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static'),
+# ]
 
-# developement db
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+# # developement db
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 
 
@@ -102,20 +102,20 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # production db (postgree)
 
-# DEBUG = False
-# ALLOWED_HOSTS = ['btrees.in','admin.btrees.in']
-# STATIC_ROOT = BASE_DIR / 'static'
+DEBUG = False
+ALLOWED_HOSTS = ['btrees.in','admin.btrees.in']
+STATIC_ROOT = BASE_DIR / 'static'
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'btree_db',
-#         'USER': 'btree_user',
-#         'PASSWORD': 'BTree@2025',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'btree_db',
+        'USER': 'btree_user',
+        'PASSWORD': 'BTree@2025',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
 
 
 # Password validation

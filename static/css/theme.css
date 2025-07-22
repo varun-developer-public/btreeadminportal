@@ -109,7 +109,7 @@ input[type='password'],
 input[type='number'],
 input[type='date'],
 textarea,
-.select2-container {
+.select2-container,select {
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 6px;
@@ -126,7 +126,7 @@ input[type='password']:focus,
 input[type='number']:focus,
 input[type='date']:focus,
 textarea:focus,
-.select2-container:focus {
+.select2-container:focus,select:focus {
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
     outline: none;

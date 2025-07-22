@@ -579,6 +579,18 @@ $(document).ready(function () {
             alert('Please correct the payment details. The sum of EMI amounts does not match the pending amount.');
         }
     });
+
+    function setupCharacterInput(inputId) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/[^a-zA-Z]/g, '');
+            });
+        }
+    }
+
+    setupCharacterInput('id_first_name');
+    setupCharacterInput('id_last_name');
 });
 </script>
 {% endblock %}
