@@ -1,47 +1,57 @@
 /* Custom styles that complement theme.css */
 
-/* Sidebar link hover effect */
-.sidebar-nav {
-    padding: 16px 8px;
+/* Sidebar Styles */
+.sidebar-container {
+    padding: 20px;
 }
 
-.sidebar-nav a {
+.sidebar-container h3 {
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav li {
+    margin-bottom: 10px;
+}
+
+.sidebar-nav .nav-link {
     display: flex;
     align-items: center;
-    padding: 12px 20px;
-    color: var(--text-primary);
-    transition: all 0.3s ease;
-    border-radius: 8px;
-    margin: 4px 0;
-    font-size: 0.95rem;
+    padding: 12px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.3s, color 0.3s;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
-.sidebar-nav a:hover {
+.sidebar-nav .nav-link:hover {
     background-color: var(--primary-light);
     color: var(--primary-blue);
 }
 
-.sidebar-nav a.active {
+.sidebar-nav .nav-link.active {
     background-color: var(--primary-blue);
-    color: white;
+    color: #fff;
 }
 
-.sidebar-nav a i {
+.sidebar-nav .nav-link i {
+    margin-right: 15px;
     width: 20px;
-    margin-right: 12px;
-    font-size: 1.1rem;
     text-align: center;
-}
-
-.sidebar-nav a span {
-    font-weight: 500;
 }
 
 /* Navbar styles */
 .navbar {
     background-color: var(--background-light);
     border-bottom: 1px solid var(--border-color);
-    padding: 12px 24px;
+    padding: 8px 24px;
     position: fixed;
     top: 0;
     left: 0;

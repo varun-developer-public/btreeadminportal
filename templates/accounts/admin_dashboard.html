@@ -10,6 +10,11 @@
 
 {% block content %}
 <div class="admin-dashboard">
+    <div class="row my-4 ms-1">
+        <div class="col-md-12">
+            <h2>Hey, {{ user.name }}!</h2>
+        </div>
+    </div>
     <div class="quick-actions">
         <a href="{% url 'create_student' %}" class="quick-action-btn">
             <i class="fas fa-user-plus"></i>
