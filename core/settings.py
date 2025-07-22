@@ -102,7 +102,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # production db (postgree)
 
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['btrees.in','admin.btrees.in']
 STATIC_ROOT = BASE_DIR / 'static'
 
