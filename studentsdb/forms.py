@@ -5,7 +5,7 @@ from studentsdb.models import Student
 from consultantdb.models import Consultant
 from settingsdb.models import SourceOfJoining
 
-from .models import CourseCategory
+from .models import CourseCategory, Course
 
 class StudentForm(forms.ModelForm):
     source_of_joining = forms.ModelChoiceField(
@@ -49,6 +49,15 @@ class StudentForm(forms.ModelForm):
         self.fields['start_date'].initial = today
         self.fields['end_date'].initial = today + relativedelta(months=4)
         self.fields['course'].queryset = Course.objects.none()
+
+        if 'course_category' in self.data:
+            try:
+                category_id = int(self.data.get('course_category'))
+                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('name')
+            except (ValueError, TypeError):
+                pass  # invalid input from the client; ignore and fallback to empty queryset
+        elif self.instance.pk:
+            self.fields['course'].queryset = self.instance.course_category.course_set.order_by('name')
 
         # Filter consultants based on user role
         if request:
@@ -94,7 +103,6 @@ class StudentUpdateForm(forms.ModelForm):
         return cleaned_data
 
 
-from .models import Course
 
 class StudentFilterForm(forms.Form):
     q = forms.CharField(

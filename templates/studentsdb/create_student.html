@@ -531,22 +531,52 @@ $(document).ready(function () {
     $workingStatusSelect.on('change', toggleItExperience);
     toggleItExperience();
 
-    // Form submission validation
-    $('.student-form').on('submit', function(e) {
+    function validateEMIAmounts() {
         const totalFees = parseFloat($('#id_total_fees').val()) || 0;
         const amountPaid = parseFloat($('#id_amount_paid').val()) || 0;
-        let emiTotal = 0;
-        let selectedType = parseInt($emiType.val(), 10) || 0;
+        const expectedEMISum = totalFees - amountPaid;
 
-        for (let i = 1; i <= selectedType; i++) {
-            emiTotal += parseFloat($(`#id_emi_${i}_amount`).val()) || 0;
-        }
+        let actualEMISum = 0;
+        // Use a more specific selector for EMI amount fields
+        $('input[id^="id_emi_"][id$="_amount"]').each(function() {
+            // Check if the parent form group is visible
+            if ($(this).closest('.form-group.emi-field').is(':visible')) {
+                actualEMISum += parseFloat($(this).val()) || 0;
+            }
+        });
 
-        if (totalFees !== (amountPaid + emiTotal)) {
-            e.preventDefault();
-            $('#emi-error-message').text('Error: Total fees must be equal to the sum of amount paid and all EMI amounts.').show();
+        const errorMessage = $('#emi-error-message');
+        const submitButton = $('#submit-button');
+
+        // Use a small tolerance for floating point comparison
+        if (Math.abs(actualEMISum - expectedEMISum) > 0.01) {
+            errorMessage.text(`Sum of EMI amounts (${actualEMISum.toFixed(2)}) must equal Pending Amount (${expectedEMISum.toFixed(2)}).`);
+            errorMessage.show();
+            submitButton.prop('disabled', true);
         } else {
-            $('#emi-error-message').hide();
+            errorMessage.hide();
+            submitButton.prop('disabled', false);
+        }
+    }
+
+    // Use event delegation for all payment fields
+    $('.student-form').on('input', '#id_total_fees, #id_amount_paid, input[id^="id_emi_"][id$="_amount"]', validateEMIAmounts);
+
+    $emiType.on("change", function() {
+        toggleEMIFields();
+        validateEMIAmounts(); // Re-validate when EMI type changes
+    });
+
+    // Initial validation on page load
+    validateEMIAmounts();
+
+    // Final check on form submission
+    $('form.student-form').on('submit', function(e) {
+        validateEMIAmounts(); // Run validation one last time
+        if ($('#submit-button').is(':disabled')) {
+            e.preventDefault();
+            // The error message is already visible, but an alert can be more prominent
+            alert('Please correct the payment details. The sum of EMI amounts does not match the pending amount.');
         }
     });
 });

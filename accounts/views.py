@@ -282,7 +282,12 @@ def password_change(request):
         if form.is_valid():
             form.save()
             messages.success(request, "Your password has been changed successfully.")
-            return redirect('login')
+            if request.user.role == 'admin':
+                return redirect('admin_dashboard')
+            elif request.user.role == 'consultant':
+                return redirect('consultant_dashboard')
+            else:
+                return redirect('staff_dashboard')
     else:
         form = PasswordChangeForm(request.user)
     return render(request, 'accounts/password_change.html', {'form': form})
