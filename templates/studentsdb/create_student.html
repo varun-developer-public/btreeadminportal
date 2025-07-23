@@ -874,5 +874,47 @@ $(document).ready(function () {
     });
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const headers = document.querySelectorAll('.form-section-header');
+    const navbar = document.querySelector('.navbar');
+    const navbarHeight = navbar ? navbar.offsetHeight : 0;
+
+    window.addEventListener('scroll', () => {
+        headers.forEach(header => {
+            const card = header.closest('.form-section-card');
+            const cardRect = card.getBoundingClientRect();
+            const headerHeight = header.offsetHeight;
+
+            // Stick when the top of the card is at or above the navbar
+            // and the bottom of the card is still visible below the header.
+            if (cardRect.top <= navbarHeight && cardRect.bottom > navbarHeight + headerHeight) {
+                if (!header.classList.contains('is-sticky')) {
+                    const headerWidth = header.getBoundingClientRect().width;
+                    header.classList.add('is-sticky');
+                    header.style.width = `${headerWidth}px`;
+                    header.style.top = `${navbarHeight}px`;
+                    // Add a placeholder to prevent content from jumping
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'sticky-placeholder';
+                    placeholder.style.height = `${headerHeight}px`;
+                    header.parentNode.insertBefore(placeholder, header.nextSibling);
+                }
+            } else {
+                if (header.classList.contains('is-sticky')) {
+                    header.classList.remove('is-sticky');
+                    header.style.width = '';
+                    header.style.top = '';
+                    // Remove the placeholder
+                    const placeholder = card.querySelector('.sticky-placeholder');
+                    if (placeholder) {
+                        placeholder.remove();
+                    }
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
 {% endblock %}
