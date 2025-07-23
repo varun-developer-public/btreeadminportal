@@ -18,6 +18,53 @@
     <link rel="stylesheet" href="{% static 'css/user_form.css' %}">
     <!-- Select2 CSS -->
     {% block extra_css %}{% endblock %}
+    <style>
+        .main-container {
+            display: flex;
+        }
+        .sidebar {
+            width: 250px;
+            transition: width 0.3s;
+            flex-shrink: 0;
+        }
+        .content-container {
+            flex-grow: 1;
+            transition: margin-left 0.3s;
+        }
+        .sidebar.collapsed {
+            width: 60px;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+        }
+        .sidebar.collapsed .sidebar-nav .nav-link {
+            justify-content: center;
+            width: 66px;
+            border-radius: 0;
+        }
+        .sidebar.collapsed .sidebar-nav span,
+        .sidebar.collapsed .sidebar-header h3 {
+            display: none;
+        }
+        .sidebar.collapsed .sidebar-container {
+            padding: 10px;
+            position: fixed;
+        }
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+        }
+        #sidebar-toggle {
+            font-size: 1.2rem;
+            background-color: transparent;
+            color: var(--text-primary);
+        }
+        .sidebar.collapsed .sidebar-nav .nav-link i{
+            margin: 0;
+        }
+    </style>
 </head>
 <body>
     {% include 'includes/navbar.html' %}
@@ -37,6 +84,32 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            const sidebar = $('.sidebar');
+            const contentContainer = $('.content-container');
+
+            function updateContentMargin() {
+                if (sidebar.length && sidebar.is(':visible')) {
+                    if (sidebar.hasClass('collapsed')) {
+                        contentContainer.css('margin-left', '60px');
+                    } else {
+                        contentContainer.css('margin-left', '250px');
+                    }
+                } else {
+                    contentContainer.css('margin-left', '0');
+                }
+            }
+
+            $('#sidebar-toggle').on('click', function() {
+                sidebar.toggleClass('collapsed');
+                updateContentMargin();
+            });
+
+            // Initial setup
+            updateContentMargin();
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

@@ -1,5 +1,10 @@
 <div class="sidebar-container">
-    <h3>Menu</h3>
+    <div class="sidebar-header">
+        <h3>Menu</h3>
+        <button id="sidebar-toggle" class="btn-light">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
     <ul class="sidebar-nav">
         {% if user.role == 'admin' %}
         <li>
@@ -23,42 +28,42 @@
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' or user.role == 'batch_coordination' %}
         <li>
             <a href="{% url 'student_list' %}" class="nav-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}">
-                <i class="fas fa-book-open"></i><span>Student DB</span>
+                <i class="fas fa-book-open"></i><span>Student</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'placement' %}
         <li>
             <a href="{% url 'placement_list' %}" class="nav-link {% if request.resolver_match.url_name == 'placement_list' %}active{% endif %}">
-                <i class="fas fa-clipboard-list"></i><span>Placement DB</span>
+                <i class="fas fa-clipboard-list"></i><span>Placement</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' or user.role == 'trainer' %}
         <li>
             <a href="{% url 'batch_list' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_list' %}active{% endif %}">
-                <i class="fas fa-calendar-alt"></i><span>Batch DB</span>
+                <i class="fas fa-calendar-alt"></i><span>Batch</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' %}
         <li>
             <a href="{% url 'payment_list' %}" class="nav-link {% if request.resolver_match.url_name == 'payment_list' %}active{% endif %}">
-                <i class="fas fa-credit-card"></i><span>Payment DB</span>
+                <i class="fas fa-credit-card"></i><span>Payment</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' %}
         <li>
             <a href="{% url 'trainer_list' %}" class="nav-link {% if request.resolver_match.url_name == 'trainer_list' %}active{% endif %}">
-                <i class="fas fa-chalkboard-teacher"></i><span>Trainers DB</span>
+                <i class="fas fa-chalkboard-teacher"></i><span>Trainers</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' %}
         <li>
             <a href="{% url 'consultant_list' %}" class="nav-link {% if request.resolver_match.url_name == 'consultant_list' %}active{% endif %}">
-                <i class="fas fa-handshake"></i><span>Consultant DB</span>
+                <i class="fas fa-handshake"></i><span>Consultant</span>
             </a>
         </li>
         {% endif %}
