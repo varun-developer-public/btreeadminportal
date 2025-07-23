@@ -79,6 +79,33 @@ def admin_dashboard(request):
     recent_activities = TransactionLog.objects.order_by('-timestamp')[:10]
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
 
+    # Fetch upcoming payments
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student')
+    upcoming_payments_list = []
+    today = timezone.now().date()
+
+    for payment in pending_payments:
+        for i in range(1, 5):
+            due_date = getattr(payment, f'emi_{i}_date')
+            amount = getattr(payment, f'emi_{i}_amount')
+            paid_amount = getattr(payment, f'emi_{i}_paid_amount')
+
+            # Find the next EMI that is due in the future and has not been paid at all.
+            if due_date and due_date >= today and amount and not paid_amount:
+                upcoming_payments_list.append({
+                    'student_name': f"{payment.student.first_name} {payment.student.last_name}",
+                    'student_id': f"{payment.student.student_id}",
+                    'due_date': due_date,
+                    'amount': amount,  # Show the full EMI amount
+                    'emi_number': i,
+                })
+                # Found the next upcoming payment for this student, so break.
+                break
+
+    # Sort all upcoming payments by due date and take the first 5.
+    upcoming_payments_list.sort(key=lambda x: x['due_date'])
+    upcoming_payments = upcoming_payments_list[:5]
+
     import json
     from django.core.serializers.json import DjangoJSONEncoder
 
@@ -93,6 +120,7 @@ def admin_dashboard(request):
         'enrollment_data': json.dumps(enrollment_data, cls=DjangoJSONEncoder),
         'recent_activities': recent_activities,
         'recent_students': recent_students,
+        'upcoming_payments': upcoming_payments,
     }
     return render(request, 'accounts/admin_dashboard.html', context)
 
