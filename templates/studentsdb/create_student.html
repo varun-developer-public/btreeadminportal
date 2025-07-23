@@ -1,13 +1,40 @@
 {% extends "base.html" %}
-{% block title %}Create Student{% endblock %}
+{% block title %}Student Creation Form{% endblock %}
 {% load static %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/student_form.css' %}">
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
 {% endblock %}
 
 {% block content %}
 <div class="student-form-container">
+    <div class="form-header">
+        <h1>Student Creation Form</h1>
+        <p class="form-subtitle">Enter the details to get going</p>
+    </div>
+
+    <div class="form-progress">
+        <div class="progress-step active">
+            <div class="step-number">1</div>
+            <div class="step-label">Personal Details</div>
+        </div>
+        <div class="progress-connector"></div>
+        <div class="progress-step">
+            <div class="step-number">2</div>
+            <div class="step-label">Education Details</div>
+        </div>
+        <div class="progress-connector"></div>
+        <div class="progress-step">
+            <div class="step-number">3</div>
+            <div class="step-label">Course Details</div>
+        </div>
+        <div class="progress-connector"></div>
+        <div class="progress-step">
+            <div class="step-number">4</div>
+            <div class="step-label">Payment Details & Submit</div>
+        </div>
+    </div>
+
     {% if messages %}
         <div class="messages">
             {% for message in messages %}
@@ -27,7 +54,7 @@
 
         <div class="form-section-card">
             <div class="form-section-header">
-                <h5><i class="fas fa-user me-2"></i>Student Personal Details</h5>
+                <h5 style="color: white;"><i class="fas fa-user me-2" style="color: white;"></i>Student Personal Details</h5>
             </div>
             <div class="form-section-body">
                 <div class="row">
@@ -35,12 +62,14 @@
                         <div class="form-group">
                             {{ student_form.first_name.label_tag }}
                             {{ student_form.first_name }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.last_name.label_tag }}
                             {{ student_form.last_name }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -49,12 +78,14 @@
                         <div class="form-group">
                             {{ student_form.phone.label_tag }}
                             {{ student_form.phone }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.alternative_phone.label_tag }}
                             {{ student_form.alternative_phone }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -63,19 +94,23 @@
                         <div class="form-group">
                             {{ student_form.email.label_tag }}
                             {{ student_form.email }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="id_district">District</label>
+                            <label for="id_district">District<span class="required-indicator">*</span></label>
                             <select id="id_district" class="form-control"></select>
+                            <div class="error-message"></div>
                         </div>
                         <div class="form-group" id="chennai_area_group" style="display: none;">
-                            <label for="id_chennai_area">Area in Chennai</label>
+                            <label for="id_chennai_area">Area in Chennai<span class="required-indicator">*</span></label>
                             <select id="id_chennai_area" class="form-control"></select>
+                            <div class="error-message"></div>
                         </div>
                         <div class="form-group">
                             {{ student_form.location }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -84,7 +119,7 @@
 
         <div class="form-section-card">
             <div class="form-section-header">
-                <h5><i class="fas fa-graduation-cap me-2"></i>Education Details</h5>
+                <h5 style="color: white;"><i class="fas fa-graduation-cap me-2" style="color: white;"></i>Education Details</h5>
             </div>
             <div class="form-section-body">
                 <div class="form-section-subtitle">Undergraduate</div>
@@ -93,12 +128,14 @@
                         <div class="form-group">
                             {{ student_form.ugdegree.label_tag }}
                             {{ student_form.ugdegree }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.ugbranch.label_tag }}
                             {{ student_form.ugbranch }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -107,12 +144,14 @@
                         <div class="form-group">
                             {{ student_form.ugpassout.label_tag }}
                             {{ student_form.ugpassout }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.ugpercentage.label_tag }}
                             {{ student_form.ugpercentage }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -125,12 +164,14 @@
                         <div class="form-group">
                             {{ student_form.pgdegree.label_tag }}
                             {{ student_form.pgdegree }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.pgbranch.label_tag }}
                             {{ student_form.pgbranch }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -139,12 +180,14 @@
                         <div class="form-group">
                             {{ student_form.pgpassout.label_tag }}
                             {{ student_form.pgpassout }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.pgpercentage.label_tag }}
                             {{ student_form.pgpercentage }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -153,7 +196,8 @@
 
         <div class="form-section-card">
             <div class="form-section-header">
-                <h5><i class="fas fa-book me-2"></i>Course Details</h5>
+                <h5 style="color: white;"><i class="fas fa-book me-2" style="color: white;"></i>Course Details</h5>
+
             </div>
             <div class="form-section-body">
                 <div class="row">
@@ -161,27 +205,30 @@
                         <div class="form-group">
                             {{ student_form.course_category.label_tag }}
                             {{ student_form.course_category }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.course.label_tag }}
                             {{ student_form.course }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
                 <div class="row">
-                    
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.start_date.label_tag }}
                             {{ student_form.start_date }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.end_date.label_tag }}
                             {{ student_form.end_date }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -191,12 +238,14 @@
                         <div class="form-group">
                             {{ student_form.mode_of_class.label_tag }}
                             {{ student_form.mode_of_class }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.week_type.label_tag }}
                             {{ student_form.week_type }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -205,12 +254,14 @@
                         <div class="form-group">
                             {{ student_form.working_status.label_tag }}
                             {{ student_form.working_status }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6" id="it_experience_group" style="display: none;">
                         <div class="form-group">
                             {{ student_form.it_experience.label_tag }}
                             {{ student_form.it_experience }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -219,12 +270,14 @@
                         <div class="form-group">
                             {{ student_form.pl_required.label_tag }}
                             {{ student_form.pl_required }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.source_of_joining.label_tag }}
                             {{ student_form.source_of_joining }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -233,12 +286,14 @@
                         <div class="form-group">
                             {{ student_form.consultant.label_tag }}
                             {{ student_form.consultant }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.enrollment_date.label_tag }}
                             {{ student_form.enrollment_date }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -247,6 +302,7 @@
                         <div class="form-group">
                             {{ student_form.course_status.label_tag }}
                             {{ student_form.course_status }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -255,7 +311,7 @@
 
         <div class="form-section-card">
             <div class="form-section-header">
-                <h5><i class="fas fa-money-bill me-2"></i>Payment Details</h5>
+                <h5 style="color: white;"><i class="fas fa-money-bill me-2" style="color: white;"></i>Payment Details</h5>
             </div>
             <div class="form-section-body">
                 <div class="row">
@@ -263,12 +319,14 @@
                         <div class="form-group">
                             {{ payment_form.payment_account.label_tag }}
                             {{ payment_form.payment_account }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ payment_form.total_fees.label_tag }}
                             {{ payment_form.total_fees }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -277,26 +335,36 @@
                         <div class="form-group">
                             {{ payment_form.amount_paid.label_tag }}
                             {{ payment_form.amount_paid }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="form-group">
+                        <div class="form-group file-upload-group">
                             {{ payment_form.initial_payment_proof.label_tag }}
-                            {{ payment_form.initial_payment_proof }}
+                            <div class="file-upload-wrapper">
+                                {{ payment_form.initial_payment_proof }}
+                                <div class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</div>
+                            </div>
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group">
+                        <div class="form-group file-upload-group">
                             {{ payment_form.gst_bill.label_tag }}
-                            {{ payment_form.gst_bill }}
+                            <div class="file-upload-wrapper">
+                                {{ payment_form.gst_bill }}
+                                <div class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</div>
+                            </div>
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ payment_form.emi_type.label_tag }}
                             {{ payment_form.emi_type }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -309,12 +377,14 @@
                         <div class="form-group emi-field" id="emi_1_amount_group">
                             {{ payment_form.emi_1_amount.label_tag }}
                             {{ payment_form.emi_1_amount }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_1_date_group">
                             {{ payment_form.emi_1_date.label_tag }}
                             {{ payment_form.emi_1_date }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -323,12 +393,14 @@
                         <div class="form-group emi-field" id="emi_2_amount_group">
                             {{ payment_form.emi_2_amount.label_tag }}
                             {{ payment_form.emi_2_amount }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_2_date_group">
                             {{ payment_form.emi_2_date.label_tag }}
                             {{ payment_form.emi_2_date }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -337,12 +409,14 @@
                         <div class="form-group emi-field" id="emi_3_amount_group">
                             {{ payment_form.emi_3_amount.label_tag }}
                             {{ payment_form.emi_3_amount }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_3_date_group">
                             {{ payment_form.emi_3_date.label_tag }}
                             {{ payment_form.emi_3_date }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -351,12 +425,14 @@
                         <div class="form-group emi-field" id="emi_4_amount_group">
                             {{ payment_form.emi_4_amount.label_tag }}
                             {{ payment_form.emi_4_amount }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_4_date_group">
                             {{ payment_form.emi_4_date.label_tag }}
                             {{ payment_form.emi_4_date }}
+                            <div class="error-message"></div>
                         </div>
                     </div>
                 </div>
@@ -370,7 +446,7 @@
             <a href="{% url 'student_list' %}" class="btn btn-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to Student List
             </a>
-            <span id="emi-error-message" class="error-message" style="display: none;"></span>
+            <div id="emi-error-message" class="error-message" style="display: none;"></div>
         </div>
     </form>
 </div>
@@ -381,6 +457,14 @@ $(document).ready(function () {
     // Initialize Select2 on all select elements first
     $('select').select2({
         width: '100%' // Ensures the dropdowns are responsive
+    });
+
+    // Add required indicator to required fields
+    $('label').each(function() {
+        const labelText = $(this).text();
+        if (labelText.includes('*')) {
+            $(this).html(labelText.replace('*', '<span class="required-indicator">*</span>'));
+        }
     });
 
     // Location script
@@ -438,6 +522,19 @@ $(document).ready(function () {
 
     updateLocationView();
 
+    // File upload styling
+    $('.file-upload-wrapper input[type="file"]').each(function() {
+        const $input = $(this);
+        const $label = $input.siblings('.file-upload-label');
+        
+        $input.on('change', function() {
+            if (this.files && this.files.length > 0) {
+                $label.html(`<i class="fas fa-file"></i> ${this.files[0].name}`);
+            } else {
+                $label.html(`<i class="fas fa-upload"></i> Choose a file`);
+            }
+        });
+    });
 
     function setupNumericInput(inputId) {
         const input = document.getElementById(inputId);
@@ -591,6 +688,51 @@ $(document).ready(function () {
 
     setupCharacterInput('id_first_name');
     setupCharacterInput('id_last_name');
+
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+        
+        // Clear all error messages first
+        $('.error-message').hide();
+        
+        // Validate required fields
+        $('input[required], select[required], textarea[required]').each(function() {
+            const $field = $(this);
+            const $errorMessage = $field.siblings('.error-message');
+            
+            if (!$field.val()) {
+                $errorMessage.text('This field is required').show();
+                isValid = false;
+            }
+        });
+        
+        // Validate email format
+        const emailField = $('#id_email');
+        if (emailField.length && emailField.val()) {
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailField.val())) {
+                emailField.siblings('.error-message').text('Please enter a valid email address').show();
+                isValid = false;
+            }
+        }
+        
+        return isValid;
+    }
+    
+    // Form submission with validation
+    $('.student-form').on('submit', function(e) {
+        if (!validateForm()) {
+            e.preventDefault();
+            // Scroll to the first error
+            const firstError = $('.error-message:visible').first();
+            if (firstError.length) {
+                $('html, body').animate({
+                    scrollTop: firstError.offset().top - 100
+                }, 500);
+            }
+        }
+    });
 });
 </script>
 {% endblock %}
