@@ -18,17 +18,23 @@
             <div class="step-number">1</div>
             <div class="step-label">Personal Details</div>
         </div>
-        <div class="progress-connector"></div>
+        <div class="progress-connector">
+            <div class="progress-connector-fill"></div>
+        </div>
         <div class="progress-step">
             <div class="step-number">2</div>
             <div class="step-label">Education Details</div>
         </div>
-        <div class="progress-connector"></div>
+        <div class="progress-connector">
+            <div class="progress-connector-fill"></div>
+        </div>
         <div class="progress-step">
             <div class="step-number">3</div>
             <div class="step-label">Course Details</div>
         </div>
-        <div class="progress-connector"></div>
+        <div class="progress-connector">
+            <div class="progress-connector-fill"></div>
+        </div>
         <div class="progress-step">
             <div class="step-number">4</div>
             <div class="step-label">Payment Details & Submit</div>
@@ -343,7 +349,7 @@
                             {{ payment_form.initial_payment_proof.label_tag }}
                             <div class="file-upload-wrapper">
                                 {{ payment_form.initial_payment_proof }}
-                                <div class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</div>
+                                <label for="{{ payment_form.initial_payment_proof.id_for_label }}" class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</label>
                             </div>
                             <div class="error-message"></div>
                         </div>
@@ -355,7 +361,7 @@
                             {{ payment_form.gst_bill.label_tag }}
                             <div class="file-upload-wrapper">
                                 {{ payment_form.gst_bill }}
-                                <div class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</div>
+                                <label for="{{ payment_form.gst_bill.id_for_label }}" class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</label>
                             </div>
                             <div class="error-message"></div>
                         </div>
@@ -454,6 +460,31 @@
 {% block extra_js %}
 <script>
 $(document).ready(function () {
+    // Animate progress bar on page load
+    function animateProgressBar() {
+        const progressFills = document.querySelectorAll('.progress-connector-fill');
+        const steps = document.querySelectorAll('.progress-step');
+        const totalSteps = steps.length;
+        
+        // Reset all steps first
+        steps.forEach((step, index) => {
+            if (index > 0) step.classList.remove('active');
+        });
+        
+        // Animate each connector fill and activate steps sequentially
+        progressFills.forEach((fill, index) => {
+            setTimeout(() => {
+                fill.style.width = '100%';
+                if (index + 1 < totalSteps) {
+                    steps[index + 1].classList.add('active');
+                }
+            }, 1000 * (index + 1));
+        });
+    }
+    
+    // Start animation after a short delay
+    setTimeout(animateProgressBar, 500);
+    
     // Initialize Select2 on all select elements first
     $('select').select2({
         width: '100%' // Ensures the dropdowns are responsive
@@ -522,14 +553,31 @@ $(document).ready(function () {
 
     updateLocationView();
 
-    // File upload styling
+    // File upload styling and validation
     $('.file-upload-wrapper input[type="file"]').each(function() {
         const $input = $(this);
         const $label = $input.siblings('.file-upload-label');
+        const $errorMessage = $input.closest('.form-group').find('.error-message');
+        
+        // Set accept attribute to restrict to image files
+        $input.attr('accept', 'image/*');
         
         $input.on('change', function() {
+            $errorMessage.hide();
+            
             if (this.files && this.files.length > 0) {
-                $label.html(`<i class="fas fa-file"></i> ${this.files[0].name}`);
+                const file = this.files[0];
+                const fileType = file.type;
+                
+                // Check if file is an image
+                if (!fileType.startsWith('image/')) {
+                    $errorMessage.text('Please select an image file (JPEG, PNG, etc.)').show();
+                    $label.html(`<i class="fas fa-upload"></i> Choose a file`);
+                    this.value = ''; // Clear the file input
+                    return;
+                }
+                
+                $label.html(`<i class="fas fa-file-image"></i> ${file.name}`);
             } else {
                 $label.html(`<i class="fas fa-upload"></i> Choose a file`);
             }
@@ -699,11 +747,26 @@ $(document).ready(function () {
         // Validate required fields
         $('input[required], select[required], textarea[required]').each(function() {
             const $field = $(this);
-            const $errorMessage = $field.siblings('.error-message');
+            let $errorMessage;
+            
+            // Handle different field types and layouts
+            if ($field.closest('.file-upload-wrapper').length) {
+                $errorMessage = $field.closest('.form-group').find('.error-message');
+            } else if ($field.closest('.select2-container').length) {
+                $errorMessage = $field.closest('.form-group').find('.error-message');
+            } else {
+                $errorMessage = $field.siblings('.error-message');
+                if (!$errorMessage.length) {
+                    $errorMessage = $field.closest('.form-group').find('.error-message');
+                }
+            }
             
             if (!$field.val()) {
+                $field.addClass('is-invalid');
                 $errorMessage.text('This field is required').show();
                 isValid = false;
+            } else {
+                $field.removeClass('is-invalid');
             }
         });
         
@@ -712,8 +775,16 @@ $(document).ready(function () {
         if (emailField.length && emailField.val()) {
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailPattern.test(emailField.val())) {
-                emailField.siblings('.error-message').text('Please enter a valid email address').show();
+                emailField.addClass('is-invalid');
+                const $errorMessage = emailField.siblings('.error-message');
+                if ($errorMessage.length) {
+                    $errorMessage.text('Please enter a valid email address').show();
+                } else {
+                    emailField.closest('.form-group').find('.error-message').text('Please enter a valid email address').show();
+                }
                 isValid = false;
+            } else {
+                emailField.removeClass('is-invalid');
             }
         }
         
@@ -731,6 +802,20 @@ $(document).ready(function () {
                     scrollTop: firstError.offset().top - 100
                 }, 500);
             }
+        } else {
+            // Show loading state on submit button
+            const submitBtn = $('#submit-button');
+            const originalText = submitBtn.html();
+            submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
+            submitBtn.prop('disabled', true);
+            
+            // Re-enable after 10 seconds in case of network issues
+            setTimeout(function() {
+                if (submitBtn.prop('disabled')) {
+                    submitBtn.html(originalText);
+                    submitBtn.prop('disabled', false);
+                }
+            }, 10000);
         }
     });
 });

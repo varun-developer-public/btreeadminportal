@@ -89,6 +89,17 @@
     top: -18px;
     z-index: 0;
     max-width: 100px;
+    overflow: hidden;
+}
+
+.progress-connector-fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--primary-blue);
+    position: absolute;
+    left: 0;
+    top: 0;
+    transition: width 0.5s ease;
 }
 
 /* Alert Messages */
@@ -332,6 +343,20 @@ select:focus {
     font-size: 0.85rem;
     margin-top: 0.25rem;
     display: none;
+    font-weight: 500;
+}
+
+.is-invalid {
+    border-color: var(--danger) !important;
+    background-color: rgba(var(--danger-rgb), 0.05) !important;
+}
+
+.is-invalid:focus {
+    box-shadow: 0 0 0 3px rgba(var(--danger-rgb), 0.15) !important;
+}
+
+.form-group:has(.is-invalid) label {
+    color: var(--danger);
 }
 
 /* Form Actions */
