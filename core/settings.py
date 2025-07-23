@@ -14,8 +14,9 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-g7ccbck23uiam(
 
 # --- PRODUCTION SETTINGS ---
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
-ALLOWED_HOSTS = ['btrees.in', 'admin.btrees.in']
+# DEBUG = False
+# ALLOWED_HOSTS = ['btrees.in', 'admin.btrees.in']
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
 # Application definition
@@ -70,16 +71,16 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # Database - Production (PostgreSQL)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'btree_db',
-        'USER': 'btree_user',
-        'PASSWORD': 'BTree@2025',
-        'HOST': 'localhost',
-        'PORT': '5432',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'btree_db',
+#         'USER': 'btree_user',
+#         'PASSWORD': 'BTree@2025',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
 
 
 # Password validation
@@ -102,14 +103,11 @@ USE_TZ = True
 # The URL to use when referring to static files located in STATIC_ROOT.
 STATIC_URL = 'static/'
 
-# The absolute path to the directory where `collectstatic` will collect static files for deployment.
-# This directory is the destination for all static files.
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # A list of directories where Django will look for your project's source static files.
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static'),
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 
 # --- MEDIA FILES CONFIGURATION (User-uploaded content) ---
@@ -124,16 +122,16 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
-# DEBUG = True
-# ALLOWED_HOSTS = ['*']
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static'),
-# ]
+# local development settings
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+ALLOWED_HOSTS = ['*']
 
-# # developement db
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+
+# developement db
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}

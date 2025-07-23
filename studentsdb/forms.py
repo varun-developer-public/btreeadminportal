@@ -142,8 +142,13 @@ class StudentFilterForm(forms.Form):
         required=False,
         label="Course Status"
     )
-    working_status = forms.ChoiceField(
-        choices=[('', 'All')] + Student.WORKING_STATUS_CHOICES,
+    start_date = forms.DateField(
         required=False,
-        label="Working Status"
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Enrollment Start Date"
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Enrollment End Date"
     )

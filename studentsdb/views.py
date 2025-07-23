@@ -80,7 +80,8 @@ def student_list(request):
         course_category = form.cleaned_data.get('course_category')
         course = form.cleaned_data.get('course')
         course_status = form.cleaned_data.get('course_status')
-        working_status = form.cleaned_data.get('working_status')
+        start_date = form.cleaned_data.get('start_date')
+        end_date = form.cleaned_data.get('end_date')
 
         if query:
             student_list = student_list.filter(
@@ -95,8 +96,10 @@ def student_list(request):
             student_list = student_list.filter(course=course)
         if course_status:
             student_list = student_list.filter(course_status=course_status)
-        if working_status:
-            student_list = student_list.filter(working_status=working_status)
+        if start_date:
+            student_list = student_list.filter(enrollment_date__gte=start_date)
+        if end_date:
+            student_list = student_list.filter(enrollment_date__lte=end_date)
 
     paginator = Paginator(student_list, 10)  # Show 10 students per page
     page = request.GET.get('page')

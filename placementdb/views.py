@@ -8,7 +8,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 def placement_list(request):
-    placements = Placement.objects.select_related('student').all()
+    placements = Placement.objects.select_related('student').all().order_by('-id')
     
     search = request.GET.get('search', '').strip()
     student_id = request.GET.get('student_id', '').strip()

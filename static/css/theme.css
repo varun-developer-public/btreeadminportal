@@ -91,9 +91,14 @@ th, td {
     text-align: left;
     font-size: 16px; /* Medium text */
 }
+td{
+    padding: 0.5rem 0.75rem;
+    font-size: 14px; /* Small text */
+}
 
 th {
     background-color: #f8f9fa;
+    border: 1px solid #b0b0b0;
     font-weight: 600;
     color: var(--text-primary);
 }
