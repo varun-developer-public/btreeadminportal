@@ -395,3 +395,31 @@
     border-radius: 4px;
     margin-top: 4px;
 }
+.table-responsive {
+    overflow-x: auto;
+}
+
+.upcoming-payments-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.upcoming-payments-table th,
+.upcoming-payments-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.upcoming-payments-table th {
+    background-color: var(--primary-blue-new);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: white
+}
+
+.upcoming-payments-table td {
+    font-size: 0.9rem;
+}

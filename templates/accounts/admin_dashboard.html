@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load custom_filter %}
+{% load humanize %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
@@ -89,22 +90,42 @@
             <h3 class="info-title"><i class="fas fa-calendar-alt"></i>Upcoming Payments</h3>
             <a href="{% url 'payment_list' %}" class="view-all">View All</a>
         </div>
-        <ul class="payment-list">
-            {% for payment in upcoming_payments %}
-            <li class="payment-item">
-                <div class="payment-details">
-                    <span class="student-name">{{ payment.student_name }}-{{ payment.student_id}}</span>
-                    <span class="due-date">{{ payment.due_date|date:"d M Y" }}</span>
-                </div>
-                <div class="payment-amount">
-                    <span class="amount">₹{{ payment.amount|floatformat:0|intcomma }}</span>
-                    <span class="emi-tag">EMI {{ payment.emi_number }}</span>
-                </div>
-            </li>
-            {% empty %}
-            <li class="no-data">No upcoming payments found.</li>
-            {% endfor %}
-        </ul>
+        <div class="table-responsive">
+            <table class="table upcoming-payments-table">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Mobile</th>
+                        <th>Course</th>
+                        <th>Consultant</th>
+                        <th>EMI No.</th>
+                        <th>Amount</th>
+                        <th>Paid</th>
+                        <th>Due Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payment in upcoming_payments %}
+                    <tr>
+                        <td>{{ payment.student_id }}</td>
+                        <td>{{ payment.student_name }}</td>
+                        <td>{{ payment.mobile }}</td>
+                        <td>{{ payment.course }}</td>
+                        <td>{{ payment.consultant }}</td>
+                        <td>{{ payment.emi_number }}</td>
+                        <td style="color: red;">₹{{ payment.amount|floatformat:0|intcomma }}</td>
+                        <td>₹{{ payment.paid|floatformat:0|intcomma }}</td>
+                        <td>{{ payment.due_date|date:"d M Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="no-data">No upcoming payments found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="charts-section">

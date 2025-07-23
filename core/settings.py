@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'accounts',
     'studentsdb',
     'placementdb',
@@ -128,7 +129,7 @@ LOGOUT_REDIRECT_URL = 'login'
 # ALLOWED_HOSTS = ['*']
 
 
-# developement db
+# # developement db
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',

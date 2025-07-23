@@ -63,12 +63,16 @@ def attr(field, css):
 @register.filter
 def intcomma(value):
     """
-    Converts an integer to a string containing commas every three digits.
-    For example, 3000 becomes '3,000' and 45000 becomes '45,000'.
+    Converts an integer to a string containing commas in the Indian numbering system.
+    For example, 100000 becomes '1,00,000'.
     """
     try:
-        if isinstance(value, (int, float)):
-            return "{:,}".format(value)
+        val = int(value)
+        s = str(val)
+        if len(s) <= 3:
+            return s
+        last_three = s[-3:]
+        other_digits = s[:-3]
+        return ','.join([other_digits[max(0, i-2):i] for i in range(len(other_digits), 0, -2)][::-1]) + ',' + last_three
     except (ValueError, TypeError):
-        pass
-    return value
+        return value

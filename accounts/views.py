@@ -80,7 +80,7 @@ def admin_dashboard(request):
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
 
     # Fetch upcoming payments
-    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student')
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__course', 'student__consultant')
     upcoming_payments_list = []
     today = timezone.now().date()
 
@@ -90,17 +90,24 @@ def admin_dashboard(request):
             amount = getattr(payment, f'emi_{i}_amount')
             paid_amount = getattr(payment, f'emi_{i}_paid_amount')
 
-            # Find the next EMI that is due in the future and has not been paid at all.
             if due_date and due_date >= today and amount and not paid_amount:
+                total_paid_by_student = payment.amount_paid or 0
+                for j in range(1, 5):
+                    total_paid_by_student += getattr(payment, f'emi_{j}_paid_amount') or 0
+
                 upcoming_payments_list.append({
+                    'student_id': payment.student.student_id,
                     'student_name': f"{payment.student.first_name} {payment.student.last_name}",
-                    'student_id': f"{payment.student.student_id}",
-                    'due_date': due_date,
-                    'amount': amount,  # Show the full EMI amount
+                    'mobile': payment.student.phone,
+                    'course': payment.student.course.name if payment.student.course else 'N/A',
+                    'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
                     'emi_number': i,
+                    'amount': amount,
+                    'paid': total_paid_by_student,
+                    'due_date': due_date,
                 })
-                # Found the next upcoming payment for this student, so break.
                 break
+
 
     # Sort all upcoming payments by due date and take the first 5.
     upcoming_payments_list.sort(key=lambda x: x['due_date'])
@@ -178,6 +185,38 @@ def staff_dashboard(request):
     # Recent Activities and Students
     recent_activities = TransactionLog.objects.order_by('-timestamp')[:10]
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
+    
+     # Fetch upcoming payments
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__course', 'student__consultant')
+    upcoming_payments_list = []
+    today = timezone.now().date()
+
+    for payment in pending_payments:
+        for i in range(1, 5):
+            due_date = getattr(payment, f'emi_{i}_date')
+            amount = getattr(payment, f'emi_{i}_amount')
+            paid_amount = getattr(payment, f'emi_{i}_paid_amount')
+
+            if due_date and due_date >= today and amount and not paid_amount:
+                total_paid_by_student = payment.amount_paid or 0
+                for j in range(1, 5):
+                    total_paid_by_student += getattr(payment, f'emi_{j}_paid_amount') or 0
+
+                upcoming_payments_list.append({
+                    'student_id': payment.student.student_id,
+                    'student_name': f"{payment.student.first_name} {payment.student.last_name}",
+                    'mobile': payment.student.phone,
+                    'course': payment.student.course.name if payment.student.course else 'N/A',
+                    'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
+                    'emi_number': i,
+                    'amount': amount,
+                    'paid': total_paid_by_student,
+                    'due_date': due_date,
+                })
+                break
+    # Sort all upcoming payments by due date and take the first 5.
+    upcoming_payments_list.sort(key=lambda x: x['due_date'])
+    upcoming_payments = upcoming_payments_list[:5]
 
     import json
     from django.core.serializers.json import DjangoJSONEncoder
@@ -193,6 +232,7 @@ def staff_dashboard(request):
         'enrollment_data': json.dumps(enrollment_data, cls=DjangoJSONEncoder),
         'recent_activities': recent_activities,
         'recent_students': recent_students,
+        'upcoming_payments': upcoming_payments,
     }
     return render(request, 'accounts/staff_dashboard.html', context)
 
