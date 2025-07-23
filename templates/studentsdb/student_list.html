@@ -83,8 +83,8 @@
         <tr>
             <td><span class="badge bg-secondary">{{ student.student_id }}</span></td>
             <td>{{ student.first_name }} {{ student.last_name|format_name }}</td>
-            <td><a href="mailto:{{ student.email }}" class="text-decoration-none">{{ student.email }}</a></td>
-            <td><a href="tel:{{ student.phone }}" class="text-decoration-none">{{ student.phone }}</a></td>
+            <td><a href="mailto:{{ student.email }}" class="text-decoration-none text-primary">{{ student.email }}</a></td>
+            <td><a href="tel:{{ student.phone }}" class="text-decoration-none text-primary">{{ student.phone }}</a></td>
             <td>{{ student.course.name|default:"—" }}</td>
             <td>{{ student.location|default:"—" }}</td>
             <td>{{ student.get_working_status_display }}</td>

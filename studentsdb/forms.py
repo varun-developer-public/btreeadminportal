@@ -3,7 +3,7 @@ from django.utils import timezone
 from dateutil.relativedelta import relativedelta
 from studentsdb.models import Student
 from consultantdb.models import Consultant
-from settingsdb.models import SourceOfJoining
+from settingsdb.models import SourceOfJoining, PaymentAccount
 
 from .models import CourseCategory, Course
 
@@ -15,8 +15,13 @@ class StudentForm(forms.ModelForm):
     )
     consultant = forms.ModelChoiceField(
         queryset=Consultant.objects.all(),
-        required=False,
+        required=True,
         empty_label="Select Consultant"
+    )
+    payment_account = forms.ModelChoiceField(
+        queryset=PaymentAccount.objects.all(),
+        required=True,
+        empty_label="Select Payment Account"
     )
     course_category = forms.ModelChoiceField(
         queryset=CourseCategory.objects.all(),
@@ -33,7 +38,7 @@ class StudentForm(forms.ModelForm):
             'working_status', 'it_experience', 'course_category', 'course',
             'start_date', 'end_date',
             'pl_required', 'source_of_joining',
-            'mode_of_class', 'week_type', 'consultant'
+            'mode_of_class', 'week_type', 'consultant', 'payment_account'
         ]
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),

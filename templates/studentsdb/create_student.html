@@ -66,7 +66,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.first_name.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.first_name.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.first_name }}
                             <div class="error-message"></div>
                         </div>
@@ -82,7 +85,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.phone.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.phone.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.phone }}
                             <div class="error-message"></div>
                         </div>
@@ -98,7 +104,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.email.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.email.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.email }}
                             <div class="error-message"></div>
                         </div>
@@ -209,14 +218,20 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.course_category.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.course_category.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.course_category }}
                             <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.course.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.course.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.course }}
                             <div class="error-message"></div>
                         </div>
@@ -242,14 +257,20 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.mode_of_class.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.mode_of_class.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.mode_of_class }}
                             <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.week_type.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.week_type.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.week_type }}
                             <div class="error-message"></div>
                         </div>
@@ -281,7 +302,10 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.source_of_joining.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.source_of_joining.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.source_of_joining }}
                             <div class="error-message"></div>
                         </div>
@@ -290,7 +314,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ student_form.consultant.label_tag }}
+                            <div class="label-form">
+                                {{ student_form.consultant.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ student_form.consultant }}
                             <div class="error-message"></div>
                         </div>
@@ -323,14 +350,20 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ payment_form.payment_account.label_tag }}
-                            {{ payment_form.payment_account }}
+                            <div class="label-form">
+                                {{ student_form.payment_account.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ student_form.payment_account }}
                             <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ payment_form.total_fees.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.total_fees.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ payment_form.total_fees }}
                             <div class="error-message"></div>
                         </div>
@@ -339,14 +372,20 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ payment_form.amount_paid.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.amount_paid.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ payment_form.amount_paid }}
                             <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group file-upload-group">
-                            {{ payment_form.initial_payment_proof.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.initial_payment_proof.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             <div class="file-upload-wrapper">
                                 {{ payment_form.initial_payment_proof }}
                                 <label for="{{ payment_form.initial_payment_proof.id_for_label }}" class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</label>
@@ -357,18 +396,21 @@
                 </div>
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="form-group file-upload-group">
+                        <div class="form-group file-upload-group gst-bill-group">
                             {{ payment_form.gst_bill.label_tag }}
                             <div class="file-upload-wrapper">
                                 {{ payment_form.gst_bill }}
-                                <label for="{{ payment_form.gst_bill.id_for_label }}" class="file-upload-label"><i class="fas fa-upload"></i> Choose a file</label>
+                                <label for="{{ payment_form.gst_bill.id_for_label }}" class="file-upload-label gst-label"><i class="fas fa-upload"></i> Choose a file</label>
                             </div>
                             <div class="error-message"></div>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            {{ payment_form.emi_type.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.emi_type.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ payment_form.emi_type }}
                             <div class="error-message"></div>
                         </div>
@@ -381,7 +423,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_1_amount_group">
-                            {{ payment_form.emi_1_amount.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.emi_1_amount.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ payment_form.emi_1_amount }}
                             <div class="error-message"></div>
                         </div>
@@ -397,7 +442,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_2_amount_group">
-                            {{ payment_form.emi_2_amount.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.emi_2_amount.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ payment_form.emi_2_amount }}
                             <div class="error-message"></div>
                         </div>
@@ -413,7 +461,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_3_amount_group">
-                            {{ payment_form.emi_3_amount.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.emi_3_amount.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ payment_form.emi_3_amount }}
                             <div class="error-message"></div>
                         </div>
@@ -429,7 +480,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group emi-field" id="emi_4_amount_group">
-                            {{ payment_form.emi_4_amount.label_tag }}
+                            <div class="label-form">
+                                {{ payment_form.emi_4_amount.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
                             {{ payment_form.emi_4_amount }}
                             <div class="error-message"></div>
                         </div>
@@ -483,7 +537,7 @@ $(document).ready(function () {
     }
     
     // Start animation after a short delay
-    setTimeout(animateProgressBar, 500);
+    setTimeout(animateProgressBar, 100);
     
     // Initialize Select2 on all select elements first
     $('select').select2({

@@ -31,10 +31,10 @@ class Student(models.Model):
 
     student_id = models.CharField(max_length=10, unique=True, blank=True)
     first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    phone = models.CharField(max_length=15, null=True, blank=True)
+    last_name = models.CharField(max_length=100, blank=True, null=True)
+    phone = models.CharField(max_length=15, null=True)
     alternative_phone = models.CharField(max_length=15, null=True, blank=True)
-    email = models.EmailField(null=True, blank=True)
+    email = models.EmailField(null=True)
     location = models.CharField(max_length=100, null=True, blank=True)
     
     # UG Details
@@ -72,10 +72,10 @@ class Student(models.Model):
     end_date = models.DateField(blank=True, null=True)
     course_percentage = models.FloatField(default=0)
     pl_required = models.BooleanField(default=False)
-    source_of_joining = models.ForeignKey(SourceOfJoining, on_delete=models.SET_NULL, null=True, blank=True)
+    source_of_joining = models.ForeignKey(SourceOfJoining, on_delete=models.SET_NULL, null=True)
     mode_of_class = models.CharField(max_length=3, choices=MODE_CHOICES)
     week_type = models.CharField(max_length=2, choices=WEEK_TYPE)
-    consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True, blank=True)
+    consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True)
 
     def __str__(self):
         return f"{self.student_id} - {self.first_name} {self.last_name}"

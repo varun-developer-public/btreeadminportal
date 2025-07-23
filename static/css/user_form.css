@@ -39,7 +39,9 @@
     color: #34495e;
     font-weight: 500;
 }
-
+.form-group .gst-label {
+    flex: 1;
+}
 .form-control {
     width: 100%;
     padding: 0.75rem;
@@ -59,6 +61,7 @@
     appearance: none;
     padding: 6px;
     padding-right: 2rem;
+    width: auto;
 }
 
 .btn-group {
@@ -79,16 +82,6 @@
 
 .btn i {
     font-size: 1rem;
-}
-
-.btn-primary {
-    background-color: #3498db;
-    border: 1px solid #2980b9;
-    color: white;
-}
-
-.btn-primary:hover {
-    background-color: #2980b9;
 }
 
 .btn-secondary {

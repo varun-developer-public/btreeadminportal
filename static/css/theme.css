@@ -3,6 +3,7 @@
 
 :root {
     --primary-blue: #074383;
+    --primary-light-blue: #eaeaea;
     --primary-light: #e6f0ff;
     --secondary-blue: #003d99;
     --text-primary: #333333;
@@ -23,6 +24,14 @@
     font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+a{
+    text-decoration: none;
+    color:white;
+    transition: color 0.2s ease;
+}
+a:hover{
+    color: #ffffff;
+}
 /* General Body Styles */
 body {
     background-color: var(--background-grey);
@@ -60,12 +69,7 @@ body {
 /* Typography */
 a {
     text-decoration: none;
-    color: #007bff; /* Primary blue */
     transition: color 0.2s;
-}
-
-a:hover {
-    color: #0056b3; /* Darker blue on hover */
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -91,16 +95,14 @@ th, td {
 th {
     background-color: #f8f9fa;
     font-weight: 600;
-    color: #495057;
+    color: var(--text-primary);
 }
 
 /* Forms */
 form {
     margin-bottom: 20px;
-    background: #fff;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 input[type='text'],

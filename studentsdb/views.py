@@ -33,6 +33,8 @@ def create_student(request):
             # Create payment object but don't commit yet
             payment = payment_form.save(commit=False)
             payment.student = student
+            payment.payment_account = student_form.cleaned_data['payment_account']
+
 
             # Calculate pending amount inside Payment model or here
             payment.total_pending_amount = payment.total_fees - payment.amount_paid

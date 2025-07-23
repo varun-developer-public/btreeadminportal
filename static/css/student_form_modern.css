@@ -5,6 +5,7 @@
     --section-margin: 1.5rem;
     --input-height: 42px;
     --transition-speed: 0.3s;
+    --danger: #dc3545;
 }
 
 /* Form Container */
@@ -12,6 +13,10 @@
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 1rem;
+}
+.label-form{
+    display: flex;
+    justify-items: flex-start;
 }
 
 /* Form Header */
@@ -268,9 +273,6 @@ select:focus {
 
 /* Select2 Styling */
 .select2-container--default .select2-selection--single {
-    height: var(--input-height) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 4px !important;
     padding: 0.5rem 1rem !important;
     display: flex !important;
     align-items: center !important;
@@ -311,6 +313,10 @@ select:focus {
 
 .file-upload-wrapper {
     position: relative;
+}
+.gst-bill-group .file-upload-wrapper {
+    display: flex;
+    gap: 20px;
 }
 
 .file-upload-label {
@@ -410,7 +416,7 @@ select:focus {
 }
 
 .btn-secondary:hover {
-    background-color: #e9ecef;
+    background-color: var(--primary-blue)
 }
 
 #emi-error-message {

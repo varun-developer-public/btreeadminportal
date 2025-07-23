@@ -13,7 +13,7 @@ class Payment(models.Model):
 
     payment_id = models.CharField(max_length=10, unique=True, editable=False, null=True, blank=True)
     student = models.OneToOneField('studentsdb.Student', on_delete=models.CASCADE)
-    payment_account = models.ForeignKey('settingsdb.PaymentAccount', on_delete=models.SET_NULL, null=True, blank=True)
+    payment_account = models.ForeignKey('settingsdb.PaymentAccount', on_delete=models.SET_NULL, null=True)
     total_fees = models.DecimalField(max_digits=10, decimal_places=2)
     gst_bill = models.BooleanField(default=False)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
