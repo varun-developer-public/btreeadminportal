@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .forms import BatchForm
+from .forms import BatchCreationForm
 from .models import Batch
 from placementdb.models import Placement
 from django.contrib.auth.decorators import login_required
 import pandas as pd
 from django.http import HttpResponse
 from django.db import transaction
-from datetime import datetime
+from datetime import datetime, date
+from dateutil.relativedelta import relativedelta
 from studentsdb.models import Student
 from trainersdb.models import Trainer
 from django.db.models import Q
@@ -46,25 +47,31 @@ def batch_list(request):
 
 def create_batch(request):
     next_batch_id = get_next_batch_id()
-
     if request.method == 'POST':
-        form = BatchForm(request.POST)
+        form = BatchCreationForm(request.POST)
         if form.is_valid():
             batch = form.save(commit=False)
-            batch.batch_id = next_batch_id  # Set manually
+            batch.batch_id = next_batch_id # Assign the pre-fetched ID
+            
+            # Handle custom time slot
+            if form.cleaned_data['time_slot'] == 'custom':
+                batch.time_slot = form.cleaned_data['custom_time_slot']
+            else:
+                batch.time_slot = form.cleaned_data['time_slot']
+
             batch.save()
+            form.save_m2m()  # Save ManyToMany relationships
 
-            batch.students.set(form.cleaned_data['students'])
-
-            # Placement sync
-            for student in form.cleaned_data['students']:
-                if student.pl_required:
-                    Placement.objects.get_or_create(student=student)
-
-            messages.success(request, f"Batch {batch.batch_id} created successfully.")
+            messages.success(request, "Batch created successfully.")
             return redirect('batch_list')
     else:
-        form = BatchForm()
+        today = date.today()
+        end_date = today + relativedelta(months=2)
+        form = BatchCreationForm(initial={
+            'batch_id': next_batch_id,
+            'start_date': today,
+            'end_date': end_date
+        })
 
     return render(request, 'batchdb/create_batch.html', {'form': form, 'next_batch_id': next_batch_id})
 
@@ -73,7 +80,7 @@ def update_batch(request, pk):
     batch = get_object_or_404(Batch, pk=pk)
 
     if request.method == 'POST':
-        form = BatchForm(request.POST, instance=batch)
+        form = BatchCreationForm(request.POST, instance=batch)
         if form.is_valid():
             batch = form.save(commit=False)
             selected_students = form.cleaned_data['students']
@@ -90,7 +97,7 @@ def update_batch(request, pk):
             messages.success(request, f"Batch {batch.batch_id} updated and students synced.")
             return redirect('batch_list')
     else:
-        form = BatchForm(instance=batch)
+        form = BatchCreationForm(instance=batch)
 
     return render(request, 'batchdb/update_batch.html', {'form': form, 'batch': batch})
 

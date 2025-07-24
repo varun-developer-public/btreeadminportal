@@ -2,6 +2,23 @@ from django.db import models
 from trainersdb.models import Trainer
 
 class Batch(models.Model):
+    MODULE_CHOICES = [
+        ('Python', 'Python'),
+        ('Java', 'Java'),
+        ('Spring Boot', 'Spring Boot'),
+        ('Power BI', 'Power BI'),
+        ('DA-Python', 'DA-Python'),
+        ('UI/UX', 'UI/UX'),
+        ('Dotnet', 'Dotnet'),
+        ('C', 'C'),
+        ('C++', 'C++'),
+    ]
+
+    BATCH_TYPE_CHOICES = [
+        ('Weekday', 'Weekday'),
+        ('Weekend', 'Weekend'),
+    ]
+
     SLOT_CHOICES = [
         ('9-10.30', '9:00 AM - 10:30 AM'),
         ('10.30-12', '10:30 AM - 12:00 PM'),
@@ -9,16 +26,18 @@ class Batch(models.Model):
         ('3-4.30', '3:00 PM - 4:30 PM'),
         ('4.30-6', '4:30 PM - 6:00 PM'),
     ]
+
     batch_id = models.CharField(max_length=50, unique=True, blank=True)
-    batch_name = models.CharField(max_length=100)
+    module_name = models.CharField(max_length=100, choices=MODULE_CHOICES,null=True)
+    batch_type = models.CharField(max_length=10, choices=BATCH_TYPE_CHOICES, null=True)
     trainer = models.ForeignKey(Trainer, on_delete=models.SET_NULL, null=True)
     start_date = models.DateField()
     end_date = models.DateField()
-    slot = models.CharField(max_length=20, choices=SLOT_CHOICES)
+    time_slot = models.CharField(max_length=20, choices=SLOT_CHOICES,null=True)
     students = models.ManyToManyField('studentsdb.Student', related_name='batches')
 
     def __str__(self):
-        return self.batch_name
+        return f"{self.module_name} - {self.batch_type}"
 
     def save(self, *args, **kwargs):
         if not self.batch_id:
