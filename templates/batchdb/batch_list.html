@@ -1,5 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+    .student-list-cell {
+        max-width: 250px;
+        max-height: 70px;
+        overflow-y: auto;
+        display: block;
+    }
+    .student-list-cell::-webkit-scrollbar {
+        display: none;
+    }
+</style>
 <div class="card">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2>Batch List</h2>
@@ -23,7 +34,7 @@
         <tr>
             <th>Batch ID</th>
             <th>Trainer</th>
-            <th>Batch Name</th>
+            <th>Module Name</th>
             <th>Start Date</th>
             <th>End Date</th>
             <th>Slot</th>
@@ -36,18 +47,20 @@
         <tr>
             <td>{{ batch.batch_id }}</td>
             <td>{{ batch.trainer }}</td>
-            <td>{{ batch.batch_name }}</td>
+            <td>{{ batch.module_name }}</td>
             <td>{{ batch.start_date }}</td>
             <td>{{ batch.end_date }}</td>
-            <td>{{ batch.get_slot_display }}</td>
+            <td>{{ batch.get_slottime }}</td>
             <td>
-                {% if batch.students.all %}
-                    {% for student in batch.students.all %}
-                        {{ student.student_id }}{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
-                {% else %}
-                    No students assigned
-                {% endif %}
+                <div class="student-list-cell">
+                    {% if batch.students.all %}
+                        {% for student in batch.students.all %}
+                            <span class="badge bg-secondary">{{ student.student_id }}</span>
+                        {% endfor %}
+                    {% else %}
+                        No students assigned
+                    {% endif %}
+                </div>
             </td>
             <td>
                 <a href="{% url 'update_batch' batch.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>

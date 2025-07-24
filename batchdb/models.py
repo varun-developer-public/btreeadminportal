@@ -39,6 +39,13 @@ class Batch(models.Model):
     def __str__(self):
         return f"{self.module_name} - {self.batch_type}"
 
+    def get_slottime(self):
+        # Check if the time_slot is a key in SLOT_CHOICES
+        if self.time_slot in dict(self.SLOT_CHOICES):
+            return self.get_time_slot_display()
+        # Otherwise, it's a custom time slot
+        return self.time_slot
+
     def save(self, *args, **kwargs):
         if not self.batch_id:
             last_batch = Batch.objects.order_by('-id').first()

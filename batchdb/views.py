@@ -118,11 +118,12 @@ def download_batch_template(request):
     """
     data = {
         'batch_id': ['BAT_101', ''],  # Optional: Leave empty to auto-generate
-        'batch_name': ['FrontEnd', 'Sql'],
+        'module_name': ['Python', 'Java'],
+        'batch_type': ['Weekday', 'Weekend'],
         'trainer': ['Trainer A', 'Trainer B'],
         'start_date': ['2025-08-01', '2025-08-01'],
-        'end_date': ['2025-12-01', '2025-12-01'],
-        'slot': ['9-10.30', '10.30-12'],
+        'end_date': ['2025-10-01', '2025-10-01'],
+        'time_slot': ['9:00 AM - 10:30 AM', '7:00 PM - 8:30 PM'],
         'students': ['BTR0001,BTR0002', 'BTR0003,BTR0004']
     }
     df = pd.DataFrame(data)
@@ -151,7 +152,7 @@ def import_batches(request):
             return redirect('batch_list')
 
         required_columns = [
-            'batch_id', 'batch_name', 'trainer', 'start_date', 'end_date', 'slot', 'students'
+            'module_name', 'batch_type', 'trainer', 'start_date', 'end_date', 'time_slot', 'students'
         ]
         if not all(col in df.columns for col in required_columns):
             messages.error(request, f"Excel file must contain the following columns: {', '.join(required_columns)}")
@@ -163,15 +164,18 @@ def import_batches(request):
         with transaction.atomic():
             for index, row in df.iterrows():
                 try:
-                    batch_name = row['batch_name']
+                    module_name = row['module_name']
+                    batch_type = row['batch_type']
                     trainer_name = row['trainer']
                     start_date_str = str(row['start_date']).split(' ')[0]
                     end_date_str = str(row['end_date']).split(' ')[0]
-                    student_ids = str(row['students']).split(',')
-                    slot = row['slot']
+                    time_slot = row['time_slot']
+                    student_ids_str = row['students']
 
-                    if not all([batch_name, trainer_name, start_date_str, end_date_str, slot, student_ids]):
-                        raise ValueError("Missing required batch fields.")
+                    if not all([module_name, batch_type, trainer_name, start_date_str, end_date_str, time_slot, student_ids_str]):
+                        raise ValueError("All fields are mandatory.")
+                    
+                    student_ids = str(student_ids_str).split(',')
 
                     try:
                         start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
@@ -192,11 +196,12 @@ def import_batches(request):
                         # Let the model's save() method generate the ID
                         batch = Batch()
 
-                    batch.batch_name = batch_name
+                    batch.module_name = module_name
+                    batch.batch_type = batch_type
                     batch.trainer = trainer
                     batch.start_date = start_date
                     batch.end_date = end_date
-                    batch.slot = slot
+                    batch.time_slot = time_slot
                     batch.save()
 
                     students = []
