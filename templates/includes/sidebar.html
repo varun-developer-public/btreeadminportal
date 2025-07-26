@@ -1,3 +1,14 @@
+<style>
+    .sidebar-nav .submenu {
+        list-style-type: none;
+        padding-left: 1.5rem; /* Adjust as needed */
+    }
+    .sidebar-nav .submenu a {
+        margin-top: 10px;
+        font-size: 0.9em; /* Make font smaller */
+        padding: 0.5rem 1.5rem; /* Reduce padding */
+    }
+</style>
 <div class="sidebar-container">
     <div class="sidebar-header">
         <h3>Menu</h3>
@@ -51,6 +62,17 @@
             <a href="{% url 'payment_list' %}" class="nav-link {% if request.resolver_match.url_name == 'payment_list' %}active{% endif %}">
                 <i class="fas fa-credit-card"></i><span>Payment</span>
             </a>
+        </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' %}
+        <li class="nav-item has-submenu">
+            <a href="#" class="nav-link submenu-toggle {% if request.resolver_match.app_name == 'coursedb' %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#course-submenu" aria-expanded="{% if request.resolver_match.app_name == 'coursedb' %}true{% else %}false{% endif %}" aria-controls="course-submenu">
+                <i class="fas fa-book"></i><span>Courses</span>
+            </a>
+            <ul class="submenu collapse {% if request.resolver_match.app_name == 'coursedb' %}show{% endif %}" id="course-submenu">
+                <li><a href="{% url 'coursedb:course_list' %}" class="nav-link {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}">Course List</a></li>
+                <li><a href="{% url 'coursedb:category_list' %}" class="nav-link {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}">Category List</a></li>
+            </ul>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' %}

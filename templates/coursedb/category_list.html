@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Course Categories</h2>
+        <a href="{% url 'coursedb:category_create' %}" class="btn">+ Add Category</a>
+    </div>
+
+    <table>
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for category in categories %}
+        <tr>
+            <td>{{ category.code }}</td>
+            <td>{{ category.name }}</td>
+            <td>
+                <a href="{% url 'coursedb:category_update' category.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
+                <a href="{% url 'coursedb:category_delete' category.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    </table>
+</div>
+{% endblock %}

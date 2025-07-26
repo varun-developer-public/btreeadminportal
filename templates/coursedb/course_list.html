@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+    .course-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .course-table th, .course-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .course-table th {
+        background-color: #f2f2f2;
+    }
+    .course-row.expandable {
+        cursor: pointer;
+    }
+    .module-row {
+        display: none;
+    }
+    .module-table {
+        width: 100%;
+        margin-top: 10px;
+    }
+</style>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Courses</h2>
+        <a href="{% url 'coursedb:course_create' %}" class="btn">+ Add Course</a>
+    </div>
+
+    <table class="course-table">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Total Duration (hours)</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course in courses %}
+            <tr class="course-row {% if course.modules.all %}expandable{% endif %}" data-course-id="{{ course.pk }}">
+                <td>{{ course.code }}</td>
+                <td>{{ course.course_name }}</td>
+                <td>{{ course.course_type }}</td>
+                <td>{{ course.category }}</td>
+                <td>{{ course.total_duration }}</td>
+                <td>
+                    <a href="{% url 'coursedb:course_update' course.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
+                    <a href="{% url 'coursedb:course_delete' course.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
+                </td>
+            </tr>
+            {% if course.modules.all %}
+            <tr class="module-row" id="modules-{{ course.pk }}">
+                <td colspan="5">
+                    <table class="module-table">
+                        <thead>
+                            <tr>
+                                <th>Module Name</th>
+                                <th>Duration (hours)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for module in course.modules.all %}
+                            <tr>
+                                <td>{{ module.name }}</td>
+                                <td>{{ module.module_duration }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const expandableRows = document.querySelectorAll('.expandable');
+    expandableRows.forEach(row => {
+        row.addEventListener('click', function() {
+            const courseId = this.dataset.courseId;
+            const moduleRow = document.getElementById(`modules-${courseId}`);
+            if (moduleRow) {
+                if (moduleRow.style.display === 'table-row') {
+                    moduleRow.style.display = 'none';
+                } else {
+                    moduleRow.style.display = 'table-row';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

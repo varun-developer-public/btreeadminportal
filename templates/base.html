@@ -75,7 +75,26 @@
         </div>
         {% endif %}
         <div class="content-container" {% if not user.is_authenticated %}style="margin-left: 0;"{% endif %}>
-            {% block content %}{% endblock %}
+            <div class="container-fluid">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        {% block breadcrumbs %}
+                            {% if breadcrumbs %}
+                                {% for breadcrumb in breadcrumbs %}
+                                    <li class="breadcrumb-item {% if forloop.last %}active{% endif %}">
+                                        {% if forloop.last %}
+                                            {{ breadcrumb.0 }}
+                                        {% else %}
+                                            <a href="{{ breadcrumb.1 }}">{{ breadcrumb.0 }}</a>
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            {% endif %}
+                        {% endblock %}
+                    </ol>
+                </nav>
+                {% block content %}{% endblock %}
+            </div>
         </div>
     </div>
     <!-- jQuery -->

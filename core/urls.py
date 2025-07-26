@@ -15,6 +15,7 @@ urlpatterns = [
     path('consultants/', include('consultantdb.urls')),
     path('settings/', include('settingsdb.urls')),
     path('payments/', include('paymentdb.urls')),
+    path('coursedb/', include('coursedb.urls')),
 ]
 
 
