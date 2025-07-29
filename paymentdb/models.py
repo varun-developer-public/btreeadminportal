@@ -6,6 +6,7 @@ from core.utils import timestamp_upload_to
 class Payment(models.Model):
     EMI_CHOICES = [
         ('NONE', 'None'),
+        ('1', '1 EMI'),
         ('2', '2 EMI'),
         ('3', '3 EMI'),
         ('4', '4 EMI'),
@@ -111,7 +112,7 @@ class Payment(models.Model):
             self.payment_id = f'PMT{next_id:04d}'
 
         # Validate EMI amounts based on EMI type
-        max_emis = int(self.emi_type) if self.emi_type in ['2', '3', '4'] else 0
+        max_emis = int(self.emi_type) if self.emi_type in ['1', '2', '3', '4'] else 0
         for i in range(1, 5):
             if i > max_emis:
                 # Don't clear fields if they are being set by carry-forward

@@ -64,7 +64,7 @@
             </a>
         </li>
         {% endif %}
-        {% if user.role == 'admin' or user.role == 'staff' %}
+        {% if user.role == 'admin'%}
         <li class="nav-item has-submenu">
             <a href="#" class="nav-link submenu-toggle {% if request.resolver_match.app_name == 'coursedb' %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#course-submenu" aria-expanded="{% if request.resolver_match.app_name == 'coursedb' %}true{% else %}false{% endif %}" aria-controls="course-submenu">
                 <i class="fas fa-book"></i><span>Courses</span>

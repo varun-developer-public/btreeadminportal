@@ -280,7 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveButton = document.getElementById('save-button');
     const durationError = document.getElementById('duration-error');
 
-    const updateDurations = () => {
+    const updateAndValidate = () => {
         let courseTotal = parseInt(totalDurationInput.value, 10) || 0;
         let modulesTotal = 0;
         let errorMessages = [];
@@ -320,51 +320,47 @@ document.addEventListener('DOMContentLoaded', function() {
         saveButton.disabled = errorMessages.length > 0;
     };
 
-    const reindexForms = () => {
-        document.querySelectorAll('.module-form').forEach((moduleForm, moduleIndex) => {
+    const reindexAll = () => {
+        const totalModulesInput = document.querySelector('#id_modules-TOTAL_FORMS');
+        const moduleForms = document.querySelectorAll('.module-form');
+        totalModulesInput.value = moduleForms.length;
+
+        moduleForms.forEach((moduleForm, moduleIndex) => {
             moduleForm.querySelectorAll('input, select, textarea, label').forEach(el => {
                 ['id', 'name', 'for'].forEach(attr => {
-                    if (el.hasAttribute(attr)) {
+                    if (el.getAttribute(attr)) {
                         el.setAttribute(attr, el.getAttribute(attr).replace(/modules-\d+/g, `modules-${moduleIndex}`));
                     }
                 });
             });
 
-            const topicFormsContainer = moduleForm.querySelector('.topic-forms-container');
-            topicFormsContainer.querySelectorAll('.topic-form').forEach((topicForm, topicIndex) => {
-                topicForm.querySelectorAll('input, select, textarea, label').forEach(el => {
-                    ['id', 'name', 'for'].forEach(attr => {
-                        if (el.hasAttribute(attr)) {
-                            el.setAttribute(attr, el.getAttribute(attr).replace(new RegExp(`modules-${moduleIndex}-topics-\\d+`, 'g'), `modules-${moduleIndex}-topics-${topicIndex}`));
-                        }
+            const totalTopicsInput = moduleForm.querySelector(`input[name$="-topics-TOTAL_FORMS"]`);
+            const topicForms = moduleForm.querySelectorAll('.topic-form');
+            if (totalTopicsInput) {
+                totalTopicsInput.value = topicForms.length;
+                topicForms.forEach((topicForm, topicIndex) => {
+                    topicForm.querySelectorAll('input, select, textarea, label').forEach(el => {
+                        ['id', 'name', 'for'].forEach(attr => {
+                            if (el.getAttribute(attr)) {
+                                el.setAttribute(attr, el.getAttribute(attr).replace(/topics-\d+/g, `topics-${topicIndex}`));
+                            }
+                        });
                     });
                 });
-            });
-            const totalTopicsInput = moduleForm.querySelector(`input[name$="-topics-TOTAL_FORMS"]`);
-            if(totalTopicsInput) totalTopicsInput.value = topicFormsContainer.querySelectorAll('.topic-form').length;
+            }
         });
-        const totalModulesInput = document.querySelector('#id_modules-TOTAL_FORMS');
-        if(totalModulesInput) totalModulesInput.value = document.querySelectorAll('.module-form').length;
     };
 
-    moduleFormsContainer.addEventListener('click', e => {
+    document.body.addEventListener('click', e => {
         if (e.target.closest('.add-topic-btn')) {
             const moduleForm = e.target.closest('.module-form');
             const topicFormsContainer = moduleForm.querySelector('.topic-forms-container');
-            const totalTopicsInput = moduleForm.querySelector(`input[name$="-topics-TOTAL_FORMS"]`);
-            const newTopicIndex = parseInt(totalTopicsInput.value, 10);
-            
             const emptyFormTemplate = document.getElementById('empty-form-template').querySelector('.empty-topic-form-template').innerHTML;
-            const moduleIndex = Array.from(document.querySelectorAll('.module-form')).indexOf(moduleForm);
-
-            let newFormHtml = emptyFormTemplate.replace(/__prefix__/g, newTopicIndex);
-            newFormHtml = newFormHtml.replace(/modules-\d+-topics/g, `modules-${moduleIndex}-topics`);
             
             const div = document.createElement('div');
-            div.innerHTML = newFormHtml;
+            div.innerHTML = emptyFormTemplate.replace(/__prefix__/g, '0'); // Placeholder index
             topicFormsContainer.appendChild(div.firstElementChild);
-            totalTopicsInput.value = newTopicIndex + 1;
-            reindexForms();
+            reindexAll();
         } else if (e.target.closest('.remove-topic-btn')) {
             const topicForm = e.target.closest('.topic-form');
             const deleteInput = topicForm.querySelector(`input[name$="-DELETE"]`);
@@ -374,8 +370,8 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 topicForm.remove();
             }
-            reindexForms();
-            updateDurations();
+            reindexAll();
+            updateAndValidate();
         } else if (e.target.closest('.remove-module-btn')) {
             const moduleForm = e.target.closest('.module-form');
             const deleteInput = moduleForm.querySelector(`input[name$="-DELETE"]`);
@@ -385,47 +381,39 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 moduleForm.remove();
             }
-            reindexForms();
-            updateDurations();
+            reindexAll();
+            updateAndValidate();
         }
     });
 
     addModuleBtn.addEventListener('click', () => {
-        const totalModulesInput = document.querySelector('#id_modules-TOTAL_FORMS');
-        const newModuleIndex = parseInt(totalModulesInput.value, 10);
         const emptyFormTemplate = document.getElementById('empty-form-template').innerHTML;
-        
-        let newFormHtml = emptyFormTemplate.replace(/__prefix__/g, newModuleIndex);
-        
         const div = document.createElement('div');
-        div.innerHTML = newFormHtml;
+        div.innerHTML = emptyFormTemplate.replace(/__prefix__/g, '0'); // Placeholder index
         
         const totalTopicsInput = div.querySelector('input[name$="-topics-TOTAL_FORMS"]');
         if(totalTopicsInput) totalTopicsInput.value = 0;
 
         moduleFormsContainer.appendChild(div.firstElementChild);
-        totalModulesInput.value = newModuleIndex + 1;
-        reindexForms();
+        reindexAll();
     });
 
-    moduleFormsContainer.addEventListener('change', e => {
+    document.body.addEventListener('change', e => {
         if (e.target.matches('input[name$="-has_topics"]')) {
             const topicsSection = e.target.closest('.module-form').querySelector('.topics-section');
             topicsSection.style.display = e.target.checked ? 'block' : 'none';
-            updateDurations();
+            updateAndValidate();
         }
     });
 
-    moduleFormsContainer.addEventListener('input', e => {
-        if (e.target.matches('input[name$="-module_duration"], input[name$="-topic_duration"]')) {
-            updateDurations();
+    document.body.addEventListener('input', e => {
+        if (e.target.matches('input[name$="-module_duration"], input[name$="-topic_duration"], #id_total_duration')) {
+            updateAndValidate();
         }
     });
 
-    totalDurationInput.addEventListener('input', updateDurations);
-
-    reindexForms();
-    updateDurations();
+    reindexAll();
+    updateAndValidate();
 });
 </script>
 {% endblock %}

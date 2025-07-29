@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 class PaymentForm(forms.ModelForm):
     EMI_CHOICES = [
         ('NONE', 'No EMI'),
+        ('1', '1 EMI'),
         ('2', '2 EMIs'),
         ('3', '3 EMIs'),
         ('4', '4 EMIs'),
@@ -86,7 +87,7 @@ class PaymentForm(forms.ModelForm):
         pending = total_fees - amount_paid
         
         # Process EMI fields based on selected EMI type
-        max_emis = int(emi_type) if emi_type in ['2', '3', '4'] else 0
+        max_emis = int(emi_type) if emi_type in ['1', '2', '3', '4'] else 0
         
         if max_emis > 0:
             emi_amounts = []
@@ -101,8 +102,8 @@ class PaymentForm(forms.ModelForm):
         # Validate EMI selection
         if pending > 0:
             if emi_type == 'NONE':
-                self.add_error('emi_type', "Select an EMI option (2/3/4) for the pending amount.")
-            elif emi_type not in ['2', '3', '4']:
+                self.add_error('emi_type', "Select an EMI option (1/2/3/4) for the pending amount.")
+            elif emi_type not in ['1', '2', '3', '4']:
                 self.add_error('emi_type', "Invalid EMI type selected.")
 
         # Clear EMI fields not corresponding to selected EMI type
