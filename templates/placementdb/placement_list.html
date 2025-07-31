@@ -93,8 +93,6 @@
                     <th>Phone</th>
                     <th>Email</th>
                     <th>Trainers</th>
-                    <th>Course Status</th>
-                    <th>Course Percentage</th>
                     <th>Location</th>
                     <th>UG Degree</th>
                     <th>Year of Pass</th>
@@ -104,6 +102,8 @@
                     <th>Percentage</th>
                     <th>Course Start Date</th>
                     <th>Course End Date</th>
+                    <th>Course Status</th>
+                    <th>Course Percentage</th>
                     <th>Resume Link</th>
                     <th>Actions</th>
                 </tr>
@@ -129,8 +129,6 @@
                             {{ batch.trainer.name|default:"-" }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     </td>
-                    <td>{{ placement.student.get_course_status_display|default:"-" }}</td>
-                    <td>{{ placement.student.course_percentage|default:"0" }}%</td>
                     <td>{{ placement.student.location|default:"-" }}</td>
                     <td>{{ placement.student.ugdegree|default:"-" }}</td>
                     <td>{{ placement.student.ugpassout|default:"-" }}</td>
@@ -140,6 +138,8 @@
                     <td>{{ placement.student.pgpercentage|default:"-" }}</td>
                     <td>{{ placement.student.start_date|date:"d-m-Y"|default:"-" }}</td>
                     <td>{{ placement.student.end_date|date:"d-m-Y"|default:"-" }}</td>
+                    <td>{{ placement.student.get_course_status_display|default:"-" }}</td>
+                    <td>{{ placement.student.course_percentage|default:"0" }}%</td>
                     <td>
                         {% if placement.resume_link %}
                             <a href="{{ placement.resume_link.url }}" target="_blank" style="color: #6c757d;">View Resume</a>
