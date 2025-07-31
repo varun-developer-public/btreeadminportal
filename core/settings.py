@@ -14,7 +14,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-g7ccbck23uiam(
 
 # --- PRODUCTION SETTINGS ---
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS = ['btrees.in', 'admin.btrees.in']
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
