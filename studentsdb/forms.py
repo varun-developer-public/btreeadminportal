@@ -115,6 +115,20 @@ class StudentUpdateForm(forms.ModelForm):
             'end_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+        if user and user.role == 'placement':
+            allowed_fields = [
+                'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
+                'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
+                'pl_required', 'course_status'
+            ]
+            for field_name, field in self.fields.items():
+                if field_name not in allowed_fields:
+                    field.disabled = True
+
     def clean(self):
         cleaned_data = super().clean()
         return cleaned_data

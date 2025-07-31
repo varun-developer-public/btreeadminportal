@@ -15,9 +15,10 @@ URL_ROLE_MAPPINGS = {
         'get_courses',
     ],
     'placement': [
+        'placement_dashboard',
         'placement_list', 'update_placement',
-        'student_list',
-        'batch_list',
+        'student_list', 'update_student',
+        'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses'
     ],
     'trainer': [
         'batch_list',

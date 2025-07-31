@@ -5,30 +5,83 @@
 {% block content %}
 <div class="payment-list-container">
     <h2>Placement Records</h2>
-    <form method="get" class="filters">
-        <div class="filter-row">
-            <div class="filter-group">
-                <label for="search">Search:</label>
-                <input type="text" id="search" name="search" value="{{ search }}" placeholder="Name">
-            </div>
-            <div class="filter-group">
-                <label for="student_id">Student ID:</label>
-                <input type="text" id="student_id" name="student_id" value="{{ student_id }}" placeholder="Student ID">
-            </div>
-            <div class="filter-group">
-                <label for="batch_id">Batch ID:</label>
-                <input type="text" id="batch_id" name="batch_id" value="{{ batch_id }}" placeholder="Batch ID">
-            </div>
-            <div class="filter-group">
-                <label for="trainer_id">Trainer ID:</label>
-                <input type="text" id="trainer_id" name="trainer_id" value="{{ trainer_id }}" placeholder="Trainer ID">
+    <div class="accordion" id="filterAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="headingOne">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    <i class="fas fa-filter me-2"></i> Filters
+                </button>
+            </h2>
+            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#filterAccordion">
+                <div class="accordion-body">
+                    <form method="get" class="filters">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                {{ form.q.label_tag }}
+                                {{ form.q }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.ug_degree.label_tag }}
+                                {{ form.ug_degree }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.ug_branch.label_tag }}
+                                {{ form.ug_branch }}
+                            </div>
+                             <div class="filter-group">
+                                {{ form.ug_passout.label_tag }}
+                                {{ form.ug_passout }}
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                {{ form.pg_degree.label_tag }}
+                                {{ form.pg_degree }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.pg_branch.label_tag }}
+                                {{ form.pg_branch }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.pg_passout.label_tag }}
+                                {{ form.pg_passout }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.batch_id.label_tag }}
+                                {{ form.batch_id }}
+                            </div>
+                        </div>
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                {{ form.course_category.label_tag }}
+                                {{ form.course_category }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.course.label_tag }}
+                                {{ form.course }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.course_status.label_tag }}
+                                {{ form.course_status }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.location.label_tag }}
+                                {{ form.location }}
+                            </div>
+                            <div class="filter-group">
+                                {{ form.course_percentage.label_tag }}
+                                {{ form.course_percentage }}
+                            </div>
+                        </div>
+                        <div class="filter-actions">
+                            <button type="submit" class="btn-primary">Apply Filters</button>
+                            <a href="{% url 'placement_list' %}" class="btn-secondary">Reset</a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="filter-actions">
-            <button type="submit" class="btn-primary">Apply Filters</button>
-            <a href="{% url 'placement_list' %}" class="btn-secondary">Reset</a>
-        </div>
-    </form>
+    </div>
     <div class="table-wrapper">
         <table>
             <thead>
@@ -68,7 +121,7 @@
                         {% endfor %}
                     </td>
                     <td>{{ placement.student.course.name|default:"-" }}</td>
-                    <td>{{ placement.student.first_name }} {{ placement.student.last_name|default:"-" }}</td>
+                    <td>{{ placement.student.first_name }} {{ placement.student.last_name|default:"" }}</td>
                     <td>{{ placement.student.phone|default:"-" }}</td>
                     <td>{{ placement.student.email|default:"-" }}</td>
                     <td>
@@ -125,6 +178,20 @@
     {% endif %}
 </div>
 <style>
+    .accordion-button {
+        transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
+    }
+    .accordion-button:not(.collapsed) {
+        color: #fff;
+        background-color: #007bff;
+    }
+    .accordion-button:hover {
+        background-color: #0056b3;
+        color: #fff;
+    }
+    .accordion-collapse {
+        transition: height 0.35s ease;
+    }
     .status-indicator {
         height: 10px;
         width: 10px;
@@ -192,4 +259,57 @@
         white-space: nowrap;
     }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.querySelector('[name="course_category"]');
+    const courseSelect = document.querySelector('[name="course"]');
+    const originalCourses = Array.from(courseSelect.options);
+
+    // Store course options organized by category
+    const coursesByCategory = {};
+    originalCourses.forEach(option => {
+        if (option.value) {
+            const text = option.text;
+            const categoryName = text.split(' - ')[0];
+            if (!coursesByCategory[categoryName]) {
+                coursesByCategory[categoryName] = [];
+            }
+            coursesByCategory[categoryName].push(option);
+        }
+    });
+
+    // Function to update course options
+    function updateCourseOptions() {
+        const selectedCategoryId = categorySelect.value;
+        const selectedCategoryName = categorySelect.options[categorySelect.selectedIndex].text;
+        const currentCourseValue = courseSelect.value;
+
+        // Clear current options
+        courseSelect.innerHTML = '';
+
+        // Add back the "All Courses" option
+        courseSelect.add(originalCourses[0]);
+
+        if (selectedCategoryId && coursesByCategory[selectedCategoryName]) {
+            // Add courses for the selected category
+            coursesByCategory[selectedCategoryName].forEach(option => {
+                courseSelect.add(option.cloneNode(true));
+            });
+        } else if (!selectedCategoryId) {
+            // If no category is selected, add all courses back
+            Object.values(coursesByCategory).flat().forEach(option => {
+                courseSelect.add(option.cloneNode(true));
+            });
+        }
+
+        // Restore previous selection if possible
+        courseSelect.value = currentCourseValue;
+    }
+
+    categorySelect.addEventListener('change', updateCourseOptions);
+
+    // Initial call to set the correct course options on page load
+    updateCourseOptions();
+});
+</script>
 {% endblock %}

@@ -128,7 +128,7 @@ def update_student(request, student_id):
     student = get_object_or_404(Student, student_id=student_id)
 
     if request.method == 'POST':
-        form = StudentUpdateForm(request.POST, instance=student)
+        form = StudentUpdateForm(request.POST, instance=student, user=request.user)
         if form.is_valid():
             updated_student = form.save(commit=False)
 
@@ -149,7 +149,7 @@ def update_student(request, student_id):
             messages.success(request, f"{updated_student.student_id} updated successfully.", extra_tags='student_message')
             return redirect('student_list')
     else:
-        form = StudentUpdateForm(instance=student)
+        form = StudentUpdateForm(instance=student, user=request.user)
 
     return render(request, 'studentsdb/update_student.html', {
         'form': form,

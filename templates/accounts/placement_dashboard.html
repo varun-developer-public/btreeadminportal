@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load custom_filter %}
+{% load humanize %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+{% endblock %}
+
+{% block title %}Placement Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="row my-4 ms-1">
+        <div class="col-md-12">
+            <h2>Hey, {{ user.name }}!</h2>
+        </div>
+    </div>
+
+    <div class="stats-overview">
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class="fas fa-briefcase stat-icon"></i>
+                <h3 class="stat-title">Total Placements</h3>
+            </div>
+            <p class="stat-value">{{ total_placements }}</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class="fas fa-building stat-icon"></i>
+                <h3 class="stat-title">Placement Drives</h3>
+            </div>
+            <p class="stat-value">{{ total_placement_drives }}</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class="fas fa-user-check stat-icon"></i>
+                <h3 class="stat-title">Overall Placed</h3>
+            </div>
+            <p class="stat-value">{{ overall_placed_students }}</p>
+        </div>
+    </div>
+
+    {# Add more sections for detailed tables or charts as needed #}
+
+</div>
+{% endblock %}

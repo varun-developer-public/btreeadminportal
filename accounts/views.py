@@ -13,11 +13,16 @@ def is_staff(user):
 def is_consultant(user):
     return user.is_authenticated and user.role == 'consultant'
 
+def is_placement(user):
+    return user.is_authenticated and user.role == 'placement'
+
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from studentsdb.models import Student
 from paymentdb.models import Payment
 from settingsdb.models import TransactionLog
+from placementdb.models import Placement
+from placementdrive.models import PlacementDrive
 from datetime import datetime
 
 from django.utils import timezone
@@ -253,6 +258,20 @@ def consultant_dashboard(request):
     }
     return render(request, 'accounts/consultant_dashboard.html', context)
 
+@login_required
+@user_passes_test(is_placement)
+def placement_dashboard(request):
+    total_placements = Placement.objects.count()
+    total_placement_drives = PlacementDrive.objects.count()
+    overall_placed_students = Student.objects.filter(course_status='P').count()
+
+    context = {
+        'total_placements': total_placements,
+        'total_placement_drives': total_placement_drives,
+        'overall_placed_students': overall_placed_students,
+    }
+    return render(request, 'accounts/placement_dashboard.html', context)
+
 @user_passes_test(is_admin)
 def user_list(request):
     users = CustomUser.objects.all().order_by('name')
@@ -329,6 +348,8 @@ def login_view(request):
                     return redirect('admin_dashboard')
                 elif user.role == 'consultant':
                     return redirect('consultant_dashboard')
+                elif user.role == 'placement':
+                    return redirect('placement_dashboard')
                 else:
                     return redirect('staff_dashboard')
             else:
