@@ -52,20 +52,46 @@ def placement_list(request):
         'trainer_id': trainer_id,
     })
 
+from .forms import PlacementUpdateForm, CompanyInterviewForm
+from placementdrive.models import PlacementDrive
+import json
+
 @login_required
 def update_placement(request, pk):
     placement = get_object_or_404(Placement, pk=pk)
+    interview_form = CompanyInterviewForm()
 
     if request.method == 'POST':
-        form = PlacementUpdateForm(request.POST, instance=placement)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Placement updated successfully.")
-            return redirect('placement_list')
-    else:
-        form = PlacementUpdateForm(instance=placement)
+        if 'update_placement' in request.POST:
+            form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Placement updated successfully.")
+                return redirect('placement_list')
+        elif 'add_interview' in request.POST:
+            interview_form = CompanyInterviewForm(request.POST)
+            if interview_form.is_valid():
+                interview = interview_form.save(commit=False)
+                interview.placement = placement
+                interview.save()
+                messages.success(request, "Interview added successfully.")
+                return redirect('update_placement', pk=pk)
+
+    form = PlacementUpdateForm(instance=placement)
+    interviews = placement.interviews.all()
+    
+    companies = PlacementDrive.objects.all()
+    company_details = {
+        c.id: {
+            'name': c.company_name,
+            'location': c.location,
+        } for c in companies
+    }
 
     return render(request, 'placementdb/update_placement.html', {
         'form': form,
+        'interview_form': interview_form,
         'placement': placement,
+        'interviews': interviews,
+        'company_details_json': json.dumps(company_details)
     })

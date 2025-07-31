@@ -50,6 +50,13 @@
             </a>
         </li>
         {% endif %}
+        {% if user.role == 'admin' or user.role == 'placement' %}
+        <li>
+            <a href="{% url 'placementdrive:drive_list' %}" class="nav-link {% if request.resolver_match.app_name == 'placementdrive' %}active{% endif %}">
+                <i class="fas fa-bullhorn"></i><span>Placement Drive</span>
+            </a>
+        </li>
+        {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' or user.role == 'trainer' %}
         <li>
             <a href="{% url 'batch_list' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_list' %}active{% endif %}">

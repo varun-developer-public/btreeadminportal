@@ -1,14 +1,173 @@
 {% extends "base.html" %}
 {% block title %}Update Placement{% endblock %}
 {% load custom_filter %}
+
 {% block content %}
-<div class="card">
-    <h2>Update Placement for {{ placement.student.student_id }} - {{ placement.student.first_name }} {{ placement.student.last_name|format_name }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Save Changes</button>
-        <a href="{% url 'placement_list' %}" class="btn btn-secondary">Cancel</a>
-    </form>
+<div class="update-placement-container">
+    <div class="student-profile">
+        <div class="profile-header">
+            <img src="{{ placement.student.profile_picture.url|default:'/static/images/logo.png' }}" alt="Profile Picture" class="profile-pic">
+            <div class="profile-info">
+                <h2>{{ placement.student.first_name }} {{ placement.student.last_name|format_name }}</h2>
+                <p>{{ placement.student.student_id }}</p>
+            </div>
+        </div>
+        <div class="profile-details">
+            <p><strong>Email:</strong> {{ placement.student.email|default:'-' }}</p>
+            <p><strong>Phone:</strong> {{ placement.student.phone|default:'-' }}</p>
+            <p><strong>Course:</strong> {{ placement.student.course.name|default:'-' }}</p>
+            <p><strong>Course Status:</strong> {{ placement.student.get_course_status_display|default:'-' }}</p>
+        </div>
+    </div>
+
+    <div class="placement-details">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="update_placement" value="1">
+            {{ form.as_p }}
+            <button type="submit" class="btn">Save Changes</button>
+        </form>
+    </div>
+
+    <div class="interview-section">
+        <h3>Company Interviews</h3>
+        <button id="add-interview-btn" class="btn">Add Interview</button>
+        <table class="interview-table">
+            <thead>
+                <tr>
+                    <th>Company Code</th>
+                    <th>Company Name</th>
+                    <th>Applying For</th>
+                    <th>Location</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Attended</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interview in interviews %}
+                <tr>
+                    <td>{{ interview.company.company_code }}</td>
+                    <td>{{ interview.company.company_name }}</td>
+                    <td>{{ interview.applying_for }}</td>
+                    <td>{{ interview.company.location }}</td>
+                    <td>{{ interview.interview_date|date:"d-m-Y" }}</td>
+                    <td>{{ interview.interview_time|time:"H:i" }}</td>
+                    <td>{{ interview.attended|yesno:"Yes,No" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7">No interviews scheduled.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<div id="interview-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <h3>Add Interview</h3>
+        <form method="post" id="interview-form">
+            {% csrf_token %}
+            <input type="hidden" name="add_interview" value="1">
+            {{ interview_form.as_p }}
+            <button type="submit" class="btn">Add</button>
+        </form>
+    </div>
+</div>
+
+<style>
+.update-placement-container {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+    padding: 20px;
+}
+.student-profile, .placement-details, .interview-section {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+}
+.profile-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.profile-pic {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-right: 20px;
+}
+.profile-info h2 {
+    margin: 0;
+}
+.interview-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.interview-table th, .interview-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 8px;
+}
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+.close-btn:hover, .close-btn:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('interview-modal');
+    var btn = document.getElementById('add-interview-btn');
+    var span = document.getElementsByClassName('close-btn')[0];
+    const companySelect = document.getElementById('id_company');
+    const companyDetails = JSON.parse('{{ company_details_json|safe }}');
+
+    btn.onclick = function() {
+        modal.style.display = 'block';
+    }
+
+    span.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+});
+</script>
 {% endblock %}

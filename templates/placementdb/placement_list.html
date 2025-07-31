@@ -34,65 +34,66 @@
             <thead>
                 <tr>
                     <th>Student ID</th>
-                    <th>Batch IDs</th>
+                    <th>Batch ID</th>
+                    <th>Course Name</th>
                     <th>Student Name</th>
                     <th>Phone</th>
                     <th>Email</th>
-                    <th>Trainer(s)</th>
+                    <th>Trainers</th>
+                    <th>Course Status</th>
+                    <th>Course Percentage</th>
+                    <th>Location</th>
+                    <th>UG Degree</th>
+                    <th>Year of Pass</th>
+                    <th>Percentage</th>
+                    <th>PG Degree</th>
+                    <th>Year of Pass</th>
+                    <th>Percentage</th>
+                    <th>Course Start Date</th>
+                    <th>Course End Date</th>
                     <th>Resume Link</th>
-                    <th>Status</th>
-                    <th>Feedback</th>
-                    <th>Company 1</th>
-                    <th>Company 2</th>
-                    <th>Company 3</th>
-                    <th>Company 4</th>
-                    <th>Company 5</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for placement in placements %}
                 <tr>
-                    <td>{{ placement.student.student_id }}</td>
                     <td>
-                        {% if placement.student.batches.all %}
-                            {% for batch in placement.student.batches.all %}
-                                {{ batch.batch_id }}{% if not forloop.last %}, {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            —
-                        {% endif %}
+                        <span class="status-indicator {% if placement.is_active %}status-active{% else %}status-inactive{% endif %}" style="margin-right: 6%;"></span>
+                        {{ placement.student.student_id }}
                     </td>
-                    <td>{{ placement.student.first_name }} {{ placement.student.last_name|format_name }}</td>
-                    <td>{{ placement.student.phone }}</td>
-                    <td>{{ placement.student.email }}</td>
                     <td>
-                        {% if placement.student.batches.all %}
-                            {% for batch in placement.student.batches.all %}
-                                {% if batch.trainer %}
-                                    {{ batch.trainer.name }}{% if not forloop.last %}, {% endif %}
-                                {% else %}
-                                    —{% if not forloop.last %}, {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                        {% else %}
-                            —
-                        {% endif %}
+                        {% for batch in placement.student.batches.all %}
+                            {{ batch.batch_id }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
                     </td>
+                    <td>{{ placement.student.course.name|default:"-" }}</td>
+                    <td>{{ placement.student.first_name }} {{ placement.student.last_name|default:"-" }}</td>
+                    <td>{{ placement.student.phone|default:"-" }}</td>
+                    <td>{{ placement.student.email|default:"-" }}</td>
+                    <td>
+                        {% for batch in placement.student.batches.all %}
+                            {{ batch.trainer.name|default:"-" }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>{{ placement.student.get_course_status_display|default:"-" }}</td>
+                    <td>{{ placement.student.course_percentage|default:"0" }}%</td>
+                    <td>{{ placement.student.location|default:"-" }}</td>
+                    <td>{{ placement.student.ugdegree|default:"-" }}</td>
+                    <td>{{ placement.student.ugpassout|default:"-" }}</td>
+                    <td>{{ placement.student.ugpercentage|default:"-" }}</td>
+                    <td>{{ placement.student.pgdegree|default:"-" }}</td>
+                    <td>{{ placement.student.pgpassout|default:"-" }}</td>
+                    <td>{{ placement.student.pgpercentage|default:"-" }}</td>
+                    <td>{{ placement.student.start_date|date:"d-m-Y"|default:"-" }}</td>
+                    <td>{{ placement.student.end_date|date:"d-m-Y"|default:"-" }}</td>
                     <td>
                         {% if placement.resume_link %}
-                            <a href="{{ placement.resume_link }}" target="_blank">View Resume</a>
+                            <a href="{{ placement.resume_link.url }}" target="_blank" style="color: #6c757d;">View Resume</a>
                         {% else %}
-                            N/A
+                            -
                         {% endif %}
                     </td>
-                    <td>{{ placement.is_active|yesno:"Active,Not Active" }}</td>
-                    <td>{{ placement.feedback }}</td>
-                    <td>{{ placement.company_1 }}</td>
-                    <td>{{ placement.company_2 }}</td>
-                    <td>{{ placement.company_3 }}</td>
-                    <td>{{ placement.company_4 }}</td>
-                    <td>{{ placement.company_5 }}</td>
                     <td>
                         <a href="{% url 'update_placement' placement.pk %}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit</a>
                     </td>
@@ -124,6 +125,18 @@
     {% endif %}
 </div>
 <style>
+    .status-indicator {
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .status-active {
+        background-color: green;
+    }
+    .status-inactive {
+        background-color: red;
+    }
     .payment-list-container {
         padding: 20px;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
