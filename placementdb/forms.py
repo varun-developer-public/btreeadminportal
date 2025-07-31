@@ -17,6 +17,10 @@ class CompanyInterviewForm(forms.ModelForm):
     class Meta:
         model = CompanyInterview
         fields = ['company', 'applying_for', 'interview_date', 'interview_time', 'attended']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['company'].required = False
         widgets = {
             'interview_date': forms.DateInput(attrs={'type': 'date'}),
             'interview_time': forms.TimeInput(attrs={'type': 'time'}),

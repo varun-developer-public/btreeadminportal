@@ -47,10 +47,10 @@
             <tbody>
                 {% for interview in interviews %}
                 <tr>
-                    <td>{{ interview.company.company_code }}</td>
-                    <td>{{ interview.company.company_name }}</td>
+                    <td>{{ interview.company.company_code|default:"N/A" }}</td>
+                    <td>{{ interview.company.company_name|default:"N/A" }}</td>
                     <td>{{ interview.applying_for }}</td>
-                    <td>{{ interview.company.location }}</td>
+                    <td>{{ interview.company.location|default:"N/A" }}</td>
                     <td>{{ interview.interview_date|date:"d-m-Y" }}</td>
                     <td>{{ interview.interview_time|time:"H:i" }}</td>
                     <td>{{ interview.attended|yesno:"Yes,No" }}</td>

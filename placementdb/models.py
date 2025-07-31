@@ -19,4 +19,5 @@ class CompanyInterview(models.Model):
     attended = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.company.company_name} interview for {self.placement.student.student_id}"
+        company_name = self.company.company_name if self.company else "N/A"
+        return f"{company_name} interview for {self.placement.student.student_id}"
