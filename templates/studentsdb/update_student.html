@@ -3,15 +3,167 @@
 {% load static %}
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 {% block content %}
 <div class="card">
     <h2>Update Student - {{ student.student_id }}</h2>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.first_name.label_tag }}
+                    {{ form.first_name }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.last_name.label_tag }}
+                    {{ form.last_name }}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.phone.label_tag }}
+                    {{ form.phone }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.alternative_phone.label_tag }}
+                    {{ form.alternative_phone }}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    {{ form.email.label_tag }}
+                    {{ form.email }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="id_district">District</label>
+                    <select id="id_district" class="form-control"></select>
+                </div>
+                <div class="form-group" id="chennai_area_group" style="display: none;">
+                    <label for="id_chennai_area">Area in Chennai</label>
+                    <select id="id_chennai_area" class="form-control"></select>
+                </div>
+                <div class="form-group">
+                    {{ form.location }}
+                </div>
+            </div>
+        </div>
+        
+        {% for field in form %}
+            {% if field.name not in "first_name,last_name,phone,alternative_phone,email,location" %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                <div class="alert alert-danger">{{ error }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endfor %}
+
         <button type="submit" class="btn">Update</button>
         <a href="{% url 'student_list' %}" class="btn btn-secondary">Back to List</a>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#id_ugdegree, #id_ugbranch, #id_pgdegree, #id_pgbranch, #id_course, #id_consultant, #id_source_of_joining').select2();
+
+    const districtSelect = $('#id_district');
+    const chennaiAreaGroup = $('#chennai_area_group');
+    const chennaiAreaSelect = $('#id_chennai_area');
+    const locationInput = $('#id_location');
+
+    const districts = [
+        "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
+        "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai",
+        "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
+        "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"
+    ];
+
+    const chennaiAreas = [
+        "Adambakkam", "Adyar", "Alandur", "Alapakkam", "Alwarpet", "Alwarthirunagar", "Ambattur", "Aminjikarai", "Anna Nagar", "Annanur", "Arumbakkam", "Ashok Nagar", "Avadi", "Ayanavaram", "Besant Nagar", "Basin Bridge", "Chepauk", "Chetpet", "Chintadripet", "Chitlapakkam", "Choolai", "Choolaimedu", "Chrompet", "Egmore", "Ekkaduthangal", "Eranavur", "Ennore", "Foreshore Estate", "Fort St. George", "George Town", "Gopalapuram", "Government Estate", "Guindy", "Guduvancheri", "IIT Madras", "Injambakkam", "ICF", "Iyyapanthangal", "Jafferkhanpet", "Kattivakkam", "K.K. Nagar", "Keelkattalai", "Kellys", "Kilpauk", "Kodambakkam", "Kodungaiyur", "Kolathur", "Korattur", "Korukkupet", "Kottivakkam", "Kotturpuram", "Kottur", "Kovalam", "Koyambedu", "Kundrathur", "Madhavaram", "Madhavaram Milk Colony", "Madipakkam", "Madambakkam", "Maduravoyal", "Manali", "Manali New Town", "Manapakkam", "Mandaveli", "Mangadu", "Mannady", "Mathur", "Medavakkam", "Meenambakkam", "MGR Nagar", "Minjur", "Mogappair", "MKB Nagar", "Mount Road", "Moolakadai", "Moulivakkam", "Mylapore", "Nandanam", "Nanganallur", "Navalur", "Neelankarai", "Nemilichery", "Nesapakkam", "Nolambur", "Noombal", "Nungambakkam", "Otteri", "Padi", "Pakkam", "Palavakkam", "Pallavaram", "Pallikaranai", "Pammal", "Park Town", "Parrys Corner", "Pattabiram", "Pattaravakkam", "Pazhavanthangal", "Peerkankaranai", "Perambur", "Peravallur", "Perumbakkam", "Perungalathur", "Perungudi", "Poonamallee", "Porur", "Pudupet", "Pulianthope", "Purasaiwalkam", "Puthagaram", "Puzhal", "Puzhuthivakkam", "Raj Bhavan", "Ramavaram", "Redhills", "Royapettah", "Royapuram", "Saidapet", "Saligramam", "Santhome", "Sembakkam", "Selaiyur", "Shenoy Nagar", "Sholavaram", "Sholinganallur", "Sithalapakkam", "Sowcarpet", "St. Thomas Mount", "Tambaram", "Teynampet", "Tharamani", "T. Nagar", "Thirumangalam", "Thirumullaivoyal", "Thiruneermalai", "Thiruninravur", "Thiruvanmiyur", "Thiruverkadu", "Thiruvotriyur", "Thuraipakkam", "Tirusulam", "Tiruvallikeni", "Tondiarpet", "Triplicane", "Ullagaram", "Urapakkam", "Vandalur", "Vadapalani", "Valasaravakkam", "Vallalar Nagar", "Vanagaram", "Velachery", "Velappanchavadi", "Vepery", "Virugambakkam", "Vyasarpadi", "Washermanpet", "West Mambalam"
+    ];
+
+    districtSelect.append('<option value="">Select a district</option>');
+    districts.forEach(d => districtSelect.append(`<option value="${d}">${d}</option>`));
+
+    chennaiAreaSelect.append('<option value="">Select an area</option>');
+    chennaiAreas.forEach(a => chennaiAreaSelect.append(`<option value="${a}">${a}</option>`));
+
+    locationInput.hide();
+    locationInput.prop('disabled', true);
+
+    function setLocationValue() {
+        const district = districtSelect.val();
+        const chennaiArea = chennaiAreaSelect.val();
+        if (district === 'Chennai' && chennaiArea) {
+            locationInput.val(chennaiArea + ', ' + district);
+        } else if (district && district !== 'Chennai') {
+            locationInput.val(district);
+        } else {
+            locationInput.val('');
+        }
+    }
+
+    districtSelect.on('change', function() {
+        if (this.value === 'Chennai') {
+            chennaiAreaGroup.show();
+        } else {
+            chennaiAreaGroup.hide();
+            chennaiAreaSelect.val('');
+        }
+        setLocationValue();
+    });
+
+    chennaiAreaSelect.on('change', setLocationValue);
+
+    // Pre-fill logic
+    const currentLocation = "{{ form.instance.location }}";
+    if (currentLocation) {
+        const parts = currentLocation.split(',').map(p => p.trim());
+        let district = '';
+        let area = '';
+
+        if (parts.length === 2) {
+            area = parts[0];
+            district = parts[1];
+        } else if (parts.length === 1) {
+            district = parts[0];
+        }
+
+        if (districts.includes(district)) {
+            districtSelect.val(district).trigger('change');
+            if (district === 'Chennai' && chennaiAreas.includes(area)) {
+                chennaiAreaSelect.val(area).trigger('change');
+            }
+        } else {
+            // If district not in list, it might be an area
+            if (chennaiAreas.includes(district)) {
+                districtSelect.val('Chennai').trigger('change');
+                chennaiAreaSelect.val(district).trigger('change');
+            }
+        }
+    }
+});
+</script>
 {% endblock %}

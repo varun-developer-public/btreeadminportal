@@ -72,7 +72,7 @@ class Student(models.Model):
     end_date = models.DateField(blank=True, null=True)
     course_percentage = models.FloatField(default=0)
     pl_required = models.BooleanField(default=False)
-    source_of_joining = models.ForeignKey(SourceOfJoining, on_delete=models.SET_NULL, null=True)
+    source_of_joining = models.ForeignKey(SourceOfJoining, on_delete=models.SET_NULL, null=True, blank=True)
     mode_of_class = models.CharField(max_length=3, choices=MODE_CHOICES)
     week_type = models.CharField(max_length=2, choices=WEEK_TYPE)
     consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True)
