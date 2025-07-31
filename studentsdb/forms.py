@@ -123,7 +123,7 @@ class StudentUpdateForm(forms.ModelForm):
             allowed_fields = [
                 'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
                 'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
-                'pl_required', 'course_status', 'course_percentage'
+                'pl_required', 'course_status', 'course_percentage', 'last_name', 'location', 'alternative_phone'
             ]
             for field_name, field in self.fields.items():
                 if field_name not in allowed_fields:
