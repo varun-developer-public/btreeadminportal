@@ -10,6 +10,16 @@ class Placement(models.Model):
     def __str__(self):
         return f"{self.student.student_id} - Placement"
 
+    def save(self, *args, **kwargs):
+        if self.pk:
+            try:
+                old_instance = Placement.objects.get(pk=self.pk)
+                if old_instance.resume_link and self.resume_link != old_instance.resume_link:
+                    old_instance.resume_link.delete(save=False)
+            except Placement.DoesNotExist:
+                pass
+        super().save(*args, **kwargs)
+
 class CompanyInterview(models.Model):
     placement = models.ForeignKey(Placement, on_delete=models.CASCADE, related_name='interviews')
     company = models.ForeignKey(PlacementDrive, on_delete=models.CASCADE, related_name='interviews',null=True)

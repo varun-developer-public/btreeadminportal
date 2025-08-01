@@ -1,5 +1,6 @@
 DEGREE_CHOICES = [
     # UG Courses
+    ('Diploma', 'Diploma'),
     ('B.Tech / B.E.', 'B.Tech / B.E.'),
     ('B.Sc.', 'B.Sc.'),
     ('BCA', 'BCA (Bachelor of Computer Applications)'),

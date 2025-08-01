@@ -58,6 +58,11 @@ class PlacementFilterForm(forms.Form):
     )
     location = forms.CharField(required=False, label='Location')
     course_percentage = forms.IntegerField(required=False, label='Course Percentage')
+    resume_status = forms.ChoiceField(
+        choices=[('', 'All Resumes'), ('yes', 'Resume Uploaded'), ('no', 'Resume Not Uploaded')],
+        required=False,
+        label="Resume Status"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

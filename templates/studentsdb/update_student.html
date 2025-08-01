@@ -95,7 +95,7 @@ $(document).ready(function() {
 
     const districts = [
         "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
-        "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai",
+        "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pondicherry", "Pudukkottai",
         "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
         "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"
     ];
@@ -111,7 +111,6 @@ $(document).ready(function() {
     chennaiAreas.forEach(a => chennaiAreaSelect.append(`<option value="${a}">${a}</option>`));
 
     locationInput.hide();
-    locationInput.prop('disabled', true);
 
     function setLocationValue() {
         const district = districtSelect.val();

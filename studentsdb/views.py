@@ -88,7 +88,8 @@ def student_list(request):
                 Q(first_name__icontains=query) |
                 Q(last_name__icontains=query) |
                 Q(email__icontains=query) |
-                Q(phone__icontains=query)
+                Q(phone__icontains=query) |
+                Q(student_id__icontains=query)
             )
         if course_category:
             student_list = student_list.filter(course__category=course_category)
@@ -100,6 +101,7 @@ def student_list(request):
             student_list = student_list.filter(enrollment_date__gte=start_date)
         if end_date:
             student_list = student_list.filter(enrollment_date__lte=end_date)
+
 
     paginator = Paginator(student_list, 10)  # Show 10 students per page
     page = request.GET.get('page')

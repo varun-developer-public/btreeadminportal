@@ -150,7 +150,7 @@ class StudentFilterForm(forms.Form):
     q = forms.CharField(
         required=False,
         label='Search',
-        widget=forms.TextInput(attrs={'placeholder': 'Search by name, email or phone'})
+        widget=forms.TextInput(attrs={'placeholder': 'Search by name, email, phone, or Student ID'})
     )
     course_category = forms.ModelChoiceField(
         queryset=CourseCategory.objects.all(),
