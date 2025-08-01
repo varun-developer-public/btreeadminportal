@@ -103,6 +103,11 @@ class StudentUpdateForm(forms.ModelForm):
         required=False,
         empty_label="Select Source of Joining"
     )
+    consultant = forms.ModelChoiceField(
+        queryset=Consultant.objects.all(),
+        required=False,
+        empty_label="Select Consultant"
+    )
 
     class Meta:
         model = Student
