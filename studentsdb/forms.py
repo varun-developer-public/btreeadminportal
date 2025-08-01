@@ -98,6 +98,12 @@ class StudentForm(forms.ModelForm):
 
 
 class StudentUpdateForm(forms.ModelForm):
+    source_of_joining = forms.ModelChoiceField(
+        queryset=SourceOfJoining.objects.all(),
+        required=False,
+        empty_label="Select Source of Joining"
+    )
+
     class Meta:
         model = Student
         fields = [
