@@ -150,6 +150,13 @@ def update_student(request, student_id):
 
             messages.success(request, f"{updated_student.student_id} updated successfully.", extra_tags='student_message')
             return redirect('student_list')
+        else:
+            # If form is not valid, add errors to messages framework
+            for field, errors in form.errors.items():
+                for error in errors:
+                    # Check if the field has a label before trying to access it
+                    label = form.fields[field].label if field in form.fields else field.capitalize()
+                    messages.error(request, f"{label}: {error}", extra_tags='student_message')
     else:
         form = StudentUpdateForm(instance=student, user=request.user)
 

@@ -45,21 +45,21 @@
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' or user.role == 'batch_coordination' or user.role == 'placement' %}
         <li>
             <a href="{% url 'student_list' %}" class="nav-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}">
-                <i class="fas fa-book-open"></i><span>Student</span>
+                <i class="fas fa-book-open"></i><span>Students DB</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'placement' %}
         <li>
             <a href="{% url 'placement_list' %}" class="nav-link {% if request.resolver_match.url_name == 'placement_list' %}active{% endif %}">
-                <i class="fas fa-clipboard-list"></i><span>Placement</span>
+                <i class="fas fa-clipboard-list"></i><span>Placement DB</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'placement' %}
         <li>
             <a href="{% url 'placementdrive:drive_list' %}" class="nav-link {% if request.resolver_match.app_name == 'placementdrive' %}active{% endif %}">
-                <i class="fas fa-bullhorn"></i><span>Placement Drive</span>
+                <i class="fas fa-bullhorn"></i><span>Placement Resources</span>
             </a>
         </li>
         {% endif %}

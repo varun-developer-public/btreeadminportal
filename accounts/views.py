@@ -23,6 +23,7 @@ from paymentdb.models import Payment
 from settingsdb.models import TransactionLog
 from placementdb.models import Placement
 from placementdrive.models import PlacementDrive
+from placementdb.models import CompanyInterview
 from datetime import datetime
 
 from django.utils import timezone
@@ -260,15 +261,42 @@ def consultant_dashboard(request):
 
 @login_required
 @user_passes_test(is_placement)
+
 def placement_dashboard(request):
-    total_placements = Placement.objects.count()
-    total_placement_drives = PlacementDrive.objects.count()
-    overall_placed_students = Student.objects.filter(course_status='P').count()
+    # Base Querysets
+    students_in_pool = Student.objects.filter(pl_required=True)
+    placements = Placement.objects.filter(student__in=students_in_pool)
+    drives = PlacementDrive.objects.all()
+
+    # Overall Stats
+    total_placement_pool = students_in_pool.count()
+    total_placed = students_in_pool.filter(course_status='P').count()
+    actively_seeking = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).count()
+    placement_rate = ((total_placed / total_placement_pool)* 100) if total_placement_pool > 0 else 0
+    active_drives_count = drives.count()
+    interviews_scheduled = CompanyInterview.objects.count()
+
+    # Table Data
+    # Assuming 'recently placed' means their course status was recently updated. We'll order by end_date as a proxy.
+    recently_placed = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
+    
+    upcoming_interviews = CompanyInterview.objects.filter(interview_date__gte=timezone.now().date()).select_related('placement__student', 'company').order_by('interview_date')[:5]
+    
+    students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student', 'student__course')[:10]
 
     context = {
-        'total_placements': total_placements,
-        'total_placement_drives': total_placement_drives,
-        'overall_placed_students': overall_placed_students,
+        # Stat Cards
+        'total_placement_pool': total_placement_pool,
+        'actively_seeking': actively_seeking,
+        'total_placed': total_placed,
+        'placement_rate': round(placement_rate, 1),
+        'active_drives_count': active_drives_count,
+        'interviews_scheduled': interviews_scheduled,
+
+        # Tables
+        'recently_placed': recently_placed,
+        'upcoming_interviews': upcoming_interviews,
+        'students_yet_to_be_placed': students_yet_to_be_placed,
     }
     return render(request, 'accounts/placement_dashboard.html', context)
 

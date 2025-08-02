@@ -109,26 +109,44 @@ class StudentUpdateForm(forms.ModelForm):
         empty_label="Select Consultant"
     )
 
+    course_category = forms.ModelChoiceField(
+        queryset=CourseCategory.objects.all(),
+        required=False,
+        empty_label="Select Course Category"
+    )
+
     class Meta:
         model = Student
         fields = [
             'first_name', 'last_name', 'phone', 'alternative_phone', 'email', 'location',
             'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
             'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
-            'working_status', 'course_status', 'course',
-            'end_date',
-            'course_percentage',
-            'pl_required',
-            'mode_of_class',
-            'week_type','consultant', 'source_of_joining'
+            'working_status', 'it_experience', 'course_category', 'course', 'course_status',
+            'start_date', 'end_date',
+            'pl_required', 'source_of_joining',
+            'mode_of_class', 'week_type', 'consultant'
         ]
         widgets = {
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
         }
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
+        # Dynamic course loading based on category
+        self.fields['course'].queryset = Course.objects.none()
+        if 'course_category' in self.data:
+            try:
+                category_id = int(self.data.get('course_category'))
+                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('name')
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.course:
+            self.fields['course_category'].initial = self.instance.course.category
+            self.fields['course'].queryset = self.instance.course.category.course_set.order_by('name')
+
 
         if user and user.role == 'placement':
             allowed_fields = [

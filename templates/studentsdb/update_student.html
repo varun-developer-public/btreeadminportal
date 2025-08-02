@@ -1,82 +1,312 @@
 {% extends "base.html" %}
 {% block title %}Update Student{% endblock %}
 {% load static %}
+
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/student_form.css' %}">
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
-{% block content %}
-<div class="card">
-    <h2>Update Student - {{ student.student_id }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    {{ form.first_name.label_tag }}
-                    {{ form.first_name }}
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    {{ form.last_name.label_tag }}
-                    {{ form.last_name }}
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    {{ form.phone.label_tag }}
-                    {{ form.phone }}
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    {{ form.alternative_phone.label_tag }}
-                    {{ form.alternative_phone }}
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    {{ form.email.label_tag }}
-                    {{ form.email }}
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label for="id_district">District</label>
-                    <select id="id_district" class="form-control"></select>
-                </div>
-                <div class="form-group" id="chennai_area_group" style="display: none;">
-                    <label for="id_chennai_area">Area in Chennai</label>
-                    <select id="id_chennai_area" class="form-control"></select>
-                </div>
-                <div class="form-group">
-                    {{ form.location }}
-                </div>
-            </div>
-        </div>
-        
-        {% for field in form %}
-            {% if field.name not in "first_name,last_name,phone,alternative_phone,email,location" %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {{ field }}
-                {% if field.help_text %}
-                <small class="form-text text-muted">{{ field.help_text }}</small>
-                {% endif %}
-                {% for error in field.errors %}
-                <div class="alert alert-danger">{{ error }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        {% endfor %}
 
-        <button type="submit" class="btn">Update</button>
-        <a href="{% url 'student_list' %}" class="btn btn-secondary">Back to List</a>
+{% block content %}
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Update Student - {{ student.student_id }}</h1>
+        <p class="form-subtitle">Update the details below</p>
+    </div>
+
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+                    <i class="fas {% if message.level_tag == 'success' %}fa-check-circle{% elif message.level_tag == 'error' %}fa-times-circle{% elif message.level_tag == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" class="student-form">
+        {% csrf_token %}
+
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-user me-2" style="color: white;"></i>Student Personal Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.first_name.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.first_name }}
+                            <div class="error-message">{{ form.first_name.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.last_name.label_tag }}
+                            {{ form.last_name }}
+                            <div class="error-message">{{ form.last_name.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.phone.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.phone }}
+                            <div class="error-message">{{ form.phone.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.alternative_phone.label_tag }}
+                            {{ form.alternative_phone }}
+                            <div class="error-message">{{ form.alternative_phone.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.email.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.email }}
+                            <div class="error-message">{{ form.email.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_district">District<span class="required-indicator">*</span></label>
+                            <select id="id_district" class="form-control"></select>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group" id="chennai_area_group" style="display: none;">
+                            <label for="id_chennai_area">Area in Chennai<span class="required-indicator">*</span></label>
+                            <select id="id_chennai_area" class="form-control"></select>
+                            <div class="error-message"></div>
+                        </div>
+                        <div class="form-group">
+                            {{ form.location }}
+                            <div class="error-message">{{ form.location.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-graduation-cap me-2" style="color: white;"></i>Education Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="form-section-subtitle">Undergraduate</div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.ugdegree.label_tag }}
+                            {{ form.ugdegree }}
+                            <div class="error-message">{{ form.ugdegree.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.ugbranch.label_tag }}
+                            {{ form.ugbranch }}
+                            <div class="error-message">{{ form.ugbranch.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.ugpassout.label_tag }}
+                            {{ form.ugpassout }}
+                            <div class="error-message">{{ form.ugpassout.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.ugpercentage.label_tag }}
+                            {{ form.ugpercentage }}
+                            <div class="error-message">{{ form.ugpercentage.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section-divider"></div>
+
+                <div class="form-section-subtitle">Postgraduate</div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.pgdegree.label_tag }}
+                            {{ form.pgdegree }}
+                            <div class="error-message">{{ form.pgdegree.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.pgbranch.label_tag }}
+                            {{ form.pgbranch }}
+                            <div class="error-message">{{ form.pgbranch.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.pgpassout.label_tag }}
+                            {{ form.pgpassout }}
+                            <div class="error-message">{{ form.pgpassout.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.pgpercentage.label_tag }}
+                            {{ form.pgpercentage }}
+                            <div class="error-message">{{ form.pgpercentage.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-book me-2" style="color: white;"></i>Course Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.course_category.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.course_category }}
+                            <div class="error-message">{{ form.course_category.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.course.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.course }}
+                            <div class="error-message">{{ form.course.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.start_date.label_tag }}
+                            {{ form.start_date }}
+                            <div class="error-message">{{ form.start_date.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.end_date.label_tag }}
+                            {{ form.end_date }}
+                            <div class="error-message">{{ form.end_date.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.mode_of_class.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.mode_of_class }}
+                            <div class="error-message">{{ form.mode_of_class.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.week_type.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.week_type }}
+                            <div class="error-message">{{ form.week_type.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.working_status.label_tag }}
+                            {{ form.working_status }}
+                            <div class="error-message">{{ form.working_status.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="it_experience_group" style="display: none;">
+                        <div class="form-group">
+                            {{ form.it_experience.label_tag }}
+                            {{ form.it_experience }}
+                            <div class="error-message">{{ form.it_experience.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.pl_required.label_tag }}
+                            {{ form.pl_required }}
+                            <div class="error-message">{{ form.pl_required.errors }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.source_of_joining.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.source_of_joining }}
+                            <div class="error-message">{{ form.source_of_joining.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.consultant.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.consultant }}
+                            <div class="error-message">{{ form.consultant.errors }}</div>
+                        </div>
+                    </div>
+                   <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.course_status.label_tag }}
+                            {{ form.course_status }}
+                            <div class="error-message">{{ form.course_status.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update Student</button>
+            <a href="{% url 'student_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
     </form>
 </div>
 {% endblock %}
@@ -86,7 +316,10 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    $('#id_ugdegree, #id_ugbranch, #id_pgdegree, #id_pgbranch, #id_course, #id_consultant, #id_source_of_joining').select2();
+    // Initialize select2 on all select elements
+    $('select').select2({
+        width: '100%'
+    });
 
     const districtSelect = $('#id_district');
     const chennaiAreaGroup = $('#chennai_area_group');
@@ -129,7 +362,7 @@ $(document).ready(function() {
             chennaiAreaGroup.show();
         } else {
             chennaiAreaGroup.hide();
-            chennaiAreaSelect.val('');
+            chennaiAreaSelect.val('').trigger('change');
         }
         setLocationValue();
     });
@@ -137,7 +370,7 @@ $(document).ready(function() {
     chennaiAreaSelect.on('change', setLocationValue);
 
     // Pre-fill logic
-    const currentLocation = "{{ form.instance.location }}";
+    const currentLocation = "{{ form.instance.location|default_if_none:'' }}";
     if (currentLocation) {
         const parts = currentLocation.split(',').map(p => p.trim());
         let district = '';
@@ -156,13 +389,28 @@ $(document).ready(function() {
                 chennaiAreaSelect.val(area).trigger('change');
             }
         } else {
-            // If district not in list, it might be an area
             if (chennaiAreas.includes(district)) {
                 districtSelect.val('Chennai').trigger('change');
                 chennaiAreaSelect.val(district).trigger('change');
             }
         }
     }
+
+    // Handle working status and IT experience
+    const workingStatusSelect = $('#id_working_status');
+    const itExperienceGroup = $('#it_experience_group');
+
+    function toggleItExperience() {
+        if (workingStatusSelect.val() === 'Yes') {
+            itExperienceGroup.show();
+        } else {
+            itExperienceGroup.hide();
+        }
+    }
+
+    toggleItExperience();
+    workingStatusSelect.on('change', toggleItExperience);
+
 });
 </script>
 {% endblock %}
