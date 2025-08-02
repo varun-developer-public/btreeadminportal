@@ -121,7 +121,7 @@ class StudentUpdateForm(forms.ModelForm):
             'first_name', 'last_name', 'phone', 'alternative_phone', 'email', 'location',
             'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
             'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
-            'working_status', 'it_experience', 'course_category', 'course', 'course_status',
+            'working_status', 'it_experience', 'course_category', 'course', 'course_status', 'course_percentage',
             'start_date', 'end_date',
             'pl_required', 'source_of_joining',
             'mode_of_class', 'week_type', 'consultant'

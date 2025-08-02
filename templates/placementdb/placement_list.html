@@ -75,9 +75,13 @@
                            <div class="filter-group">
                                {{ form.resume_status.label_tag }}
                                {{ form.resume_status }}
-                           </div>
-                        </div>
-                        <div class="filter-actions">
+                          </div>
+                          <div class="filter-group">
+                               {{ form.is_active.label_tag }}
+                               {{ form.is_active }}
+                          </div>
+                       </div>
+                       <div class="filter-actions">
                             <button type="submit" class="btn-primary">Apply Filters</button>
                             <a href="{% url 'placement_list' %}" class="btn-secondary">Reset</a>
                         </div>

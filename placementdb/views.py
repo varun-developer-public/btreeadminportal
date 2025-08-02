@@ -26,6 +26,7 @@ def placement_list(request):
         location = form.cleaned_data.get('location')
         course_percentage = form.cleaned_data.get('course_percentage')
         resume_status = form.cleaned_data.get('resume_status')
+        is_active = form.cleaned_data.get('is_active')
 
         if q:
             placements = placements.filter(
@@ -63,6 +64,11 @@ def placement_list(request):
                 placements = placements.filter(resume_link__isnull=False).exclude(resume_link='')
             elif resume_status == 'no':
                 placements = placements.filter(Q(resume_link__isnull=True) | Q(resume_link=''))
+        if is_active:
+            if is_active == 'yes':
+                placements = placements.filter(is_active=True)
+            elif is_active == 'no':
+                placements = placements.filter(is_active=False)
 
     paginator = Paginator(placements, 10)  # Show 10 placements per page
     page = request.GET.get('page')

@@ -63,6 +63,11 @@ class PlacementFilterForm(forms.Form):
         required=False,
         label="Resume Status"
     )
+    is_active = forms.ChoiceField(
+        choices=[('', 'All'), ('yes', 'Active'), ('no', 'Inactive')],
+        required=False,
+        label="Status"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
