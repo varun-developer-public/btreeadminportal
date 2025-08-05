@@ -88,6 +88,10 @@ def payment_list(request):
     except EmptyPage:
         payments_page = paginator.page(paginator.num_pages)
 
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+
     context = {
         'payments': payments_page,
         'total_pending_amount': total_pending_amount,
@@ -102,6 +106,7 @@ def payment_list(request):
         'payment_status': payment_status,
         'date_from': date_from,
         'date_to': date_to,
+        'query_params': query_params.urlencode(),
     }
     return render(request, 'paymentdb/payment_list.html', context)
 

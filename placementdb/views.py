@@ -80,10 +80,14 @@ def placement_list(request):
     except EmptyPage:
         placements = paginator.page(paginator.num_pages)
 
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+
     return render(request, 'placementdb/placement_list.html', {
         'placements': placements,
         'form': form,
-        'query_params': request.GET.urlencode(),
+        'query_params': query_params.urlencode(),
     })
 
 from .forms import PlacementUpdateForm, CompanyInterviewForm
