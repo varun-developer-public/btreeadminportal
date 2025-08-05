@@ -13,6 +13,7 @@
                 <th>Date</th>
                 <th>Portal</th>
                 <th>Company Name</th>
+                <th>Stack</th>
                 <th>SPOC</th>
                 <th>Mobile</th>
                 <th>Email</th>
@@ -28,6 +29,7 @@
                 <td>{{ drive.date }}</td>
                 <td>{{ drive.portal }}</td>
                 <td>{{ drive.company_name }}</td>
+                <td>{{ drive.stack.name|default:"-" }}</td>
                 <td>{{ drive.spoc }}</td>
                 <td>{{ drive.mobile }}</td>
                 <td>{{ drive.email }}</td>

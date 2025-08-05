@@ -97,6 +97,7 @@
                     <th>Student ID</th>
                     <th>Batch ID</th>
                     <th>Course Name</th>
+                    <th>Stack</th>
                     <th>Student Name</th>
                     <th>Phone</th>
                     <th>Email</th>
@@ -129,6 +130,7 @@
                         {% endfor %}
                     </td>
                     <td>{{ placement.student.course.name|default:"-" }}</td>
+                    <td>{{ placement.student.course.category.name|default:"-" }}</td>
                     <td>{{ placement.student.first_name }} {{ placement.student.last_name|default:"" }}</td>
                     <td>{{ placement.student.phone|default:"-" }}</td>
                     <td>{{ placement.student.email|default:"-" }}</td>
@@ -169,8 +171,8 @@
     <div class="pagination">
         <span class="step-links">
             {% if placements.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ placements.previous_page_number }}">previous</a>
+                <a href="?page=1&{{ query_params }}">&laquo; first</a>
+                <a href="?page={{ placements.previous_page_number }}&{{ query_params }}">previous</a>
             {% endif %}
 
             <span class="current">
@@ -178,10 +180,29 @@
             </span>
 
             {% if placements.has_next %}
-                <a href="?page={{ placements.next_page_number }}">next</a>
-                <a href="?page={{ placements.paginator.num_pages }}">last &raquo;</a>
+                <a href="?page={{ placements.next_page_number }}&{{ query_params }}">next</a>
+                <a href="?page={{ placements.paginator.num_pages }}&{{ query_params }}">last &raquo;</a>
             {% endif %}
         </span>
+        <form method="get" class="page-search">
+            <input type="number" name="page" min="1" max="{{ placements.paginator.num_pages }}" placeholder="Page">
+            <input type="hidden" name="q" value="{{ request.GET.q }}">
+            <input type="hidden" name="ug_degree" value="{{ request.GET.ug_degree }}">
+            <input type="hidden" name="ug_branch" value="{{ request.GET.ug_branch }}">
+            <input type="hidden" name="ug_passout" value="{{ request.GET.ug_passout }}">
+            <input type="hidden" name="pg_degree" value="{{ request.GET.pg_degree }}">
+            <input type="hidden" name="pg_branch" value="{{ request.GET.pg_branch }}">
+            <input type="hidden" name="pg_passout" value="{{ request.GET.pg_passout }}">
+            <input type="hidden" name="batch_id" value="{{ request.GET.batch_id }}">
+            <input type="hidden" name="course_category" value="{{ request.GET.course_category }}">
+            <input type="hidden" name="course" value="{{ request.GET.course }}">
+            <input type="hidden" name="course_status" value="{{ request.GET.course_status }}">
+            <input type="hidden" name="location" value="{{ request.GET.location }}">
+            <input type="hidden" name="course_percentage" value="{{ request.GET.course_percentage }}">
+            <input type="hidden" name="resume_status" value="{{ request.GET.resume_status }}">
+            <input type="hidden" name="is_active" value="{{ request.GET.is_active }}">
+            <button type="submit">Go</button>
+        </form>
     </div>
     {% endif %}
 </div>

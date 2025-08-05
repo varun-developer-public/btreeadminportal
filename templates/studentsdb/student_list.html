@@ -100,7 +100,7 @@
     {% for student in students %}
         <tr>
             <td><span class="badge bg-secondary">{{ student.student_id }}</span></td>
-            <td>{{ student.first_name }} {{ student.last_name|format_name }}</td>
+            <td>{{ student.first_name }} {{ student.last_name|default:"" }}</td>
             <td><a href="mailto:{{ student.email }}" class="text-decoration-none text-primary">{{ student.email }}</a></td>
             <td><a href="tel:{{ student.phone }}" class="text-decoration-none text-primary">{{ student.phone }}</a></td>
             <td>{{ student.location|default:"—" }}</td>
@@ -152,6 +152,16 @@
             <a href="?page={{ students.paginator.num_pages }}&{{ query_params }}">last &raquo;</a>
         {% endif %}
     </span>
+    <form method="get" class="page-search">
+        <input type="number" name="page" min="1" max="{{ students.paginator.num_pages }}" placeholder="Page">
+        <input type="hidden" name="q" value="{{ request.GET.q }}">
+        <input type="hidden" name="course_category" value="{{ request.GET.course_category }}">
+        <input type="hidden" name="course" value="{{ request.GET.course }}">
+        <input type="hidden" name="course_status" value="{{ request.GET.course_status }}">
+        <input type="hidden" name="start_date" value="{{ request.GET.start_date }}">
+        <input type="hidden" name="end_date" value="{{ request.GET.end_date }}">
+        <button type="submit">Go</button>
+    </form>
 </div>
 
 {% endblock %}

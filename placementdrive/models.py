@@ -1,12 +1,14 @@
 from django.db import models
 from django.utils import timezone
 from accounts.models import CustomUser
+from studentsdb.models import CourseCategory
 
 class PlacementDrive(models.Model):
     company_code = models.CharField(max_length=20, unique=True, editable=False)
     date = models.DateField(default=timezone.now)
     portal = models.CharField(max_length=100)
     company_name = models.CharField(max_length=255)
+    stack = models.ForeignKey(CourseCategory, on_delete=models.SET_NULL, null=True, blank=True)
     spoc = models.CharField(max_length=255)
     mobile = models.CharField(max_length=15)
     email = models.EmailField()

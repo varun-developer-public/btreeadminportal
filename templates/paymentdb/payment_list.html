@@ -79,7 +79,7 @@
                 {% for payment in payments %}
                 <tr class="status-{{ payment.status|lower }}">
                     <td>{{ payment.student.student_id }}</td>
-                    <td>{{ payment.student.first_name }} {{ payment.student.last_name|format_name }}</td>
+                    <td>{{ payment.student.first_name }} {{ payment.student.last_name|default:"" }}</td>
                     <td>{{ payment.student.phone }}</td>
                     <td>{{ payment.student.consultant.name|default:'N/A' }}</td>
                     <td>
@@ -171,6 +171,15 @@
                 <a href="?page={{ payments.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">last &raquo;</a>
             {% endif %}
         </span>
+        <form method="get" class="page-search">
+            <input type="number" name="page" min="1" max="{{ payments.paginator.num_pages }}" placeholder="Page">
+            <input type="hidden" name="search" value="{{ request.GET.search }}">
+            <input type="hidden" name="emi_type" value="{{ request.GET.emi_type }}">
+            <input type="hidden" name="payment_status" value="{{ request.GET.payment_status }}">
+            <input type="hidden" name="date_from" value="{{ request.GET.date_from }}">
+            <input type="hidden" name="date_to" value="{{ request.GET.date_to }}">
+            <button type="submit">Go</button>
+        </form>
     </div>
 </div>
 

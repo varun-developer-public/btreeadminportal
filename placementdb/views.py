@@ -83,6 +83,7 @@ def placement_list(request):
     return render(request, 'placementdb/placement_list.html', {
         'placements': placements,
         'form': form,
+        'query_params': request.GET.urlencode(),
     })
 
 from .forms import PlacementUpdateForm, CompanyInterviewForm
