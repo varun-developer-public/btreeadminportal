@@ -38,30 +38,37 @@ def payment_list(request):
     if emi_type in ['NONE', '2', '3', '4']:
         payments = payments.filter(emi_type=emi_type)
 
+    if payment_status:
+        if payment_status == 'Pending':
+            payments = payments.filter(total_pending_amount__gt=0)
+        elif payment_status == 'Paid':
+            payments = payments.filter(total_pending_amount__lte=0)
+
     filtered_pending_amount = 0
     # Filter by pending EMI date range if specified
     if date_from and date_to:
         pending_emi_query = Q()
         for i in range(1, 5):
-            # An EMI is pending if its due date is in the range and it's not fully paid.
+            # An EMI is pending if its due date is in the range and it's not paid at all.
             is_pending_in_range = Q(
                 **{f'emi_{i}_date__gte': date_from, f'emi_{i}_date__lte': date_to},
-                **{f'emi_{i}_amount__isnull': False}
-            ) & (
-                Q(**{f'emi_{i}_paid_amount__isnull': True}) | Q(**{f'emi_{i}_paid_amount__lt': F(f'emi_{i}_amount')})
+                **{f'emi_{i}_amount__isnull': False},
+                **{f'emi_{i}_paid_amount__isnull': True}
             )
             pending_emi_query |= is_pending_in_range
         
-        filtered_payments = payments.filter(pending_emi_query).distinct()
+        # Filter for payments that have a pending EMI in the date range and are currently pending.
+        filtered_payments = payments.filter(pending_emi_query, total_pending_amount__gt=0).distinct()
         
         # Calculate the pending amount for the filtered date range
         for payment in filtered_payments:
             for i in range(1, 5):
                 emi_date = getattr(payment, f'emi_{i}_date')
                 if emi_date and date_from <= emi_date.strftime('%Y-%m-%d') <= date_to:
-                    emi_amount = getattr(payment, f'emi_{i}_amount') or 0
-                    paid_amount = getattr(payment, f'emi_{i}_paid_amount') or 0
-                    filtered_pending_amount += emi_amount - paid_amount
+                    paid_amount = getattr(payment, f'emi_{i}_paid_amount')
+                    if paid_amount is None:
+                        emi_amount = getattr(payment, f'emi_{i}_amount') or 0
+                        filtered_pending_amount += emi_amount
 
         payments = filtered_payments
 
@@ -73,10 +80,6 @@ def payment_list(request):
     for payment in payments:
         payment.status = payment.get_payment_status()
         processed_payments.append(payment)
-
-    # Filter by payment status if specified
-    if payment_status:
-        processed_payments = [p for p in processed_payments if p.status == payment_status]
 
     paginator = Paginator(processed_payments, 10)  # Show 10 payments per page
     page = request.GET.get('page')

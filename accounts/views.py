@@ -96,7 +96,7 @@ def admin_dashboard(request):
             amount = getattr(payment, f'emi_{i}_amount')
             paid_amount = getattr(payment, f'emi_{i}_paid_amount')
 
-            if due_date and due_date >= today and amount and not paid_amount:
+            if due_date and amount and not paid_amount:
                 total_paid_by_student = payment.amount_paid or 0
                 for j in range(1, 5):
                     total_paid_by_student += getattr(payment, f'emi_{j}_paid_amount') or 0
@@ -204,7 +204,7 @@ def staff_dashboard(request):
             amount = getattr(payment, f'emi_{i}_amount')
             paid_amount = getattr(payment, f'emi_{i}_paid_amount')
 
-            if due_date and due_date >= today and amount and not paid_amount:
+            if due_date and amount and not paid_amount:
                 total_paid_by_student = payment.amount_paid or 0
                 for j in range(1, 5):
                     total_paid_by_student += getattr(payment, f'emi_{j}_paid_amount') or 0

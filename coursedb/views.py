@@ -51,7 +51,7 @@ def course_create(request):
                 module_form.topic_formset = TopicFormSet(request.POST, prefix=prefix)
             else:
                 module_form.topic_formset = TopicFormSet(prefix=prefix)
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix='modules-__prefix__-topics')
+        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
 
     else:  # GET
         form = CourseForm()
@@ -59,7 +59,7 @@ def course_create(request):
         for i, module_form in enumerate(module_formset.forms):
             prefix = f'modules-{i}-topics'
             module_form.topic_formset = TopicFormSet(prefix=prefix)
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix='modules-__prefix__-topics')
+        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
 
     context = {'form': form, 'formset': module_formset}
     return render(request, 'coursedb/course_form.html', context)
@@ -103,7 +103,7 @@ def course_update(request, pk):
                  module_form.topic_formset = TopicFormSet(request.POST, instance=module_form.instance, prefix=prefix)
             else:
                  module_form.topic_formset = TopicFormSet(instance=module_form.instance, prefix=prefix)
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix='modules-__prefix__-topics')
+        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
 
     else:  # GET
         form = CourseForm(instance=course)
@@ -111,7 +111,7 @@ def course_update(request, pk):
         for i, module_form in enumerate(module_formset.forms):
             prefix = f'modules-{i}-topics'
             module_form.topic_formset = TopicFormSet(instance=module_form.instance, prefix=prefix)
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix='modules-__prefix__-topics')
+        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
 
     context = {'form': form, 'formset': module_formset}
     return render(request, 'coursedb/course_form.html', context)
