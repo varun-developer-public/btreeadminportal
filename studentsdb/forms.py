@@ -92,9 +92,9 @@ class StudentForm(forms.ModelForm):
 
     def clean_last_name(self):
         last_name = self.cleaned_data.get('last_name')
-        if not last_name.isalpha():
+        if last_name and not last_name.isalpha():
             raise forms.ValidationError("Last name should only contain alphabetic characters.")
-        return last_name.capitalize()
+        return last_name.capitalize() if last_name else last_name
 
 
 class StudentUpdateForm(forms.ModelForm):
