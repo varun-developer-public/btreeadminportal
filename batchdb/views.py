@@ -4,10 +4,11 @@ from .forms import BatchCreationForm
 from .models import Batch
 from placementdb.models import Placement
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 import pandas as pd
 from django.http import HttpResponse
 from django.db import transaction
-from datetime import datetime, date
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from studentsdb.models import Student
 from trainersdb.models import Trainer
@@ -65,7 +66,7 @@ def create_batch(request):
             messages.success(request, "Batch created successfully.")
             return redirect('batch_list')
     else:
-        today = date.today()
+        today = timezone.now().date()
         end_date = today + relativedelta(months=2)
         form = BatchCreationForm(initial={
             'batch_id': next_batch_id,

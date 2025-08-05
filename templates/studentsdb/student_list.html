@@ -90,6 +90,7 @@
             <th>Location</th>
             <th>Consultant</th>
             <th>Course Name</th>
+            <th>Course Category</th>
             <th>Current Batches</th>
             <th>Course Status</th>
             <th>Enrollment Date</th>
@@ -106,6 +107,7 @@
             <td>{{ student.location|default:"—" }}</td>
             <td>{{ student.consultant.name|default:"—" }}</td>
             <td>{{ student.course.name|default:"—" }}</td>
+            <td>{{ student.course.category.name|default:"—" }}</td>
             <td>
                 <div class="batch-list-cell">
                     {% for batch in student.batches.all %}

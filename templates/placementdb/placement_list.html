@@ -97,7 +97,6 @@
                     <th>Student ID</th>
                     <th>Batch ID</th>
                     <th>Course Name</th>
-                    <th>Stack</th>
                     <th>Student Name</th>
                     <th>Phone</th>
                     <th>Email</th>
@@ -130,7 +129,6 @@
                         {% endfor %}
                     </td>
                     <td>{{ placement.student.course.name|default:"-" }}</td>
-                    <td>{{ placement.student.course.category.name|default:"-" }}</td>
                     <td>{{ placement.student.first_name }} {{ placement.student.last_name|default:"" }}</td>
                     <td>{{ placement.student.phone|default:"-" }}</td>
                     <td>{{ placement.student.email|default:"-" }}</td>

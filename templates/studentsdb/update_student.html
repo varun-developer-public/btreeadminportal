@@ -418,6 +418,27 @@ $(document).ready(function() {
     toggleItExperience();
     workingStatusSelect.on('change', toggleItExperience);
 
+    const categorySelect = $('#id_course_category');
+    const courseSelect = $('#id_course');
+
+    categorySelect.on('change', function() {
+        const categoryId = $(this).val();
+        courseSelect.empty().append('<option value="">Select a course</option>');
+
+        if (categoryId) {
+            $.ajax({
+                url: '{% url "get_courses" %}',
+                data: {
+                    'category_id': categoryId
+                },
+                success: function(data) {
+                    data.forEach(function(course) {
+                        courseSelect.append(`<option value="${course.id}">${course.name}</option>`);
+                    });
+                }
+            });
+        }
+    });
 });
 </script>
 {% endblock %}

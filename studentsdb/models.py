@@ -3,7 +3,6 @@ from django.utils import timezone
 from consultantdb.models import Consultant
 from settingsdb.models import SourceOfJoining
 from .field_choices import DEGREE_CHOICES, BRANCH_CHOICES
-import datetime
 
 class CourseCategory(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -40,13 +39,13 @@ class Student(models.Model):
     # UG Details
     ugdegree = models.CharField(max_length=100, choices=DEGREE_CHOICES, null=True, blank=True)
     ugbranch = models.CharField(max_length=100, choices=BRANCH_CHOICES, null=True, blank=True)
-    ugpassout = models.IntegerField(choices=[(r, r) for r in range(2014, datetime.date.today().year + 6)], null=True, blank=True)
+    ugpassout = models.IntegerField(choices=[(r, r) for r in range(2014, timezone.now().year + 6)], null=True, blank=True)
     ugpercentage = models.FloatField(null=True, blank=True)
 
     # PG Details
     pgdegree = models.CharField(max_length=100, choices=DEGREE_CHOICES, null=True, blank=True)
     pgbranch = models.CharField(max_length=100, choices=BRANCH_CHOICES, null=True, blank=True)
-    pgpassout = models.IntegerField(choices=[(r, r) for r in range(2014, datetime.date.today().year + 6)], null=True, blank=True)
+    pgpassout = models.IntegerField(choices=[(r, r) for r in range(2014, timezone.now().year + 6)], null=True, blank=True)
     pgpercentage = models.FloatField(null=True, blank=True)
 
     # Work Status
