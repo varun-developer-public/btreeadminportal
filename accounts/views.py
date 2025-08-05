@@ -103,7 +103,7 @@ def admin_dashboard(request):
 
                 upcoming_payments_list.append({
                     'student_id': payment.student.student_id,
-                    'student_name': f"{payment.student.first_name} {payment.student.last_name}",
+                    'student_name': f"{payment.student.first_name} {payment.student.last_name or ''}",
                     'mobile': payment.student.phone,
                     'course': payment.student.course.name if payment.student.course else 'N/A',
                     'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
@@ -211,7 +211,7 @@ def staff_dashboard(request):
 
                 upcoming_payments_list.append({
                     'student_id': payment.student.student_id,
-                    'student_name': f"{payment.student.first_name} {payment.student.last_name}",
+                    'student_name': f"{payment.student.first_name} {payment.student.last_name or ''}",
                     'mobile': payment.student.phone,
                     'course': payment.student.course.name if payment.student.course else 'N/A',
                     'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
