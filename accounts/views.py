@@ -16,7 +16,7 @@ def is_consultant(user):
 def is_placement(user):
     return user.is_authenticated and user.role == 'placement'
 
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.db.models.functions import TruncMonth
 from studentsdb.models import Student
 from paymentdb.models import Payment
@@ -261,7 +261,6 @@ def consultant_dashboard(request):
 
 @login_required
 @user_passes_test(is_placement)
-
 def placement_dashboard(request):
     # Base Querysets
     students_in_pool = Student.objects.filter(pl_required=True)
@@ -272,9 +271,27 @@ def placement_dashboard(request):
     total_placement_pool = students_in_pool.count()
     total_placed = students_in_pool.filter(course_status='P').count()
     actively_seeking = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).count()
-    placement_rate = ((total_placed / total_placement_pool)* 100) if total_placement_pool > 0 else 0
+    placement_rate = ((total_placed / total_placement_pool) * 100) if total_placement_pool > 0 else 0
     active_drives_count = drives.count()
     interviews_scheduled = CompanyInterview.objects.count()
+
+    # Resume Stats
+    students_in_pool_no_resume = students_in_pool.filter(
+        Q(placement__isnull=True) | Q(placement__resume_link__isnull=True) | Q(placement__resume_link='')
+    )
+    resumes_to_collect_count = students_in_pool_no_resume.count()
+
+    completed_but_no_resume = students_in_pool_no_resume.filter(course_status='C').count()
+
+    in_progress_50_80_no_resume = students_in_pool_no_resume.filter(
+        course_status='IP', course_percentage__gte=50, course_percentage__lt=80
+    ).count()
+
+    in_progress_below_50_no_resume = students_in_pool_no_resume.filter(
+        course_status='IP', course_percentage__lt=50
+    ).count()
+
+    yts_no_resume = students_in_pool_no_resume.filter(course_status='YTS').count()
 
     # Table Data
     # Assuming 'recently placed' means their course status was recently updated. We'll order by end_date as a proxy.
@@ -292,6 +309,13 @@ def placement_dashboard(request):
         'placement_rate': round(placement_rate, 1),
         'active_drives_count': active_drives_count,
         'interviews_scheduled': interviews_scheduled,
+
+        # Resume Stats
+        'resumes_to_collect_count': resumes_to_collect_count,
+        'completed_but_no_resume': completed_but_no_resume,
+        'in_progress_50_80_no_resume': in_progress_50_80_no_resume,
+        'in_progress_below_50_no_resume': in_progress_below_50_no_resume,
+        'yts_no_resume': yts_no_resume,
 
         # Tables
         'recently_placed': recently_placed,
