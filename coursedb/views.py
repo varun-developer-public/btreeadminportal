@@ -20,17 +20,9 @@ def course_create(request):
                     module_names = request.POST.getlist('module_name')
                     module_hours = request.POST.getlist('module_hours')
                     
-                    # This is tricky because checkboxes only submit a value when checked.
-                    # We need a way to associate topics with the correct module.
-                    # Let's assume the order is preserved.
-                    
-                    current_topic_index = 0
                     for i in range(len(module_names)):
-                        # A hidden input could be added by the JS to mark which modules have topics.
-                        # For now, we'll rely on the presence of topic names for a given module index.
-                        has_topics_key = f'module_{i}_has_topics' # A hypothetical hidden field.
-                        has_topics = request.POST.get(f'has_topics_module_{i}') == 'on' # Let's assume JS adds this.
-
+                        has_topics = request.POST.get(f'has_topics_module_{i}') == 'on'
+                        
                         module = CourseModule.objects.create(
                             course=course,
                             name=module_names[i],
@@ -52,7 +44,6 @@ def course_create(request):
                     return redirect('coursedb:course_list')
             except Exception as e:
                 messages.error(request, f"An error occurred: {e}")
-
     else:
         form = CourseForm()
 
@@ -77,7 +68,8 @@ def course_update(request, pk):
                     module_hours = request.POST.getlist('module_hours')
 
                     for i in range(len(module_names)):
-                        has_topics = f'module_{i}_has_topics' in request.POST
+                        has_topics = request.POST.get(f'has_topics_module_{i}') == 'on'
+                        
                         module = CourseModule.objects.create(
                             course=course,
                             name=module_names[i],
@@ -103,7 +95,7 @@ def course_update(request, pk):
         form = CourseForm(instance=course)
 
     context = {'form': form, 'course': course}
-    return render(request, 'coursedb/course_form.html', context)
+    return render(request, 'coursedb/course_update_form.html', context)
 
 
 def course_delete(request, pk):

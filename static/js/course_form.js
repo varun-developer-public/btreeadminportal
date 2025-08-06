@@ -5,6 +5,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const addModuleBtn = document.getElementById('add-module-btn');
     const categorySelect = document.getElementById('id_category');
     const codeInput = document.getElementById('id_code');
+    const saveButton = document.querySelector('button[type="submit"]');
+
+    let formInteracted = false;
+
+    function setFormInteracted() {
+        if (!formInteracted) {
+            formInteracted = true;
+        }
+        validateDurations();
+    }
 
     function validateRequiredFields() {
         let allRequiredFilled = true;
@@ -16,14 +26,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (!moduleNameInput.value) {
                 allRequiredFilled = false;
-                moduleNameInput.classList.add('is-invalid');
+                if (formInteracted) moduleNameInput.classList.add('is-invalid');
             } else {
                 moduleNameInput.classList.remove('is-invalid');
             }
 
             if (!moduleHoursInput.value) {
                 allRequiredFilled = false;
-                moduleHoursInput.classList.add('is-invalid');
+                if (formInteracted) moduleHoursInput.classList.add('is-invalid');
             } else {
                 moduleHoursInput.classList.remove('is-invalid');
             }
@@ -36,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 topicNameInputs.forEach(input => {
                     if (!input.value) {
                         allRequiredFilled = false;
-                        input.classList.add('is-invalid');
+                        if (formInteracted) input.classList.add('is-invalid');
                     } else {
                         input.classList.remove('is-invalid');
                     }
@@ -45,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 topicHoursInputs.forEach(input => {
                     if (!input.value) {
                         allRequiredFilled = false;
-                        input.classList.add('is-invalid');
+                        if (formInteracted) input.classList.add('is-invalid');
                     } else {
                         input.classList.remove('is-invalid');
                     }
@@ -56,7 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function validateDurations() {
-        const saveButton = document.querySelector('button[type="submit"]');
         let totalModulesDuration = 0;
         const moduleForms = modulesContainer.querySelectorAll('.module-form');
 
@@ -83,16 +92,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const courseTotalDuration = parseInt(totalDurationInput.value) || 0;
         const allRequiredFilled = validateRequiredFields();
 
-        if (totalModulesDuration === 0 && courseTotalDuration === 0) {
+        if (!formInteracted) {
             validationMessageDiv.style.display = 'none';
-            saveButton.disabled = true;
+            saveButton.disabled = false; // Enable by default on update page
             return;
         }
         
         validationMessageDiv.style.display = 'block';
 
         if (totalModulesDuration !== courseTotalDuration || !allRequiredFilled) {
-            validationMessageDiv.textContent = `The sum of module durations (${totalModulesDuration} hours) must equal the total course duration (${courseTotalDuration} hours).`;
+            let errorMessages = [];
+            if (totalModulesDuration !== courseTotalDuration) {
+                errorMessages.push(`The sum of module durations (${totalModulesDuration} hours) must equal the total course duration (${courseTotalDuration} hours).`);
+            }
+            if (!allRequiredFilled) {
+                errorMessages.push('Please fill in all required fields.');
+            }
+            validationMessageDiv.textContent = errorMessages.join(' ');
             validationMessageDiv.className = 'error';
             saveButton.disabled = true;
         } else {
@@ -118,8 +134,12 @@ document.addEventListener('DOMContentLoaded', function() {
             validateDurations();
         };
         moduleDiv.querySelector('.topic-forms-container').appendChild(topicDiv);
-        const topicInputs = topicDiv.querySelectorAll(`input[name="topic_hours_module_${moduleIndex}"]`);
-        topicInputs.forEach(input => input.addEventListener('input', validateDurations));
+        
+        const topicInputs = topicDiv.querySelectorAll('input');
+        topicInputs.forEach(input => {
+            input.addEventListener('input', setFormInteracted);
+            input.addEventListener('blur', setFormInteracted);
+        });
     }
 
     function attachModuleEvents(moduleDiv) {
@@ -145,17 +165,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 topicsSection.style.display = 'none';
                 topicFormsContainer.innerHTML = '';
             }
-            validateDurations();
+            setFormInteracted();
         };
 
         addTopicBtn.onclick = function() {
             addTopicToModule(moduleDiv);
         };
 
-        const inputs = moduleDiv.querySelectorAll('input[name="module_name"], input[name="module_hours"], input[name^="topic_name_module_"], input[name^="topic_hours_module_"], .has-topics-checkbox');
+        const inputs = moduleDiv.querySelectorAll('input[name="module_name"], input[name="module_hours"], .has-topics-checkbox');
         inputs.forEach(input => {
-            input.addEventListener('blur', validateDurations);
-            input.addEventListener('change', validateDurations);
+            input.addEventListener('input', setFormInteracted);
+            input.addEventListener('blur', setFormInteracted);
+        });
+
+        const topicInputs = moduleDiv.querySelectorAll('.topic-form input');
+        topicInputs.forEach(input => {
+            input.addEventListener('input', setFormInteracted);
+            input.addEventListener('blur', setFormInteracted);
+        });
+
+        const removeTopicBtns = moduleDiv.querySelectorAll('.remove-topic-btn');
+        removeTopicBtns.forEach(btn => {
+            btn.onclick = function() {
+                btn.closest('.topic-form').remove();
+                validateDurations();
+            };
         });
     }
 
@@ -169,8 +203,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (addModuleBtn) {
         addModuleBtn.onclick = addModule;
-        addModule(); // Add initial module
     }
+
+    // Attach events to existing modules on update page
+    const existingModules = modulesContainer.querySelectorAll('.module-form');
+    existingModules.forEach(moduleDiv => {
+        attachModuleEvents(moduleDiv);
+    });
 
     if (categorySelect && codeInput) {
         categorySelect.addEventListener('change', function() {
@@ -188,5 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    totalDurationInput.addEventListener('blur', validateDurations);
+    totalDurationInput.addEventListener('input', setFormInteracted);
+    totalDurationInput.addEventListener('blur', setFormInteracted);
+
+    validateDurations();
 });

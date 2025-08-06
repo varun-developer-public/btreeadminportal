@@ -1,103 +1,125 @@
 {% extends "base.html" %}
-{% block content %}
+{% load static %}
+
+{% block title %}Course List{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
 <style>
-    .course-table {
-        width: 100%;
-        border-collapse: collapse;
+    .table-wrapper {
+        overflow-x: auto;
     }
-    .course-table th, .course-table td {
-        border: 1px solid #ddd;
-        padding: 8px;
-        text-align: left;
+    .action-icons a {
+        margin: 0 5px;
+        font-size: 1.1rem;
+        text-decoration: none;
     }
-    .course-table th {
-        background-color: #f2f2f2;
-    }
-    .course-row.expandable {
+    .expandable-row {
         cursor: pointer;
     }
-    .module-row {
-        display: none;
+    .accordion-button:not(.collapsed) {
+        color: #0c63e4;
+        background-color: #e7f1ff;
     }
-    .module-table {
-        width: 100%;
-        margin-top: 10px;
+    .accordion-button:focus {
+        z-index: 3;
+        border-color: #86b7fe;
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+    }
+    .accordion-button::after {
+        flex-shrink: 0;
+        width: 1.25rem;
+        height: 1.25rem;
+        margin-left: auto;
+        content: "";
+        background-image: var(--bs-accordion-btn-icon);
+        background-repeat: no-repeat;
+        background-size: 1.25rem;
+        transition: transform .2s ease-in-out;
     }
 </style>
+{% endblock %}
 
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>Courses</h2>
-        <a href="{% url 'coursedb:course_create' %}" class="btn">+ Add Course</a>
+{% block content %}
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-book me-2"></i>Course List</h2>
+        <a href="{% url 'coursedb:course_create' %}" class="btn-primary">
+            <i class="fas fa-plus me-2"></i>Add New Course
+        </a>
     </div>
 
-    <table class="course-table">
-        <thead>
-            <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Category</th>
-                <th>Total Duration (hours)</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for course in courses %}
-            <tr class="course-row {% if course.modules.all %}expandable{% endif %}" data-course-id="{{ course.pk }}">
-                <td>{{ course.code }}</td>
-                <td>{{ course.course_name }}</td>
-                <td>{{ course.course_type }}</td>
-                <td>{{ course.category }}</td>
-                <td>{{ course.total_duration }}</td>
-                <td>
-                    <a href="{% url 'coursedb:course_update' course.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
-                    <a href="{% url 'coursedb:course_delete' course.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
-                </td>
-            </tr>
-            {% if course.modules.all %}
-            <tr class="module-row" id="modules-{{ course.pk }}">
-                <td colspan="5">
-                    <table class="module-table">
-                        <thead>
-                            <tr>
-                                <th>Module Name</th>
-                                <th>Duration (hours)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for module in course.modules.all %}
-                            <tr>
-                                <td>{{ module.name }}</td>
-                                <td>{{ module.module_duration }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Duration</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr class="expandable-row" data-bs-toggle="collapse" data-bs-target="#collapse-course-{{ course.pk }}">
+                    <td><i class="fas fa-chevron-down"></i></td>
+                    <td>{{ course.code }}</td>
+                    <td>{{ course.course_name }}</td>
+                    <td>{{ course.category }}</td>
+                    <td>{{ course.course_type }}</td>
+                    <td>{{ course.total_duration }} hours</td>
+                    <td class="text-center action-icons">
+                        <a href="{% url 'coursedb:course_update' course.pk %}" class="text-success"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'coursedb:course_delete' course.pk %}" class="text-danger"><i class="fas fa-trash"></i></a>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="7" class="p-0">
+                        <div id="collapse-course-{{ course.pk }}" class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                {% if course.modules.all %}
+                                <div class="accordion" id="module-accordion-{{ course.pk }}">
+                                    {% for module in course.modules.all %}
+                                    <div class="accordion-item">
+                                        <h2 class="accordion-header" id="heading-module-{{ module.pk }}">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-module-{{ module.pk }}">
+                                                {{ module.name }} - {{ module.module_duration }} hours
+                                            </button>
+                                        </h2>
+                                        <div id="collapse-module-{{ module.pk }}" class="accordion-collapse collapse" data-bs-parent="#module-accordion-{{ course.pk }}">
+                                            <div class="accordion-body">
+                                                {% if module.has_topics and module.topics.all %}
+                                                    <ul class="list-group">
+                                                        {% for topic in module.topics.all %}
+                                                            <li class="list-group-item">{{ topic.name }} - {{ topic.topic_duration }} hours</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                {% else %}
+                                                    <p>No topics for this module.</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <p>No modules for this course.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No courses found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const expandableRows = document.querySelectorAll('.expandable');
-    expandableRows.forEach(row => {
-        row.addEventListener('click', function() {
-            const courseId = this.dataset.courseId;
-            const moduleRow = document.getElementById(`modules-${courseId}`);
-            if (moduleRow) {
-                if (moduleRow.style.display === 'table-row') {
-                    moduleRow.style.display = 'none';
-                } else {
-                    moduleRow.style.display = 'table-row';
-                }
-            }
-        });
-    });
-});
-</script>
 {% endblock %}

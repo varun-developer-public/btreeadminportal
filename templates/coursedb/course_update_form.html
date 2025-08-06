@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Create Course{% endblock %}
+{% block title %}Update Course{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
@@ -10,8 +10,8 @@
 {% block content %}
 <div class="student-form-container">
     <div class="form-header">
-        <h1>Create Course</h1>
-        <p class="form-subtitle">Enter the details to create a new course</p>
+        <h1>Update Course</h1>
+        <p class="form-subtitle">Update the details for {{ course.course_name }}</p>
     </div>
 
     <form method="post" class="student-form">
@@ -84,13 +84,63 @@
                 <h5 style="color: white;"><i class="fas fa-cogs me-2" style="color: white;"></i>Modules</h5>
             </div>
             <div class="form-section-body">
-                <div id="modules-container"></div>
+                <div id="modules-container">
+                    {% for module in course.modules.all %}
+                    <div class="module-form">
+                        <button type="button" class="remove-btn remove-module-btn">X</button>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Module Name<span class="required-indicator">*</span></label>
+                                    <input type="text" name="module_name" class="form-control" value="{{ module.name }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Module Hours<span class="required-indicator">*</span></label>
+                                    <input type="number" name="module_hours" min="1" class="form-control" value="{{ module.module_duration }}">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label style="font-weight:normal;">
+                                <input type="checkbox" name="has_topics" class="has-topics-checkbox" {% if module.has_topics %}checked{% endif %}>
+                                Has Topics?
+                            </label>
+                        </div>
+                        <div class="topics-section" style="{% if not module.has_topics %}display:none;{% endif %}">
+                            <div class="topic-forms-container">
+                                {% for topic in module.topics.all %}
+                                <div class="topic-form">
+                                    <button type="button" class="remove-btn remove-topic-btn">X</button>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Topic Name<span class="required-indicator">*</span></label>
+                                                <input type="text" name="topic_name_module_{{ forloop.parentloop.counter0 }}" class="form-control" value="{{ topic.name }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Topic Hours<span class="required-indicator">*</span></label>
+                                                <input type="number" name="topic_hours_module_{{ forloop.parentloop.counter0 }}" min="1" class="form-control" value="{{ topic.topic_duration }}">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button type="button" class="btn btn-sm btn-secondary add-topic-btn">Add Topic</button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
                 <button type="button" class="btn btn-primary" id="add-module-btn">Add Module</button>
             </div>
         </div>
         <div id="duration-validation-message"></div>
          <div class="form-actions">
-             <button type="submit" class="btn btn-success">Save Course</button>
+             <button type="submit" class="btn btn-success">Update Course</button>
          </div>
 
         <!-- Templates - hidden but present in DOM -->
