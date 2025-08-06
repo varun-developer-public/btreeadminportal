@@ -8,60 +8,61 @@ def course_list(request):
     courses = Course.objects.prefetch_related('modules').all()
     return render(request, 'coursedb/course_list.html', {'courses': courses})
 
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
 def course_create(request):
     if request.method == 'POST':
-        form = CourseForm(request.POST)
+        course_form = CourseForm(request.POST)
         module_formset = CourseModuleFormSet(request.POST, prefix='modules')
 
-        if form.is_valid() and module_formset.is_valid():
-            course = form.save()
-            modules = module_formset.save(commit=False)
-            
-            all_valid = True
-            topic_formsets = []
-            for i, module_form in enumerate(module_formset.forms):
-                if module_form.cleaned_data and not module_form.cleaned_data.get('DELETE'):
-                    if module_form.cleaned_data.get('has_topics'):
-                        # Assign temporary instance for validation
-                        module_instance = modules[i]
-                        prefix = f'modules-{i}-topics'
-                        topic_formset = TopicFormSet(request.POST, instance=module_instance, prefix=prefix)
-                        topic_formsets.append(topic_formset)
-                        if not topic_formset.is_valid():
-                            all_valid = False
-                    else:
-                        topic_formsets.append(None)
-            
-            if all_valid:
-                for i, module in enumerate(modules):
-                    module.course = course
-                    module.save()
-                    if topic_formsets[i]:
-                        topics = topic_formsets[i].save(commit=False)
-                        for topic in topics:
-                            topic.module = module
-                            topic.save()
-                messages.success(request, "Course created successfully.")
-                return redirect('coursedb:course_list')
+        all_valid = course_form.is_valid() and module_formset.is_valid()
+        topic_formsets = []
+        modules = module_formset.save(commit=False) if module_formset.is_valid() else []
 
-        # Re-render with errors
         for i, module_form in enumerate(module_formset.forms):
             prefix = f'modules-{i}-topics'
-            if module_form.cleaned_data and module_form.cleaned_data.get('has_topics'):
-                module_form.topic_formset = TopicFormSet(request.POST, prefix=prefix)
+            if (module_form.cleaned_data and 
+                not module_form.cleaned_data.get('DELETE', False) and 
+                module_form.cleaned_data.get('has_topics')):
+                module_instance = modules[i] if i < len(modules) else None
+                topic_formset = TopicFormSet(request.POST, instance=module_instance, prefix=prefix)
+                topic_formsets.append(topic_formset)
+                module_form.topic_formset = topic_formset
+                if not topic_formset.is_valid():
+                    all_valid = False
             else:
-                module_form.topic_formset = TopicFormSet(prefix=prefix)
+                topic_formset = TopicFormSet(request.POST, prefix=prefix)
+                topic_formsets.append(None)
+                module_form.topic_formset = topic_formset
+
         module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
 
+        if all_valid:
+            course = course_form.save()
+            for i, module in enumerate(modules):
+                module.course = course
+                module.save()
+                if topic_formsets[i]:
+                    topics = topic_formsets[i].save(commit=False)
+                    for topic in topics:
+                        topic.module = module
+                        topic.save()
+            messages.success(request, "Course created successfully.")
+            return redirect('coursedb:course_list')
+
     else:  # GET
-        form = CourseForm()
+        course_form = CourseForm()
         module_formset = CourseModuleFormSet(prefix='modules')
         for i, module_form in enumerate(module_formset.forms):
             prefix = f'modules-{i}-topics'
             module_form.topic_formset = TopicFormSet(prefix=prefix)
         module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
 
-    context = {'form': form, 'formset': module_formset}
+    context = {
+        'form': course_form,
+        'formset': module_formset,
+    }
     return render(request, 'coursedb/course_form.html', context)
 
 def course_update(request, pk):

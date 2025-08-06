@@ -1,18 +1,30 @@
 {% extends "base.html" %}
-{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Course{% endblock %}
 {% load static %}
+{% block title %}Create Course{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
 <style>
-    .topic-form .form-control {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.8rem;
+    .module-form, .topic-form {
+        background: #f5f8fc;
+        border: 1px solid #dbeafe;
+        border-radius: 6px;
+        padding: 15px 16px;
+        margin-bottom: 15px;
+        position: relative;
+    }
+    .module-form > .remove-module-btn,
+    .topic-form > .remove-topic-btn {
+        position: absolute;
+        right: 12px;
+        top: 12px;
     }
     .topics-section {
-        padding-left: 20px;
-        border-left: 2px solid #eee;
         margin-top: 10px;
+        margin-left: 30px;
+        border-left: 3px solid #c7e5fc;
+        padding-left: 21px;
+        background: #fafdff;
     }
 </style>
 {% endblock %}
@@ -20,7 +32,8 @@
 {% block content %}
 <div class="student-form-container">
     <div class="form-header">
-        <h1>{% if form.instance.pk %}Edit{% else %}Create{% endif %} Course</h1>
+        <h1>Create Course</h1>
+        <p class="form-subtitle">Enter the details to create a new course</p>
     </div>
 
     <form method="post" class="student-form">
@@ -98,370 +111,146 @@
             </div>
         </div>
 
-        <div id="modules-section" class="form-section-card">
+        <div class="form-section-card">
             <div class="form-section-header">
-                <h5 style="color: white;"><i class="fas fa-puzzle-piece me-2" style="color: white;"></i>Modules</h5>
+                <h5 style="color: white;"><i class="fas fa-cogs me-2" style="color: white;"></i>Modules</h5>
             </div>
             <div class="form-section-body">
-                {{ formset.management_form }}
-                {{ formset.non_form_errors }}
-                <div id="module-forms-container">
-                    {% for form in formset %}
-                        <div class="module-form">
-                            {{ form.id }}
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        {{ form.name.label_tag }}
-                                        {{ form.name }}
-                                        {{ form.name.errors }}
-                                    </div>
-                                </div>
-                                <div class="col-md-5">
-                                    <div class="form-group">
-                                        {{ form.module_duration.label_tag }}
-                                        {{ form.module_duration }}
-                                        {{ form.module_duration.errors }}
-                                    </div>
-                                </div>
-                                <div class="col-md-1 d-flex align-items-center">
-                                    {% if formset.can_delete %}
-                                        {% if form.instance.pk %}<div style="display:none;">{{ form.DELETE }}</div>{% endif %}
-                                        <button type="button" class="btn btn-danger remove-module-btn"><i class="fas fa-times"></i></button>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-12">
-                                    <div class="form-check">
-                                        {{ form.has_topics }}
-                                        <label class="form-check-label" for="{{ form.has_topics.id_for_label }}">Has Topics</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="topics-section" style="display: {% if form.instance.has_topics %}block{% else %}none{% endif %};">
-                                <h6>Topics</h6>
-                                <div class="topic-forms-container">
-                                    {{ form.topic_formset.management_form }}
-                                    {% for topic_form in form.topic_formset %}
-                                        <div class="topic-form">
-                                            {{ topic_form.id }}
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        {{ topic_form.name.label_tag }}
-                                                        {{ topic_form.name }}
-                                                        {{ topic_form.name.errors }}
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-5">
-                                                    <div class="form-group">
-                                                        {{ topic_form.topic_duration.label_tag }}
-                                                        {{ topic_form.topic_duration }}
-                                                        {{ topic_form.topic_duration.errors }}
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-1 d-flex align-items-center">
-                                                    {% if form.topic_formset.can_delete %}
-                                                        {% if topic_form.instance.pk %}<div style="display:none;">{{ topic_form.DELETE }}</div>{% endif %}
-                                                        <button type="button" class="btn btn-danger remove-topic-btn"><i class="fas fa-times"></i></button>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                                <script type="text/template" class="empty-topic-form-template">
-                                    <div class="topic-form">
-                                        {{ form.topic_formset.empty_form.id }}
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    {{ form.topic_formset.empty_form.name.label_tag }}
-                                                    {{ form.topic_formset.empty_form.name }}
-                                                    {{ form.topic_formset.empty_form.name.errors }}
-                                                </div>
-                                            </div>
-                                            <div class="col-md-5">
-                                                <div class="form-group">
-                                                    {{ form.topic_formset.empty_form.topic_duration.label_tag }}
-                                                    {{ form.topic_formset.empty_form.topic_duration }}
-                                                    {{ form.topic_formset.empty_form.topic_duration.errors }}
-                                                </div>
-                                            </div>
-                                            <div class="col-md-1 d-flex align-items-center">
-                                                <button type="button" class="btn btn-danger remove-topic-btn"><i class="fas fa-times"></i></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </script>
-                                <button type="button" class="btn btn-sm btn-secondary add-topic-btn">Add Topic</button>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-
-                <script type="text/template" id="empty-form-template">
-                    <div class="module-form">
-                        {{ formset.empty_form.id }}
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    {{ formset.empty_form.name.label_tag }}
-                                    {{ formset.empty_form.name }}
-                                    {{ formset.empty_form.name.errors }}
-                                </div>
-                            </div>
-                            <div class="col-md-5">
-                                <div class="form-group">
-                                    {{ formset.empty_form.module_duration.label_tag }}
-                                    {{ formset.empty_form.module_duration }}
-                                    {{ formset.empty_form.module_duration.errors }}
-                                </div>
-                            </div>
-                            <div class="col-md-1 d-flex align-items-center">
-                                <button type="button" class="btn btn-danger remove-module-btn"><i class="fas fa-times"></i></button>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="form-check">
-                                    {{ formset.empty_form.has_topics }}
-                                    <label class="form-check-label" for="{{ formset.empty_form.has_topics.id_for_label }}">Has Topics</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="topics-section" style="display: none;">
-                            <h6>Topics</h6>
-                            <div class="topic-forms-container">
-                                {{ formset.empty_form.topic_formset.management_form }}
-                            </div>
-                            <script type="text/template" class="empty-topic-form-template">
-                                <div class="topic-form">
-                                    {{ formset.empty_form.topic_formset.empty_form.id }}
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                {{ formset.empty_form.topic_formset.empty_form.name.label_tag }}
-                                                {{ formset.empty_form.topic_formset.empty_form.name }}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-5">
-                                            <div class="form-group">
-                                                {{ formset.empty_form.topic_formset.empty_form.topic_duration.label_tag }}
-                                                {{ formset.empty_form.topic_formset.empty_form.topic_duration }}
-                                            </div>
-                                        </div>
-                                        <div class="col-md-1 d-flex align-items-center">
-                                            <button type="button" class="btn btn-danger remove-topic-btn"><i class="fas fa-times"></i></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </script>
-                            <button type="button" class="btn btn-sm btn-secondary add-topic-btn">Add Topic</button>
-                        </div>
-                    </div>
-                </script>
-                <button type="button" id="add-module-btn" class="btn btn-secondary">Add Module</button>
+                <div id="modules-container"></div>
+                <button type="button" class="btn btn-primary" id="add-module-btn">Add Module</button>
             </div>
         </div>
 
         <div class="form-actions">
-            <button type="submit" id="save-button" class="btn btn-primary">Save</button>
-            <a href="{% url 'coursedb:course_list' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success">Save Course</button>
         </div>
-        <div id="duration-error" class="alert alert-danger mt-2" style="display: none;"></div>
+
+        <!-- Templates - hidden but present in DOM -->
+        <template id="module-template">
+            <div class="module-form">
+                <button type="button" class="btn btn-danger btn-sm remove-module-btn">Remove</button>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Module Name</label>
+                            <input type="text" name="module_name" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Module Hours</label>
+                            <input type="number" name="module_hours" min="1" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="font-weight:normal;">
+                        <input type="checkbox" name="has_topics" class="has-topics-checkbox">
+                        Has Topics?
+                    </label>
+                </div>
+                <div class="topics-section" style="display:none;">
+                    <div class="topic-forms-container"></div>
+                    <button type="button" class="btn btn-sm btn-secondary add-topic-btn">Add Topic</button>
+                </div>
+            </div>
+        </template>
+        <template id="topic-template">
+            <div class="topic-form">
+                <button type="button" class="btn btn-danger btn-sm remove-topic-btn">Remove</button>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Topic Name</label>
+                            <input type="text" name="topic_name" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Topic Hours</label>
+                            <input type="number" name="topic_hours" min="1" class="form-control">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
     </form>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const moduleFormsetPrefix = 'modules';
-    const topicFormsetPrefix = 'topics';
+// CREATE A NEW MODULE FORM
+function addModule() {
+    const tmpl = document.getElementById('module-template').content.cloneNode(true);
+    const moduleDiv = tmpl.querySelector('.module-form');
+    // Attach all button events
+    attachModuleEvents(moduleDiv);
+    document.getElementById('modules-container').appendChild(moduleDiv);
+}
 
-    const moduleFormsContainer = document.getElementById('module-forms-container');
-    const addModuleBtn = document.getElementById('add-module-btn');
-    const emptyModuleFormTemplate = document.getElementById('empty-form-template');
+// MODULE EVENTS (add/remove topics, toggle show/hide on checkbox)
+function attachModuleEvents(moduleDiv) {
+    moduleDiv.querySelector('.remove-module-btn').onclick = function() {
+        moduleDiv.remove();
+    };
+    const hasTopics = moduleDiv.querySelector('.has-topics-checkbox');
+    const topicsSection = moduleDiv.querySelector('.topics-section');
+    const addTopicBtn = moduleDiv.querySelector('.add-topic-btn');
+    const topicFormsContainer = moduleDiv.querySelector('.topic-forms-container');
+    // Show topics section and auto-add first topic
+    hasTopics.onchange = function() {
+        if (hasTopics.checked) {
+            topicsSection.style.display = 'block';
+            // If section is empty, add a topic row
+            if (!topicFormsContainer.querySelector('.topic-form')) {
+                addTopicToModule(moduleDiv);
+            }
+        } else {
+            topicsSection.style.display = 'none';
+            topicFormsContainer.innerHTML = '';
+        }
+    };
+    addTopicBtn.onclick = function() {
+        addTopicToModule(moduleDiv);
+    };
+}
+
+// CREATE NEW TOPIC ROW
+function addTopicToModule(moduleDiv) {
+    const tmpl = document.getElementById('topic-template').content.cloneNode(true);
+    const topicDiv = tmpl.querySelector('.topic-form');
+    topicDiv.querySelector('.remove-topic-btn').onclick = function() {
+        topicDiv.remove();
+    };
+    moduleDiv.querySelector('.topic-forms-container').appendChild(topicDiv);
+}
+
+// Add the first starter module for user-friendliness
+document.addEventListener('DOMContentLoaded', function() {
     const categorySelect = document.getElementById('id_category');
     const codeInput = document.getElementById('id_code');
-    const totalDurationInput = document.getElementById('id_total_duration');
-    const saveButton = document.getElementById('save-button');
-    const durationError = document.getElementById('duration-error');
 
-    function updateAndValidate() {
-        let courseTotal = parseInt(totalDurationInput.value, 10) || 0;
-        let modulesTotal = 0;
-        let errorMessages = [];
-
-        document.querySelectorAll('.module-form').forEach((moduleForm) => {
-            const deleteInput = moduleForm.querySelector(`input[name$="-DELETE"]`);
-            if (deleteInput && deleteInput.checked) return;
-
-            const moduleDurationInput = moduleForm.querySelector(`input[name$="-module_duration"]`);
-            const moduleDuration = parseInt(moduleDurationInput.value, 10) || 0;
-            modulesTotal += moduleDuration;
-
-            const hasTopicsCheckbox = moduleForm.querySelector(`input[name$="-has_topics"]`);
-            if (hasTopicsCheckbox && hasTopicsCheckbox.checked) {
-                let topicsTotal = 0;
-                moduleForm.querySelectorAll('.topic-form').forEach(topicForm => {
-                    const topicDeleteInput = topicForm.querySelector(`input[name$="-DELETE"]`);
-                    if (!topicDeleteInput || !topicDeleteInput.checked) {
-                        const topicDurationInput = topicForm.querySelector(`input[name$="-topic_duration"]`);
-                        topicsTotal += parseInt(topicDurationInput.value, 10) || 0;
-                    }
-                });
-
-                if (moduleDuration !== topicsTotal) {
-                    const moduleName = moduleForm.querySelector(`input[name$="-name"]`).value || `This module`;
-                    errorMessages.push(`Topics in '${moduleName}' sum to ${topicsTotal}hrs, but module duration is ${moduleDuration}hrs.`);
-                }
+    if (categorySelect && codeInput) {
+        categorySelect.addEventListener('change', function() {
+            const categoryId = this.value;
+            if (categoryId) {
+                fetch(`/coursedb/ajax/get_next_course_code/?category_id=${categoryId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.next_code) {
+                            codeInput.value = data.next_code;
+                        }
+                    })
+                    .catch(error => console.error('Error fetching next course code:', error));
             }
         });
-
-        if (courseTotal !== modulesTotal) {
-            errorMessages.push(`All module durations sum to ${modulesTotal}hrs, but course duration is ${courseTotal}hrs.`);
-        }
-
-        durationError.innerHTML = errorMessages.join('<br>');
-        durationError.style.display = errorMessages.length > 0 ? 'block' : 'none';
-        saveButton.disabled = errorMessages.length > 0;
     }
-
-    function escapeRegex(string) {
-        return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    
+    if (document.getElementById('add-module-btn')) {
+        document.getElementById('add-module-btn').onclick = addModule;
+        addModule();
     }
-
-    function addTopic(moduleForm) {
-        if (!moduleForm) {
-            console.error("addTopic was called without a module form.");
-            return;
-        }
-
-        const topicFormsContainer = moduleForm.querySelector('.topic-forms-container');
-        const emptyTopicTemplate = moduleForm.querySelector('.empty-topic-form-template');
-        const totalFormsInput = moduleForm.querySelector(`input[name$="-${topicFormsetPrefix}-TOTAL_FORMS"]`);
-
-        if (!topicFormsContainer || !emptyTopicTemplate || !totalFormsInput) {
-            console.error("Module form is missing required elements for adding a topic.", {
-                topicFormsContainer,
-                emptyTopicTemplate,
-                totalFormsInput
-            });
-            return;
-        }
-
-        const newIndex = parseInt(totalFormsInput.value);
-        const formsetPrefix = totalFormsInput.name.replace('-TOTAL_FORMS', '');
-        
-        const prefixRegex = new RegExp(escapeRegex(formsetPrefix + '-__prefix__'), 'g');
-        
-        const newFormHtml = emptyTopicTemplate.innerHTML.replace(prefixRegex, `${formsetPrefix}-${newIndex}`);
-
-        topicFormsContainer.insertAdjacentHTML('beforeend', newFormHtml);
-
-        totalFormsInput.value = newIndex + 1;
-        updateAndValidate();
-    }
-
-    addModuleBtn.addEventListener('click', () => {
-        const totalFormsInput = document.querySelector(`#id_${moduleFormsetPrefix}-TOTAL_FORMS`);
-        const newModuleIndex = parseInt(totalFormsInput.value);
-
-        let newModuleHtml = emptyModuleFormTemplate.innerHTML;
-        
-        const modulePrefixRegex = new RegExp(escapeRegex(moduleFormsetPrefix + '-__prefix__'), 'g');
-        newModuleHtml = newModuleHtml.replace(modulePrefixRegex, `${moduleFormsetPrefix}-${newModuleIndex}`);
-
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = newModuleHtml.trim();
-        const newModuleForm = tempDiv.firstElementChild;
-
-        moduleFormsContainer.appendChild(newModuleForm);
-
-        const totalTopicsInput = newModuleForm.querySelector(`input[name$="-${topicFormsetPrefix}-TOTAL_FORMS"]`);
-        if (totalTopicsInput) {
-            totalTopicsInput.value = 0;
-        }
-
-        totalFormsInput.value = newModuleIndex + 1;
-        updateAndValidate();
-    });
-
-    document.body.addEventListener('click', e => {
-        const target = e.target;
-        const addTopicBtn = target.closest('.add-topic-btn');
-        const removeTopicBtn = target.closest('.remove-topic-btn');
-        const removeModuleBtn = target.closest('.remove-module-btn');
-
-        if (addTopicBtn) {
-            addTopic(addTopicBtn.closest('.module-form'));
-        } else if (removeTopicBtn) {
-            const topicForm = removeTopicBtn.closest('.topic-form');
-            const deleteInput = topicForm.querySelector(`input[name$="-DELETE"]`);
-            if (deleteInput) {
-                deleteInput.checked = true;
-                topicForm.style.display = 'none';
-            } else {
-                topicForm.remove();
-            }
-            updateAndValidate();
-        } else if (removeModuleBtn) {
-            const moduleForm = removeModuleBtn.closest('.module-form');
-            const deleteInput = moduleForm.querySelector(`input[name$="-DELETE"]`);
-            if (deleteInput) {
-                deleteInput.checked = true;
-                moduleForm.style.display = 'none';
-            } else {
-                moduleForm.remove();
-            }
-            updateAndValidate();
-        }
-    });
-
-    document.body.addEventListener('change', e => {
-        const hasTopicsCheckbox = e.target;
-        if (hasTopicsCheckbox.matches('input[name$="-has_topics"]')) {
-            const moduleForm = hasTopicsCheckbox.closest('.module-form');
-            if (!moduleForm) return;
-
-            const topicsSection = moduleForm.querySelector('.topics-section');
-            const topicFormsContainer = moduleForm.querySelector('.topic-forms-container');
-
-            if (hasTopicsCheckbox.checked) {
-                topicsSection.style.display = 'block';
-                // The automatic adding of a topic is removed to prevent race conditions.
-                // User will need to click "Add Topic" manually.
-            } else {
-                topicsSection.style.display = 'none';
-                topicFormsContainer.querySelectorAll('.topic-form').forEach(form => form.remove());
-                const totalTopicsInput = moduleForm.querySelector(`input[name$="-topics-TOTAL_FORMS"]`);
-                if (totalTopicsInput) totalTopicsInput.value = 0;
-            }
-            updateAndValidate();
-        }
-    });
-
-    categorySelect.addEventListener('change', function() {
-        const categoryId = this.value;
-        if (categoryId) {
-            const getCodeUrl = "{% url 'coursedb:get_next_course_code' %}";
-            fetch(`${getCodeUrl}?category_id=${categoryId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.next_code) codeInput.value = data.next_code;
-                })
-                .catch(error => console.error('Error fetching course code:', error));
-        }
-    });
-
-    document.body.addEventListener('input', e => {
-        if (e.target.matches('input[name$="-module_duration"], input[name$="-topic_duration"], #id_total_duration')) {
-            updateAndValidate();
-        }
-    });
-
-    updateAndValidate();
 });
 </script>
 {% endblock %}
