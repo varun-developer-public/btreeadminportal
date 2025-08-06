@@ -270,41 +270,47 @@ def placement_dashboard(request):
     # Overall Stats
     total_placement_pool = students_in_pool.count()
     total_placed = students_in_pool.filter(course_status='P').count()
-    actively_seeking = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).count()
+    
+    # Actively seeking students for the main stat card
+    actively_seeking_stat = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS']).count()
+    
     placement_rate = ((total_placed / total_placement_pool) * 100) if total_placement_pool > 0 else 0
     active_drives_count = drives.count()
     interviews_scheduled = CompanyInterview.objects.count()
 
-    # Resume Stats
-    students_in_pool_no_resume = students_in_pool.filter(
+    # --- Refined Resume Statistics ---
+    # 1. Start with students who need placement and are in an active course status.
+    #    Exclude any who are explicitly marked as inactive in the placement table.
+    active_pool_for_resumes = Student.objects.filter(
+        pl_required=True,
+        course_status__in=['IP', 'C', 'YTS']
+    ).exclude(placement__is_active=False)
+
+    # 2. From this pool, find those who don't have a resume.
+    students_no_resume = active_pool_for_resumes.filter(
         Q(placement__isnull=True) | Q(placement__resume_link__isnull=True) | Q(placement__resume_link='')
     )
-    resumes_to_collect_count = students_in_pool_no_resume.count()
-
-    completed_but_no_resume = students_in_pool_no_resume.filter(course_status='C').count()
-
-    in_progress_50_80_no_resume = students_in_pool_no_resume.filter(
+    
+    # 3. Calculate the total and segregated counts.
+    resumes_to_collect_count = students_no_resume.count()
+    completed_but_no_resume = students_no_resume.filter(course_status='C').count()
+    in_progress_50_80_no_resume = students_no_resume.filter(
         course_status='IP', course_percentage__gte=50, course_percentage__lt=80
     ).count()
-
-    in_progress_below_50_no_resume = students_in_pool_no_resume.filter(
+    in_progress_below_50_no_resume = students_no_resume.filter(
         course_status='IP', course_percentage__lt=50
     ).count()
-
-    yts_no_resume = students_in_pool_no_resume.filter(course_status='YTS').count()
+    yts_no_resume = students_no_resume.filter(course_status='YTS').count()
 
     # Table Data
-    # Assuming 'recently placed' means their course status was recently updated. We'll order by end_date as a proxy.
     recently_placed = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
-    
     upcoming_interviews = CompanyInterview.objects.filter(interview_date__gte=timezone.now().date()).select_related('placement__student', 'company').order_by('interview_date')[:5]
-    
     students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student', 'student__course')[:10]
 
     context = {
         # Stat Cards
         'total_placement_pool': total_placement_pool,
-        'actively_seeking': actively_seeking,
+        'actively_seeking': actively_seeking_stat,
         'total_placed': total_placed,
         'placement_rate': round(placement_rate, 1),
         'active_drives_count': active_drives_count,
