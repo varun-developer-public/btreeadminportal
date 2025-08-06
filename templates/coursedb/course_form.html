@@ -101,17 +101,17 @@
         <!-- Templates - hidden but present in DOM -->
         <template id="module-template">
             <div class="module-form">
-                <button type="button" class="btn btn-danger btn-sm remove-module-btn">Remove</button>
+                <button type="button" class="remove-btn remove-module-btn">X</button>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Module Name</label>
+                            <label>Module Name<span class="required-indicator">*</span></label>
                             <input type="text" name="module_name" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Module Hours</label>
+                            <label>Module Hours<span class="required-indicator">*</span></label>
                             <input type="number" name="module_hours" min="1" class="form-control">
                         </div>
                     </div>
@@ -130,17 +130,17 @@
         </template>
         <template id="topic-template">
             <div class="topic-form">
-                <button type="button" class="btn btn-danger btn-sm remove-topic-btn">Remove</button>
+                <button type="button" class="remove-btn remove-topic-btn">X</button>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Topic Name</label>
+                            <label>Topic Name<span class="required-indicator">*</span></label>
                             <input type="text" name="topic_name" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label>Topic Hours</label>
+                            <label>Topic Hours<span class="required-indicator">*</span></label>
                             <input type="number" name="topic_hours" min="1" class="form-control">
                         </div>
                     </div>

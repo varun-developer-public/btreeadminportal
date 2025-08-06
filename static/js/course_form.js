@@ -6,7 +6,57 @@ document.addEventListener('DOMContentLoaded', function() {
     const categorySelect = document.getElementById('id_category');
     const codeInput = document.getElementById('id_code');
 
+    function validateRequiredFields() {
+        let allRequiredFilled = true;
+        const moduleForms = modulesContainer.querySelectorAll('.module-form');
+
+        moduleForms.forEach((moduleForm, index) => {
+            const moduleNameInput = moduleForm.querySelector('input[name="module_name"]');
+            const moduleHoursInput = moduleForm.querySelector('input[name="module_hours"]');
+            
+            if (!moduleNameInput.value) {
+                allRequiredFilled = false;
+                moduleNameInput.classList.add('is-invalid');
+            } else {
+                moduleNameInput.classList.remove('is-invalid');
+            }
+
+            if (!moduleHoursInput.value) {
+                allRequiredFilled = false;
+                moduleHoursInput.classList.add('is-invalid');
+            } else {
+                moduleHoursInput.classList.remove('is-invalid');
+            }
+
+            const hasTopics = moduleForm.querySelector('.has-topics-checkbox').checked;
+            if (hasTopics) {
+                const topicNameInputs = moduleForm.querySelectorAll(`input[name^="topic_name_module_${index}"]`);
+                const topicHoursInputs = moduleForm.querySelectorAll(`input[name^="topic_hours_module_${index}"]`);
+
+                topicNameInputs.forEach(input => {
+                    if (!input.value) {
+                        allRequiredFilled = false;
+                        input.classList.add('is-invalid');
+                    } else {
+                        input.classList.remove('is-invalid');
+                    }
+                });
+
+                topicHoursInputs.forEach(input => {
+                    if (!input.value) {
+                        allRequiredFilled = false;
+                        input.classList.add('is-invalid');
+                    } else {
+                        input.classList.remove('is-invalid');
+                    }
+                });
+            }
+        });
+        return allRequiredFilled;
+    }
+
     function validateDurations() {
+        const saveButton = document.querySelector('button[type="submit"]');
         let totalModulesDuration = 0;
         const moduleForms = modulesContainer.querySelectorAll('.module-form');
 
@@ -31,20 +81,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         const courseTotalDuration = parseInt(totalDurationInput.value) || 0;
+        const allRequiredFilled = validateRequiredFields();
 
         if (totalModulesDuration === 0 && courseTotalDuration === 0) {
             validationMessageDiv.style.display = 'none';
+            saveButton.disabled = true;
             return;
         }
         
         validationMessageDiv.style.display = 'block';
 
-        if (totalModulesDuration !== courseTotalDuration) {
+        if (totalModulesDuration !== courseTotalDuration || !allRequiredFilled) {
             validationMessageDiv.textContent = `The sum of module durations (${totalModulesDuration} hours) must equal the total course duration (${courseTotalDuration} hours).`;
             validationMessageDiv.className = 'error';
+            saveButton.disabled = true;
         } else {
             validationMessageDiv.textContent = 'Module durations match the total course duration.';
             validationMessageDiv.className = 'success';
+            saveButton.disabled = false;
         }
     }
 
@@ -98,8 +152,11 @@ document.addEventListener('DOMContentLoaded', function() {
             addTopicToModule(moduleDiv);
         };
 
-        const inputs = moduleDiv.querySelectorAll('input[name="module_hours"], input[name="topic_hours"], .has-topics-checkbox');
-        inputs.forEach(input => input.addEventListener('input', validateDurations));
+        const inputs = moduleDiv.querySelectorAll('input[name="module_name"], input[name="module_hours"], input[name^="topic_name_module_"], input[name^="topic_hours_module_"], .has-topics-checkbox');
+        inputs.forEach(input => {
+            input.addEventListener('blur', validateDurations);
+            input.addEventListener('change', validateDurations);
+        });
     }
 
     function addModule() {
@@ -131,5 +188,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    totalDurationInput.addEventListener('input', validateDurations);
+    totalDurationInput.addEventListener('blur', validateDurations);
 });
