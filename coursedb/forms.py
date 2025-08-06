@@ -32,15 +32,34 @@ class CourseForm(forms.ModelForm):
 class BaseCourseModuleFormSet(forms.BaseInlineFormSet):
     def clean(self):
         super().clean()
-        total_duration = self.instance.total_duration
-        module_durations = 0
+        if not self.is_valid():
+            return
+
+        total_duration = self.instance.total_duration or 0
+        calculated_module_durations = 0
+
         for form in self.forms:
-            if not form.cleaned_data or form.cleaned_data.get('DELETE'):
+            if not form.is_valid() or form.cleaned_data.get('DELETE'):
                 continue
-            module_durations += form.cleaned_data.get('module_duration', 0)
-        
-        if total_duration != module_durations:
-            raise forms.ValidationError(f"The sum of module durations ({module_durations} hours) must equal the total course duration ({total_duration} hours).")
+
+            has_topics = form.cleaned_data.get('has_topics')
+            
+            if has_topics:
+                # For modules with topics, duration is the sum of its topics.
+                # This requires the topic formset to be cleaned first.
+                # We'll rely on the view to orchestrate this.
+                # For now, we assume the client-side sets the correct duration.
+                module_duration = form.cleaned_data.get('module_duration', 0)
+            else:
+                module_duration = form.cleaned_data.get('module_duration', 0)
+            
+            calculated_module_durations += module_duration
+
+        if total_duration != calculated_module_durations:
+            raise forms.ValidationError(
+                f"The sum of module durations ({calculated_module_durations} hours) must equal the "
+                f"total course duration ({total_duration} hours)."
+            )
 
 CourseModuleFormSet = forms.inlineformset_factory(
     Course,

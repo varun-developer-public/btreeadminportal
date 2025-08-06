@@ -1,128 +1,135 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const moduleFormsContainer = document.getElementById('module-forms-container');
-    const addModuleBtn = document.getElementById('add-module-btn');
-    const emptyModuleFormTemplate = document.getElementById('empty-form-template');
+    const modulesContainer = document.getElementById('modules-container');
     const totalDurationInput = document.getElementById('id_total_duration');
-    const saveButton = document.getElementById('save-button');
-    const durationError = document.getElementById('duration-error');
+    const validationMessageDiv = document.getElementById('duration-validation-message');
+    const addModuleBtn = document.getElementById('add-module-btn');
     const categorySelect = document.getElementById('id_category');
     const codeInput = document.getElementById('id_code');
 
-    if (!moduleFormsContainer) return;
+    function validateDurations() {
+        let totalModulesDuration = 0;
+        const moduleForms = modulesContainer.querySelectorAll('.module-form');
 
-    const updateTotal = () => {
-        if (!totalDurationInput || !durationError || !saveButton) return;
+        moduleForms.forEach((moduleForm, index) => {
+            const hasTopics = moduleForm.querySelector('.has-topics-checkbox').checked;
+            const moduleHoursInput = moduleForm.querySelector('input[name="module_hours"]');
 
-        let courseTotal = parseInt(totalDurationInput.value, 10) || 0;
-        let modulesTotal = 0;
-        let errorMessages = [];
-
-        document.querySelectorAll('.module-form').forEach(moduleForm => {
-            if (moduleForm.style.display === 'none') return;
-
-            const moduleDurationInput = moduleForm.querySelector('input[name$="-module_duration"]');
-            const moduleDuration = parseInt(moduleDurationInput.value, 10) || 0;
-            modulesTotal += moduleDuration;
-
-            const hasTopicsCheckbox = moduleForm.querySelector('input[name$="-has_topics"]');
-            if (hasTopicsCheckbox && hasTopicsCheckbox.checked) {
-                let topicsTotal = 0;
-                moduleForm.querySelectorAll('.topic-form').forEach(topicForm => {
-                    if (topicForm.style.display === 'none') return;
-                    const topicDurationInput = topicForm.querySelector('input[name$="-topic_duration"]');
-                    topicsTotal += parseInt(topicDurationInput.value, 10) || 0;
+            if (hasTopics) {
+                const topicInputs = moduleForm.querySelectorAll(`input[name^="topic_hours_module_${index}"]`);
+                let totalTopicsDuration = 0;
+                topicInputs.forEach(input => {
+                    totalTopicsDuration += parseInt(input.value) || 0;
                 });
-
-                if (moduleDuration !== topicsTotal) {
-                    const moduleName = moduleForm.querySelector('input[name$="-name"]').value || 'A module';
-                    errorMessages.push(`Topics in '${moduleName}' sum to ${topicsTotal}hrs, but module is ${moduleDuration}hrs.`);
-                }
+                
+                moduleHoursInput.value = totalTopicsDuration;
+                moduleHoursInput.readOnly = true;
+                totalModulesDuration += totalTopicsDuration;
+            } else {
+                moduleHoursInput.readOnly = false;
+                totalModulesDuration += parseInt(moduleHoursInput.value) || 0;
             }
         });
 
-        if (courseTotal !== modulesTotal) {
-            errorMessages.push(`Modules sum to ${modulesTotal}hrs, but course is ${courseTotal}hrs.`);
+        const courseTotalDuration = parseInt(totalDurationInput.value) || 0;
+
+        if (totalModulesDuration === 0 && courseTotalDuration === 0) {
+            validationMessageDiv.style.display = 'none';
+            return;
         }
-
-        durationError.innerHTML = errorMessages.join('<br>');
-        durationError.style.display = errorMessages.length > 0 ? 'block' : 'none';
-        saveButton.disabled = errorMessages.length > 0;
-    };
-
-    const setupTopicForm = (topicForm) => {
-        topicForm.querySelector('.remove-topic-btn').addEventListener('click', () => {
-            const deleteInput = topicForm.querySelector('input[name$="-DELETE"]');
-            if (deleteInput) deleteInput.checked = true;
-            topicForm.style.display = 'none';
-            updateTotal();
-        });
-        topicForm.querySelector('input[name$="-topic_duration"]').addEventListener('input', updateTotal);
-    };
-
-    const setupModuleForm = (moduleForm) => {
-        const hasTopicsCheckbox = moduleForm.querySelector('input[name$="-has_topics"]');
-        const topicsSection = moduleForm.querySelector('.topics-section');
-        const addTopicBtn = moduleForm.querySelector('.add-topic-btn');
-
-        hasTopicsCheckbox.addEventListener('change', () => {
-            const isChecked = hasTopicsCheckbox.checked;
-            topicsSection.style.display = isChecked ? 'block' : 'none';
-            addTopicBtn.style.display = isChecked ? 'inline-block' : 'none';
-            updateTotal();
-        });
-
-        addTopicBtn.addEventListener('click', () => {
-            const topicFormsContainer = moduleForm.querySelector('.topic-forms-container');
-            const template = document.getElementById('empty-form-template').querySelector('.empty-topic-form-template').innerHTML;
-            const totalFormsInput = moduleForm.querySelector('input[name$="-topics-TOTAL_FORMS"]');
-            const newIndex = parseInt(totalFormsInput.value);
-            
-            const newFormHtml = template.replace(/__prefix__/g, newIndex);
-            topicFormsContainer.insertAdjacentHTML('beforeend', newFormHtml);
-            totalFormsInput.value = newIndex + 1;
-
-            setupTopicForm(topicFormsContainer.lastElementChild);
-            updateTotal();
-        });
-
-        moduleForm.querySelector('.remove-module-btn').addEventListener('click', () => {
-            const deleteInput = moduleForm.querySelector('input[name$="-DELETE"]');
-            if (deleteInput) deleteInput.checked = true;
-            moduleForm.style.display = 'none';
-            updateTotal();
-        });
-
-        moduleForm.querySelectorAll('.topic-form').forEach(setupTopicForm);
-        moduleForm.querySelector('input[name$="-module_duration"]').addEventListener('input', updateTotal);
-    };
-
-    addModuleBtn.addEventListener('click', () => {
-        const totalFormsInput = document.querySelector('#id_modules-TOTAL_FORMS');
-        const newIndex = parseInt(totalFormsInput.value);
-        const newFormHtml = emptyModuleFormTemplate.innerHTML.replace(/__prefix__/g, newIndex);
         
-        moduleFormsContainer.insertAdjacentHTML('beforeend', newFormHtml);
-        totalFormsInput.value = newIndex + 1;
+        validationMessageDiv.style.display = 'block';
 
-        setupModuleForm(moduleFormsContainer.lastElementChild);
-        updateTotal();
-    });
+        if (totalModulesDuration !== courseTotalDuration) {
+            validationMessageDiv.textContent = `The sum of module durations (${totalModulesDuration} hours) must equal the total course duration (${courseTotalDuration} hours).`;
+            validationMessageDiv.className = 'error';
+        } else {
+            validationMessageDiv.textContent = 'Module durations match the total course duration.';
+            validationMessageDiv.className = 'success';
+        }
+    }
 
-    if (categorySelect) {
-        categorySelect.addEventListener('change', () => {
-            const categoryId = categorySelect.value;
+    function addTopicToModule(moduleDiv) {
+        const moduleIndex = Array.from(modulesContainer.children).indexOf(moduleDiv);
+        const tmpl = document.getElementById('topic-template').content.cloneNode(true);
+        const topicDiv = tmpl.querySelector('.topic-form');
+        
+        const topicNameInput = topicDiv.querySelector('input[name="topic_name"]');
+        topicNameInput.name = `topic_name_module_${moduleIndex}`;
+        
+        const topicHoursInput = topicDiv.querySelector('input[name="topic_hours"]');
+        topicHoursInput.name = `topic_hours_module_${moduleIndex}`;
+
+        topicDiv.querySelector('.remove-topic-btn').onclick = function() {
+            topicDiv.remove();
+            validateDurations();
+        };
+        moduleDiv.querySelector('.topic-forms-container').appendChild(topicDiv);
+        const topicInputs = topicDiv.querySelectorAll(`input[name="topic_hours_module_${moduleIndex}"]`);
+        topicInputs.forEach(input => input.addEventListener('input', validateDurations));
+    }
+
+    function attachModuleEvents(moduleDiv) {
+        moduleDiv.querySelector('.remove-module-btn').onclick = function() {
+            moduleDiv.remove();
+            validateDurations();
+        };
+
+        const hasTopics = moduleDiv.querySelector('.has-topics-checkbox');
+        const topicsSection = moduleDiv.querySelector('.topics-section');
+        const addTopicBtn = moduleDiv.querySelector('.add-topic-btn');
+        const topicFormsContainer = moduleDiv.querySelector('.topic-forms-container');
+
+        hasTopics.onchange = function() {
+            const moduleIndex = Array.from(modulesContainer.children).indexOf(moduleDiv);
+            hasTopics.name = `has_topics_module_${moduleIndex}`;
+            if (hasTopics.checked) {
+                topicsSection.style.display = 'block';
+                if (!topicFormsContainer.querySelector('.topic-form')) {
+                    addTopicToModule(moduleDiv);
+                }
+            } else {
+                topicsSection.style.display = 'none';
+                topicFormsContainer.innerHTML = '';
+            }
+            validateDurations();
+        };
+
+        addTopicBtn.onclick = function() {
+            addTopicToModule(moduleDiv);
+        };
+
+        const inputs = moduleDiv.querySelectorAll('input[name="module_hours"], input[name="topic_hours"], .has-topics-checkbox');
+        inputs.forEach(input => input.addEventListener('input', validateDurations));
+    }
+
+    function addModule() {
+        const tmpl = document.getElementById('module-template').content.cloneNode(true);
+        const moduleDiv = tmpl.querySelector('.module-form');
+        attachModuleEvents(moduleDiv);
+        modulesContainer.appendChild(moduleDiv);
+        validateDurations();
+    }
+
+    if (addModuleBtn) {
+        addModuleBtn.onclick = addModule;
+        addModule(); // Add initial module
+    }
+
+    if (categorySelect && codeInput) {
+        categorySelect.addEventListener('change', function() {
+            const categoryId = this.value;
             if (categoryId) {
-                const url = document.body.dataset.getCodeUrl;
-                fetch(`${url}?category_id=${categoryId}`)
-                    .then(res => res.json())
+                fetch(`/coursedb/ajax/get_next_course_code/?category_id=${categoryId}`)
+                    .then(response => response.json())
                     .then(data => {
-                        if (data.next_code) codeInput.value = data.next_code;
-                    });
+                        if (data.next_code) {
+                            codeInput.value = data.next_code;
+                        }
+                    })
+                    .catch(error => console.error('Error fetching next course code:', error));
             }
         });
     }
 
-    document.querySelectorAll('.module-form').forEach(setupModuleForm);
-    if (totalDurationInput) totalDurationInput.addEventListener('input', updateTotal);
-    updateTotal();
+    totalDurationInput.addEventListener('input', validateDurations);
 });

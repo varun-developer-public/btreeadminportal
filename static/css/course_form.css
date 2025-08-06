@@ -1,0 +1,55 @@
+.module-form, .topic-form {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: var(--form-border-radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    transition: box-shadow 0.3s ease;
+}
+
+.module-form:hover, .topic-form:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.module-form .form-group, .topic-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.remove-module-btn, .remove-topic-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.topics-section {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #dee2e6;
+    margin-left: 2rem;
+    padding-left: 1.5rem;
+    border-left: 2px solid var(--primary-blue);
+}
+
+.has-topics-checkbox {
+    margin-right: 0.5rem;
+}
+
+#duration-validation-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: var(--form-border-radius);
+    display: none;
+}
+
+#duration-validation-message.error {
+    background-color: rgba(var(--danger-rgb), 0.1);
+    color: var(--danger);
+    border-left: 4px solid var(--danger);
+}
+
+#duration-validation-message.success {
+    background-color: rgba(var(--success-rgb), 0.1);
+    color: var(--success);
+    border-left: 4px solid var(--success);
+}

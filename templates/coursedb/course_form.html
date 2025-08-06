@@ -4,29 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
-<style>
-    .module-form, .topic-form {
-        background: #f5f8fc;
-        border: 1px solid #dbeafe;
-        border-radius: 6px;
-        padding: 15px 16px;
-        margin-bottom: 15px;
-        position: relative;
-    }
-    .module-form > .remove-module-btn,
-    .topic-form > .remove-topic-btn {
-        position: absolute;
-        right: 12px;
-        top: 12px;
-    }
-    .topics-section {
-        margin-top: 10px;
-        margin-left: 30px;
-        border-left: 3px solid #c7e5fc;
-        padding-left: 21px;
-        background: #fafdff;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/course_form.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -41,11 +19,6 @@
         {% if form.non_field_errors %}
             <div class="alert alert-danger">
                 {{ form.non_field_errors }}
-            </div>
-        {% endif %}
-        {% if formset.non_form_errors %}
-            <div class="alert alert-danger">
-                {{ formset.non_form_errors }}
             </div>
         {% endif %}
         <div class="form-section-card">
@@ -120,10 +93,10 @@
                 <button type="button" class="btn btn-primary" id="add-module-btn">Add Module</button>
             </div>
         </div>
-
-        <div class="form-actions">
-            <button type="submit" class="btn btn-success">Save Course</button>
-        </div>
+        <div id="duration-validation-message"></div>
+         <div class="form-actions">
+             <button type="submit" class="btn btn-success">Save Course</button>
+         </div>
 
         <!-- Templates - hidden but present in DOM -->
         <template id="module-template">
@@ -179,78 +152,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// CREATE A NEW MODULE FORM
-function addModule() {
-    const tmpl = document.getElementById('module-template').content.cloneNode(true);
-    const moduleDiv = tmpl.querySelector('.module-form');
-    // Attach all button events
-    attachModuleEvents(moduleDiv);
-    document.getElementById('modules-container').appendChild(moduleDiv);
-}
-
-// MODULE EVENTS (add/remove topics, toggle show/hide on checkbox)
-function attachModuleEvents(moduleDiv) {
-    moduleDiv.querySelector('.remove-module-btn').onclick = function() {
-        moduleDiv.remove();
-    };
-    const hasTopics = moduleDiv.querySelector('.has-topics-checkbox');
-    const topicsSection = moduleDiv.querySelector('.topics-section');
-    const addTopicBtn = moduleDiv.querySelector('.add-topic-btn');
-    const topicFormsContainer = moduleDiv.querySelector('.topic-forms-container');
-    // Show topics section and auto-add first topic
-    hasTopics.onchange = function() {
-        if (hasTopics.checked) {
-            topicsSection.style.display = 'block';
-            // If section is empty, add a topic row
-            if (!topicFormsContainer.querySelector('.topic-form')) {
-                addTopicToModule(moduleDiv);
-            }
-        } else {
-            topicsSection.style.display = 'none';
-            topicFormsContainer.innerHTML = '';
-        }
-    };
-    addTopicBtn.onclick = function() {
-        addTopicToModule(moduleDiv);
-    };
-}
-
-// CREATE NEW TOPIC ROW
-function addTopicToModule(moduleDiv) {
-    const tmpl = document.getElementById('topic-template').content.cloneNode(true);
-    const topicDiv = tmpl.querySelector('.topic-form');
-    topicDiv.querySelector('.remove-topic-btn').onclick = function() {
-        topicDiv.remove();
-    };
-    moduleDiv.querySelector('.topic-forms-container').appendChild(topicDiv);
-}
-
-// Add the first starter module for user-friendliness
-document.addEventListener('DOMContentLoaded', function() {
-    const categorySelect = document.getElementById('id_category');
-    const codeInput = document.getElementById('id_code');
-
-    if (categorySelect && codeInput) {
-        categorySelect.addEventListener('change', function() {
-            const categoryId = this.value;
-            if (categoryId) {
-                fetch(`/coursedb/ajax/get_next_course_code/?category_id=${categoryId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.next_code) {
-                            codeInput.value = data.next_code;
-                        }
-                    })
-                    .catch(error => console.error('Error fetching next course code:', error));
-            }
-        });
-    }
-    
-    if (document.getElementById('add-module-btn')) {
-        document.getElementById('add-module-btn').onclick = addModule;
-        addModule();
-    }
-});
-</script>
+<script src="{% static 'js/course_form.js' %}"></script>
 {% endblock %}

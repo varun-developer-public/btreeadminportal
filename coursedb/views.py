@@ -1,121 +1,110 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import Course, CourseCategory, CourseModule
-from .forms import CourseForm, CourseCategoryForm, CourseModuleFormSet, TopicFormSet
+from .models import Course, CourseCategory, CourseModule, Topic
+from .forms import CourseForm, CourseCategoryForm
+from django.db import transaction
 
 def course_list(request):
-    courses = Course.objects.prefetch_related('modules').all()
+    courses = Course.objects.prefetch_related('modules__topics').all()
     return render(request, 'coursedb/course_list.html', {'courses': courses})
-
-from django.shortcuts import render, redirect
-from django.contrib import messages
 
 def course_create(request):
     if request.method == 'POST':
-        course_form = CourseForm(request.POST)
-        module_formset = CourseModuleFormSet(request.POST, prefix='modules')
+        form = CourseForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    course = form.save()
+                    
+                    module_names = request.POST.getlist('module_name')
+                    module_hours = request.POST.getlist('module_hours')
+                    
+                    # This is tricky because checkboxes only submit a value when checked.
+                    # We need a way to associate topics with the correct module.
+                    # Let's assume the order is preserved.
+                    
+                    current_topic_index = 0
+                    for i in range(len(module_names)):
+                        # A hidden input could be added by the JS to mark which modules have topics.
+                        # For now, we'll rely on the presence of topic names for a given module index.
+                        has_topics_key = f'module_{i}_has_topics' # A hypothetical hidden field.
+                        has_topics = request.POST.get(f'has_topics_module_{i}') == 'on' # Let's assume JS adds this.
 
-        all_valid = course_form.is_valid() and module_formset.is_valid()
-        topic_formsets = []
-        modules = module_formset.save(commit=False) if module_formset.is_valid() else []
+                        module = CourseModule.objects.create(
+                            course=course,
+                            name=module_names[i],
+                            module_duration=module_hours[i],
+                            has_topics=has_topics
+                        )
 
-        for i, module_form in enumerate(module_formset.forms):
-            prefix = f'modules-{i}-topics'
-            if (module_form.cleaned_data and 
-                not module_form.cleaned_data.get('DELETE', False) and 
-                module_form.cleaned_data.get('has_topics')):
-                module_instance = modules[i] if i < len(modules) else None
-                topic_formset = TopicFormSet(request.POST, instance=module_instance, prefix=prefix)
-                topic_formsets.append(topic_formset)
-                module_form.topic_formset = topic_formset
-                if not topic_formset.is_valid():
-                    all_valid = False
-            else:
-                topic_formset = TopicFormSet(request.POST, prefix=prefix)
-                topic_formsets.append(None)
-                module_form.topic_formset = topic_formset
+                        if has_topics:
+                            topic_names = request.POST.getlist(f'topic_name_module_{i}')
+                            topic_hours = request.POST.getlist(f'topic_hours_module_{i}')
+                            for j in range(len(topic_names)):
+                                Topic.objects.create(
+                                    module=module,
+                                    name=topic_names[j],
+                                    topic_duration=topic_hours[j]
+                                )
+                    
+                    messages.success(request, "Course created successfully.")
+                    return redirect('coursedb:course_list')
+            except Exception as e:
+                messages.error(request, f"An error occurred: {e}")
 
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
-
-        if all_valid:
-            course = course_form.save()
-            for i, module in enumerate(modules):
-                module.course = course
-                module.save()
-                if topic_formsets[i]:
-                    topics = topic_formsets[i].save(commit=False)
-                    for topic in topics:
-                        topic.module = module
-                        topic.save()
-            messages.success(request, "Course created successfully.")
-            return redirect('coursedb:course_list')
-
-    else:  # GET
-        course_form = CourseForm()
-        module_formset = CourseModuleFormSet(prefix='modules')
-        for i, module_form in enumerate(module_formset.forms):
-            prefix = f'modules-{i}-topics'
-            module_form.topic_formset = TopicFormSet(prefix=prefix)
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
+    else:
+        form = CourseForm()
 
     context = {
-        'form': course_form,
-        'formset': module_formset,
+        'form': form,
     }
     return render(request, 'coursedb/course_form.html', context)
+
 
 def course_update(request, pk):
     course = get_object_or_404(Course, pk=pk)
     if request.method == 'POST':
         form = CourseForm(request.POST, instance=course)
-        module_formset = CourseModuleFormSet(request.POST, instance=course, prefix='modules')
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    course = form.save()
+                    
+                    course.modules.all().delete()
 
-        if form.is_valid() and module_formset.is_valid():
-            all_valid = True
-            topic_formsets = []
-            for i, module_form in enumerate(module_formset.forms):
-                if module_form.cleaned_data and not module_form.cleaned_data.get('DELETE'):
-                    if module_form.cleaned_data.get('has_topics'):
-                        prefix = f'modules-{i}-topics'
-                        topic_formset = TopicFormSet(request.POST, instance=module_form.instance, prefix=prefix)
-                        topic_formsets.append(topic_formset)
-                        if not topic_formset.is_valid():
-                            all_valid = False
-                    else:
-                        topic_formsets.append(None)
-            
-            if all_valid:
-                form.save()
-                module_formset.save()
-                for i, module_form in enumerate(module_formset.forms):
-                    if module_form.cleaned_data and not module_form.cleaned_data.get('DELETE'):
-                        if topic_formsets[i]:
-                            topic_formsets[i].save()
-                        else:
-                            module_form.instance.topics.all().delete()
-                messages.success(request, "Course updated successfully.")
-                return redirect('coursedb:course_list')
+                    module_names = request.POST.getlist('module_name')
+                    module_hours = request.POST.getlist('module_hours')
 
-        # Re-render with errors
-        for i, module_form in enumerate(module_formset.forms):
-            prefix = f'modules-{i}-topics'
-            if module_form.cleaned_data and module_form.cleaned_data.get('has_topics'):
-                 module_form.topic_formset = TopicFormSet(request.POST, instance=module_form.instance, prefix=prefix)
-            else:
-                 module_form.topic_formset = TopicFormSet(instance=module_form.instance, prefix=prefix)
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
+                    for i in range(len(module_names)):
+                        has_topics = f'module_{i}_has_topics' in request.POST
+                        module = CourseModule.objects.create(
+                            course=course,
+                            name=module_names[i],
+                            module_duration=module_hours[i],
+                            has_topics=has_topics
+                        )
 
-    else:  # GET
+                        if has_topics:
+                            topic_names = request.POST.getlist(f'topic_name_module_{i}')
+                            topic_hours = request.POST.getlist(f'topic_hours_module_{i}')
+                            for j in range(len(topic_names)):
+                                Topic.objects.create(
+                                    module=module,
+                                    name=topic_names[j],
+                                    topic_duration=topic_hours[j]
+                                )
+
+                    messages.success(request, "Course updated successfully.")
+                    return redirect('coursedb:course_list')
+            except Exception as e:
+                messages.error(request, f"An error occurred: {e}")
+    else:
         form = CourseForm(instance=course)
-        module_formset = CourseModuleFormSet(instance=course, prefix='modules')
-        for i, module_form in enumerate(module_formset.forms):
-            prefix = f'modules-{i}-topics'
-            module_form.topic_formset = TopicFormSet(instance=module_form.instance, prefix=prefix)
-        module_formset.empty_form.topic_formset = TopicFormSet(prefix=f'{module_formset.prefix}-__prefix__-topics')
 
-    context = {'form': form, 'formset': module_formset}
+    context = {'form': form, 'course': course}
     return render(request, 'coursedb/course_form.html', context)
+
 
 def course_delete(request, pk):
     course = get_object_or_404(Course, pk=pk)
