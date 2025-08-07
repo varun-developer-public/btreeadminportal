@@ -1,12 +1,219 @@
 {% extends "base.html" %}
+{% block title %}Create Trainer{% endblock %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <h2>Add New Trainer</h2>
-    <form method="post">
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Create Trainer</h1>
+    </div>
+
+    <form method="post" class="student-form">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Add Trainer</button>
-        <a href="{% url 'trainer_list' %}" class="btn btn-secondary">Back</a>
+        {% if form.errors or formset.errors %}
+            <div class="alert alert-danger">
+                <strong>Error:</strong>
+                <ul>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    {% for error in formset.non_form_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for form in formset %}
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li>{{ form.prefix }}-{{ field.label }}: {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-user me-2" style="color: white;"></i>Trainer Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.name.label_tag }}
+                            {{ form.name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <div class="form-group">
+                            {{ form.country_code.label_tag }}
+                            {{ form.country_code }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.phone_number.label_tag }}
+                            {{ form.phone_number }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.location.label_tag }}
+                            {{ form.location }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group" id="other_location_group" style="display: none;">
+                            {{ form.other_location.label_tag }}
+                            {{ form.other_location }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.years_of_experience.label_tag }}
+                            {{ form.years_of_experience }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.stack.label_tag }}
+                            {{ form.stack }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.employment_type.label_tag }}
+                            {{ form.employment_type }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.mode.label_tag }}
+                            {{ form.mode }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.availability.label_tag }}
+                            {{ form.availability }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-clock me-2" style="color: white;"></i>Timing Slots</h5>
+            </div>
+            <div class="form-section-body">
+                {{ form.timing_slots }}
+                <div id="timing-slots-container">
+                    <!-- Timing slots will be added here dynamically -->
+                </div>
+                <button type="button" id="add-slot-btn" class="btn btn-secondary mt-2">Add another slot</button>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Create Trainer</button>
+        </div>
     </form>
 </div>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#id_stack').select2();
+
+    $('#id_location').change(function() {
+        if ($(this).val() === 'Others') {
+            $('#other_location_group').show();
+        } else {
+            $('#other_location_group').hide();
+        }
+    }).trigger('change');
+
+    const slotsContainer = $('#timing-slots-container');
+    const hiddenInput = $('#id_timing_slots');
+    let slots = [];
+
+    function renderSlots() {
+        slotsContainer.empty();
+        slots.forEach((slot, index) => {
+            const slotHtml = `
+                <div class="row mb-2" data-index="${index}">
+                    <div class="col-md-5">
+                        <label>Start Time</label>
+                        <input type="time" class="form-control start-time" value="${slot.start_time}">
+                    </div>
+                    <div class="col-md-5">
+                        <label>End Time</label>
+                        <input type="time" class="form-control end-time" value="${slot.end_time}">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger remove-slot-btn">Remove</button>
+                    </div>
+                </div>
+            `;
+            slotsContainer.append(slotHtml);
+        });
+        hiddenInput.val(JSON.stringify(slots));
+    }
+
+    $('#add-slot-btn').click(function() {
+        slots.push({ start_time: '', end_time: '' });
+        renderSlots();
+    });
+
+    slotsContainer.on('click', '.remove-slot-btn', function() {
+        const index = $(this).closest('.row').data('index');
+        slots.splice(index, 1);
+        renderSlots();
+    });
+
+    slotsContainer.on('change', '.start-time, .end-time', function() {
+        const index = $(this).closest('.row').data('index');
+        const startTime = $(this).closest('.row').find('.start-time').val();
+        const endTime = $(this).closest('.row').find('.end-time').val();
+        slots[index] = { start_time: startTime, end_time: endTime };
+        hiddenInput.val(JSON.stringify(slots));
+    });
+
+    // Initial render if there are existing slots (for update form)
+    try {
+        const initialSlots = JSON.parse(hiddenInput.val());
+        if (Array.isArray(initialSlots)) {
+            slots = initialSlots;
+        }
+    } catch (e) {
+        // Ignore parsing errors, start with empty slots
+    }
+    renderSlots();
+});
+</script>
+{% endblock %}
 {% endblock %}

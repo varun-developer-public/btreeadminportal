@@ -135,7 +135,7 @@
                     <tbody>
                         {% for interview in upcoming_interviews %}
                         <tr>
-                            <td>{{ interview.placement.student.first_name }} {{ interview.placement.student.last_name }}</td>
+                            <td>{{ interview.placement.student.first_name }} {{ interview.placement.student.last_name|default:'' }}</td>
                             <td>{{ interview.company.company_name }}</td>
                             <td>{{ interview.interview_date|date:"d M Y" }}</td>
                             <td>{{ interview.interview_time|time:"H:i" }}</td>

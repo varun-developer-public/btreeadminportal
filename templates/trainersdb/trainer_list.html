@@ -1,72 +1,193 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
 {% block content %}
-<div class="container">
+<div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Trainer List</h2>
-        <a href="{% url 'create_trainer' %}" class="btn btn-primary">➕ Add Trainer</a>
+        <h2 class="mb-0"><i class="fas fa-chalkboard-teacher me-2"></i>Trainer List</h2>
+        <a href="{% url 'create_trainer' %}" class="btn-primary">
+            <i class="fas fa-plus me-2"></i>Add New Trainer
+        </a>
     </div>
 
-    <form method="get" class="mb-4">
-        <div class="input-group">
-            <input type="text" class="form-control" name="q" placeholder="Search by name, email, phone, or stack" value="{{ query }}">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-search me-2"></i>Search
-            </button>
+    <form method="get" class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="id_q">Search</label>
+                <input type="text" class="form-control" name="q" id="id_q" placeholder="Name, email, phone" value="{{ query|default:'' }}">
+            </div>
+            <div class="filter-group">
+                <label for="id_stack_filter">Stack</label>
+                <select name="stack" class="form-control" id="id_stack_filter">
+                    <option value="">All Stacks</option>
+                    {% for course in all_courses %}
+                        <option value="{{ course.id }}" {% if course.id|stringformat:"s" == stack_query %}selected{% endif %}>{{ course.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="id_location">Location</label>
+                <select name="location" class="form-control" id="id_location">
+                    <option value="">All Locations</option>
+                    {% for value, display in location_choices %}
+                        <option value="{{ value }}" {% if value == location_query %}selected{% endif %}>{{ display }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="id_experience">Experience (years)</label>
+                <input type="number" name="experience" id="id_experience" class="form-control" value="{{ experience_query|default:'' }}" placeholder="Min years">
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="id_availability">Availability</label>
+                <select name="availability" id="id_availability" class="form-control">
+                    <option value="">All</option>
+                    {% for value, display in availability_choices %}
+                        <option value="{{ value }}" {% if value == availability_query %}selected{% endif %}>{{ display }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="id_mode">Mode</label>
+                <select name="mode" id="id_mode" class="form-control">
+                    <option value="">All</option>
+                    {% for value, display in mode_choices %}
+                        <option value="{{ value }}" {% if value == mode_query %}selected{% endif %}>{{ display }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="id_employment">Employment</label>
+                <select name="employment" id="id_employment" class="form-control">
+                    <option value="">All</option>
+                    {% for value, display in employment_choices %}
+                        <option value="{{ value }}" {% if value == employment_query %}selected{% endif %}>{{ display }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filters</button>
+            <a href="{% url 'trainer_list' %}" class="btn-secondary">Reset</a>
         </div>
     </form>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Trainer ID</th>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Address</th>
-                <th>Date of Birth</th>
-                <th>Date of Joining</th>
-                <th>Type</th>
-                <th>Stack</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for trainer in trainers %}
-            <tr>
-                <td>{{ trainer.trainer_id }}</td>
-                <td>{{ trainer.name }}</td>
-                <td>{{ trainer.phone }}</td>
-                <td>{{ trainer.email }}</td>
-                <td>{{ trainer.address|default:'-' }}</td>
-                <td>{{ trainer.date_of_birth|date:"d M Y"|default:'-' }}</td>
-                <td>{{ trainer.date_of_joining|date:"d M Y"|default:'-' }}</td>
-                <td>{{ trainer.get_trainer_type_display }}</td>
-                <td>{{ trainer.stack }}</td>
-                <td>
-                    <a href="{% url 'update_trainer' trainer.pk %}" class="btn btn-sm btn-info">✏️ Update</a>
-                    <a href="{% url 'delete_trainer' trainer.pk %}" class="btn btn-sm btn-danger">🗑️ Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Email</th>
+                    <th>Location</th>
+                    <th>Experience</th>
+                    <th>Stack</th>
+                    <th>Mode</th>
+                    <th>Availability</th>
+                    <th>Employment</th>
+                    <th>Timings</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trainer in trainers %}
+                <tr>
+                    <td><span class="badge bg-secondary">{{ trainer.trainer_id }}</span></td>
+                    <td>{{ trainer.name|default:"-" }}</td>
+                    <td>
+                        {% if trainer.phone_number %}
+                            {{ trainer.country_code }} {{ trainer.phone_number }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ trainer.email|default:"-" }}</td>
+                    <td>
+                        {% if trainer.location == 'Others' %}
+                            {{ trainer.other_location|default:"-" }}
+                        {% else %}
+                            {{ trainer.get_location_display|default:"-" }}
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if trainer.years_of_experience is not None %}
+                            {{ trainer.years_of_experience }} years
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% for course in trainer.stack.all %}
+                            <span class="badge bg-info">{{ course.course_name }}</span>
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+                    <td>{{ trainer.get_mode_display|default:"-" }}</td>
+                    <td>{{ trainer.get_availability_display|default:"-" }}</td>
+                    <td>{{ trainer.get_employment_type_display|default:"-" }}</td>
+                    <td>
+                        {% for slot in trainer.timing_slots %}
+                            <span class="badge bg-success">{{ slot.start_time }} - {{ slot.end_time }}</span>
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="{% url 'update_trainer' trainer.pk %}" class="btn-update btn-sm"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'delete_trainer' trainer.pk %}" class="btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="text-center py-4 text-muted">
+                        <i class="fas fa-user-slash me-2"></i>No trainers found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
+    {% if trainers.has_other_pages %}
     <div class="pagination justify-content-center mt-4">
-        <span class="step-links">
+        <ul class="pagination">
             {% if trainers.has_previous %}
-                <a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; first</a>
-                <a href="?page={{ trainers.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">previous</a>
+                <li class="page-item"><a class="page-link" href="?page=1&{{ query_params }}">&laquo; First</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ trainers.previous_page_number }}&{{ query_params }}">Previous</a></li>
             {% endif %}
 
-            <span class="current">
-                Page {{ trainers.number }} of {{ trainers.paginator.num_pages }}.
-            </span>
+            <li class="page-item disabled"><span class="page-link">Page {{ trainers.number }} of {{ trainers.paginator.num_pages }}</span></li>
 
             {% if trainers.has_next %}
-                <a href="?page={{ trainers.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
-                <a href="?page={{ trainers.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">last &raquo;</a>
+                <li class="page-item"><a class="page-link" href="?page={{ trainers.next_page_number }}&{{ query_params }}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?page={{ trainers.paginator.num_pages }}&{{ query_params }}">Last &raquo;</a></li>
             {% endif %}
-        </span>
+        </ul>
     </div>
+    {% endif %}
 </div>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#id_stack_filter').select2({
+        placeholder: "Select a stack",
+        allowClear: true
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}
