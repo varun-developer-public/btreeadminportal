@@ -294,6 +294,9 @@ def placement_dashboard(request):
     # 3. Calculate the total and segregated counts.
     resumes_to_collect_count = students_no_resume.count()
     completed_but_no_resume = students_no_resume.filter(course_status='C').count()
+    in_progress_80_99_no_resume = students_no_resume.filter(
+        course_status='IP', course_percentage__gte=80, course_percentage__lt=99
+    ).count()
     in_progress_50_80_no_resume = students_no_resume.filter(
         course_status='IP', course_percentage__gte=50, course_percentage__lt=80
     ).count()
@@ -319,6 +322,7 @@ def placement_dashboard(request):
         # Resume Stats
         'resumes_to_collect_count': resumes_to_collect_count,
         'completed_but_no_resume': completed_but_no_resume,
+        'in_progress_80_99_no_resume': in_progress_80_99_no_resume,
         'in_progress_50_80_no_resume': in_progress_50_80_no_resume,
         'in_progress_below_50_no_resume': in_progress_below_50_no_resume,
         'yts_no_resume': yts_no_resume,
