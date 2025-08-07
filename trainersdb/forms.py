@@ -16,6 +16,8 @@ class TrainerForm(forms.ModelForm):
         ]
         widgets = {
             'stack': forms.SelectMultiple(attrs={'class': 'form-control'}),
+            'profile': forms.FileInput(attrs={'class': 'form-control'}),
+            'demo_link': forms.URLInput(attrs={'class': 'form-control'}),
         }
 
     def clean_timing_slots(self):

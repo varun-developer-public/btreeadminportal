@@ -5,6 +5,18 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .table {
+        font-size: 0.9rem;
+    }
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.4em 0.6em;
+    }
+    .bg-info {
+        background-color: #17a2b8 !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -231,16 +243,32 @@ $(document).ready(function() {
         allowClear: true
     });
 
-    $('.trainer-row').on('click', function(e) {
-        if ($(e.target).closest('.action-btn').length) {
-            return;
-        }
-        var target = $(this).data('bs-target');
-        var currentCollapse = $(target);
-        
-        $('.collapse').not(currentCollapse).collapse('hide');
-        
-        currentCollapse.collapse('toggle');
+    var collapseElements = [].slice.call(document.querySelectorAll('.collapse'));
+    var trainerRows = [].slice.call(document.querySelectorAll('.trainer-row'));
+
+    trainerRows.forEach(function (row) {
+        row.addEventListener('click', function (e) {
+            if (e.target.closest('.action-btn')) {
+                return;
+            }
+
+            var targetId = this.dataset.bsTarget;
+            var targetCollapse = document.querySelector(targetId);
+
+            collapseElements.forEach(function (collapse) {
+                if (collapse !== targetCollapse) {
+                    var bsCollapse = new bootstrap.Collapse(collapse, {
+                        toggle: false
+                    });
+                    bsCollapse.hide();
+                }
+            });
+
+            var bsTargetCollapse = new bootstrap.Collapse(targetCollapse, {
+                toggle: false
+            });
+            bsTargetCollapse.toggle();
+        });
     });
 });
 </script>
