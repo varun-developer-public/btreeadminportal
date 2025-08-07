@@ -5,6 +5,11 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .collapse.show {
+        transition: height 0.3s ease;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -13,7 +18,7 @@
         <h1>Update Trainer</h1>
     </div>
 
-    <form method="post" class="student-form">
+    <form method="post" class="student-form" enctype="multipart/form-data">
         {% csrf_token %}
         {% if form.errors or formset.errors %}
             <div class="alert alert-danger">
@@ -110,6 +115,28 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
+                            {{ form.profile.label_tag }}
+                            {{ form.profile }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.demo_link.label_tag }}
+                            {{ form.demo_link }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-clock me-2" style="color: white;"></i>Available Slots</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
                             {{ form.mode.label_tag }}
                             {{ form.mode }}
                         </div>
@@ -121,18 +148,24 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="form-section-card">
-            <div class="form-section-header">
-                <h5 style="color: white;"><i class="fas fa-clock me-2" style="color: white;"></i>Timing Slots</h5>
-            </div>
-            <div class="form-section-body">
                 {{ form.timing_slots }}
                 <div id="timing-slots-container">
                     <!-- Timing slots will be added here dynamically -->
                 </div>
                 <button type="button" id="add-slot-btn" class="btn btn-secondary mt-2">Add another slot</button>
+            </div>
+        </div>
+
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-money-bill-wave me-2" style="color: white;"></i>Commercials</h5>
+            </div>
+            <div class="form-section-body">
+                {{ form.commercials }}
+                <div id="commercials-container">
+                    <!-- Commercials will be added here dynamically -->
+                </div>
+                <button type="button" id="add-commercial-btn" class="btn btn-secondary mt-2">Add Commercial</button>
             </div>
         </div>
 
@@ -213,6 +246,94 @@ $(document).ready(function() {
         // Ignore parsing errors, start with empty slots
     }
     renderSlots();
+
+    const commercialsContainer = $('#commercials-container');
+    const commercialsHiddenInput = $('#id_commercials');
+    let commercials = [];
+
+    function renderCommercials() {
+        commercialsContainer.empty();
+        commercials.forEach((commercial, index) => {
+            let inputs = '';
+            if (commercial.commercial_type === 'studentwise') {
+                inputs = `
+                    <div class="col-md-4">
+                        <label>1st Student Payment</label>
+                        <input type="number" class="form-control first-student-payment" value="${commercial.first_student_payment || ''}">
+                    </div>
+                    <div class="col-md-4">
+                        <label>2nd Student Payment</label>
+                        <input type="number" class="form-control second-student-payment" value="${commercial.second_student_payment || ''}">
+                    </div>
+                `;
+            } else {
+                inputs = `
+                    <div class="col-md-8">
+                        <label>Payment</label>
+                        <input type="number" class="form-control payment" value="${commercial.payment || ''}">
+                    </div>
+                `;
+            }
+
+            const commercialHtml = `
+                <div class="row mb-2" data-index="${index}">
+                    <div class="col-md-4">
+                        <label>Commercial Type</label>
+                        <select class="form-control commercial-type">
+                            <option value="studentwise" ${commercial.commercial_type === 'studentwise' ? 'selected' : ''}>Student-wise</option>
+                            <option value="one_on_one" ${commercial.commercial_type === 'one_on_one' ? 'selected' : ''}>One on One</option>
+                            <option value="batch_wise" ${commercial.commercial_type === 'batch_wise' ? 'selected' : ''}>Batch-wise</option>
+                        </select>
+                    </div>
+                    ${inputs}
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger remove-commercial-btn">Remove</button>
+                    </div>
+                </div>
+            `;
+            commercialsContainer.append(commercialHtml);
+        });
+        commercialsHiddenInput.val(JSON.stringify(commercials));
+    }
+
+    $('#add-commercial-btn').click(function() {
+        commercials.push({ commercial_type: 'studentwise' });
+        renderCommercials();
+    });
+
+    commercialsContainer.on('click', '.remove-commercial-btn', function() {
+        const index = $(this).closest('.row').data('index');
+        commercials.splice(index, 1);
+        renderCommercials();
+    });
+
+    commercialsContainer.on('change', '.commercial-type', function() {
+        const index = $(this).closest('.row').data('index');
+        commercials[index].commercial_type = $(this).val();
+        renderCommercials();
+    });
+
+    commercialsContainer.on('change', '.first-student-payment, .second-student-payment, .payment', function() {
+        const index = $(this).closest('.row').data('index');
+        if (commercials[index].commercial_type === 'studentwise') {
+            commercials[index].first_student_payment = $(this).closest('.row').find('.first-student-payment').val();
+            commercials[index].second_student_payment = $(this).closest('.row').find('.second-student-payment').val();
+        } else {
+            commercials[index].payment = $(this).closest('.row').find('.payment').val();
+        }
+        commercialsHiddenInput.val(JSON.stringify(commercials));
+    });
+
+    // Initial render for commercials
+    try {
+        const initialCommercials = JSON.parse(commercialsHiddenInput.val());
+        if (Array.isArray(initialCommercials)) {
+            commercials = initialCommercials;
+        }
+    } catch (e) {
+        // Ignore parsing errors, start with empty commercials
+    }
+    renderCommercials();
 });
 </script>
 {% endblock %}

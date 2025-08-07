@@ -68,6 +68,9 @@ class Trainer(models.Model):
     employment_type = models.CharField(max_length=2, choices=EMPLOYMENT_TYPE_CHOICES)
     date_of_joining = models.DateField(auto_now_add=True, null=True)
     timing_slots = models.JSONField(default=list, blank=True, null=True)
+    profile = models.FileField(upload_to='trainer_profiles/', blank=True, null=True)
+    demo_link = models.URLField(blank=True, null=True)
+    commercials = models.JSONField(default=list, blank=True, null=True)
 
 
     def save(self, *args, **kwargs):

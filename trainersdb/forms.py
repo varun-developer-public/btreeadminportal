@@ -4,13 +4,15 @@ import json
 
 class TrainerForm(forms.ModelForm):
     timing_slots = forms.CharField(widget=forms.HiddenInput(), required=False)
+    commercials = forms.CharField(widget=forms.HiddenInput(), required=False)
 
     class Meta:
         model = Trainer
         fields = [
             'name', 'country_code', 'phone_number', 'email', 'location',
             'other_location', 'years_of_experience', 'stack', 'mode',
-            'availability', 'employment_type', 'timing_slots'
+            'availability', 'employment_type', 'timing_slots', 'profile',
+            'demo_link', 'commercials'
         ]
         widgets = {
             'stack': forms.SelectMultiple(attrs={'class': 'form-control'}),
@@ -36,9 +38,28 @@ class TrainerForm(forms.ModelForm):
         except json.JSONDecodeError:
             raise forms.ValidationError("Invalid JSON in timing slots.")
 
+    def clean_commercials(self):
+        commercials_str = self.cleaned_data.get('commercials')
+        if not commercials_str:
+            return []
+        
+        try:
+            commercials = json.loads(commercials_str)
+            if not isinstance(commercials, list):
+                raise forms.ValidationError("Invalid format for commercials.")
+
+            for commercial in commercials:
+                if 'commercial_type' not in commercial:
+                    raise forms.ValidationError("Each commercial must have a type.")
+            
+            return commercials
+        except json.JSONDecodeError:
+            raise forms.ValidationError("Invalid JSON in commercials.")
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.timing_slots = self.cleaned_data.get('timing_slots', [])
+        instance.commercials = self.cleaned_data.get('commercials', [])
         if commit:
             instance.save()
             self.save_m2m()

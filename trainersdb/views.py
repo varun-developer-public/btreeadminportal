@@ -86,7 +86,7 @@ import json
 
 def create_trainer(request):
     if request.method == 'POST':
-        form = TrainerForm(request.POST)
+        form = TrainerForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             messages.success(request, f"Trainer {form.cleaned_data.get('name')} added.")
@@ -98,13 +98,16 @@ def create_trainer(request):
 def update_trainer(request, pk):
     trainer = get_object_or_404(Trainer, pk=pk)
     if request.method == 'POST':
-        form = TrainerForm(request.POST, instance=trainer)
+        form = TrainerForm(request.POST, request.FILES, instance=trainer)
         if form.is_valid():
             form.save()
             messages.success(request, "Trainer updated successfully!")
             return redirect('trainer_list')
     else:
-        form = TrainerForm(instance=trainer, initial={'timing_slots': json.dumps(trainer.timing_slots)})
+        form = TrainerForm(instance=trainer, initial={
+            'timing_slots': json.dumps(trainer.timing_slots or []),
+            'commercials': json.dumps(trainer.commercials or [])
+        })
     return render(request, 'trainersdb/update_trainer.html', {'form': form, 'title': 'Update Trainer'})
 
 def delete_trainer(request, pk):

@@ -1,4 +1,5 @@
 from django import template
+from datetime import datetime
 
 register = template.Library()
 
@@ -76,3 +77,11 @@ def intcomma(value):
         return ','.join([other_digits[max(0, i-2):i] for i in range(len(other_digits), 0, -2)][::-1]) + ',' + last_three
     except (ValueError, TypeError):
         return value
+@register.filter
+def format_time(time_str):
+    if isinstance(time_str, str):
+        try:
+            return datetime.strptime(time_str, '%H:%M').strftime('%I:%M %p')
+        except ValueError:
+            return time_str
+    return time_str
