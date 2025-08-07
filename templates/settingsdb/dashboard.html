@@ -8,6 +8,8 @@
         <li style="margin-bottom: 10px;"><a href="{% url 'user_list' %}" class="btn">Manage Users</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'source_list' %}" class="btn">Manage Source of Joining</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'payment_account_list' %}" class="btn">Manage Payment Accounts</a></li>
+        <li style="margin-bottom: 10px;"><a href="{% url 'import_data' %}" class="btn">Import Data</a></li>
+        <li style="margin-bottom: 10px;"><a href="{% url 'export_data' %}" class="btn">Export Data</a></li>
         {% if request.user.role == 'admin' %}
         <li style="margin-bottom: 10px;"><a href="{% url 'transaction_log' %}" class="btn">View Transaction Logs</a></li>
         {% endif %}

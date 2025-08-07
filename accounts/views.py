@@ -30,6 +30,7 @@ from django.utils import timezone
 from datetime import timedelta
 from trainersdb.models import Trainer
 from django.db.models import Count
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 def admin_dashboard(request):
@@ -292,18 +293,39 @@ def placement_dashboard(request):
     )
     
     # 3. Calculate the total and segregated counts.
-    resumes_to_collect_count = students_no_resume.count()
-    completed_but_no_resume = students_no_resume.filter(course_status='C').count()
-    in_progress_80_99_no_resume = students_no_resume.filter(
-        course_status='IP', course_percentage__gte=80, course_percentage__lt=99
-    ).count()
-    in_progress_50_80_no_resume = students_no_resume.filter(
-        course_status='IP', course_percentage__gte=50, course_percentage__lt=80
-    ).count()
-    in_progress_below_50_no_resume = students_no_resume.filter(
-        course_status='IP', course_percentage__lt=50
-    ).count()
-    yts_no_resume = students_no_resume.filter(course_status='YTS').count()
+    students_no_resume_list = students_no_resume.select_related('course', 'placement')
+    
+    resumes_to_collect_count = students_no_resume_list.count()
+    
+    completed_but_no_resume_list = students_no_resume_list.filter(course_status='C')
+    in_progress_80_99_no_resume_list = students_no_resume_list.filter(course_status='IP', course_percentage__gte=80, course_percentage__lt=99)
+    in_progress_50_80_no_resume_list = students_no_resume_list.filter(course_status='IP', course_percentage__gte=50, course_percentage__lt=80)
+    in_progress_below_50_no_resume_list = students_no_resume_list.filter(course_status='IP', course_percentage__lt=50)
+    yts_no_resume_list = students_no_resume_list.filter(course_status='YTS')
+
+    completed_but_no_resume = completed_but_no_resume_list.count()
+    in_progress_80_99_no_resume = in_progress_80_99_no_resume_list.count()
+    in_progress_50_80_no_resume = in_progress_50_80_no_resume_list.count()
+    in_progress_below_50_no_resume = in_progress_below_50_no_resume_list.count()
+    yts_no_resume = yts_no_resume_list.count()
+
+    # --- Pagination for Resume Lists ---
+    def paginate_queryset(queryset, page_param, per_page=10):
+        paginator = Paginator(queryset, per_page)
+        page_number = request.GET.get(page_param)
+        try:
+            return paginator.page(page_number)
+        except PageNotAnInteger:
+            return paginator.page(1)
+        except EmptyPage:
+            return paginator.page(paginator.num_pages)
+
+    completed_paginated = paginate_queryset(completed_but_no_resume_list, 'completed_page')
+    progress_80_99_paginated = paginate_queryset(in_progress_80_99_no_resume_list, 'progress_80_99_page')
+    progress_50_80_paginated = paginate_queryset(in_progress_50_80_no_resume_list, 'progress_50_80_page')
+    progress_below_50_paginated = paginate_queryset(in_progress_below_50_no_resume_list, 'progress_below_50_page')
+    yts_paginated = paginate_queryset(yts_no_resume_list, 'yts_page')
+
 
     # Table Data
     recently_placed = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
@@ -319,7 +341,7 @@ def placement_dashboard(request):
         'active_drives_count': active_drives_count,
         'interviews_scheduled': interviews_scheduled,
 
-        # Resume Stats
+        # Resume Stats (Counts)
         'resumes_to_collect_count': resumes_to_collect_count,
         'completed_but_no_resume': completed_but_no_resume,
         'in_progress_80_99_no_resume': in_progress_80_99_no_resume,
@@ -327,7 +349,14 @@ def placement_dashboard(request):
         'in_progress_below_50_no_resume': in_progress_below_50_no_resume,
         'yts_no_resume': yts_no_resume,
 
-        # Tables
+        # Paginated Lists for Tables
+        'completed_list_paginated': completed_paginated,
+        'progress_80_99_list_paginated': progress_80_99_paginated,
+        'progress_50_80_list_paginated': progress_50_80_paginated,
+        'progress_below_50_list_paginated': progress_below_50_paginated,
+        'yts_list_paginated': yts_paginated,
+
+        # Other Tables
         'recently_placed': recently_placed,
         'upcoming_interviews': upcoming_interviews,
         'students_yet_to_be_placed': students_yet_to_be_placed,

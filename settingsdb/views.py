@@ -3,6 +3,18 @@ from django.shortcuts import get_object_or_404, render, redirect
 from .models import SourceOfJoining, PaymentAccount, TransactionLog
 from .forms import SourceForm, PaymentAccountForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+import pandas as pd
+from django.http import HttpResponse
+from io import BytesIO
+
+from studentsdb.models import Student, Course, CourseCategory
+from trainersdb.models import Trainer
+from consultantdb.models import Consultant
+from batchdb.models import Batch
+from paymentdb.models import Payment
+from placementdb.models import Placement, CompanyInterview
+from placementdrive.models import PlacementDrive
+from accounts.models import CustomUser
 import json
 
 @staff_member_required
@@ -77,3 +89,75 @@ def transaction_log(request):
         log.cleaned_details = clean_transaction_data(log.changes)
         
     return render(request, 'settingsdb/transaction_log.html', {'logs': logs})
+
+@staff_member_required
+def export_data(request):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        models_to_export = {
+            'Students': Student,
+            'Courses': Course,
+            'CourseCategories': CourseCategory,
+            'Trainers': Trainer,
+            'Consultants': Consultant,
+            'Batches': Batch,
+            'Payments': Payment,
+            'Placements': Placement,
+            'CompanyInterviews': CompanyInterview,
+            'PlacementDrives': PlacementDrive,
+            'Users': CustomUser,
+            'SourceOfJoining': SourceOfJoining,
+            'PaymentAccounts': PaymentAccount,
+        }
+
+        for sheet_name, model in models_to_export.items():
+            data = list(model.objects.all().values())
+            df = pd.DataFrame(data)
+            
+            # Convert datetime columns to timezone-unaware
+            for col in df.columns:
+                if pd.api.types.is_datetime64_any_dtype(df[col]):
+                    df[col] = df[col].dt.tz_localize(None)
+            
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+    output.seek(0)
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = 'attachment; filename="backup_data.xlsx"'
+    return response
+
+from django.db import transaction
+
+@staff_member_required
+def import_data(request):
+    if request.method == 'POST':
+        excel_file = request.FILES['excel_file']
+        xls = pd.ExcelFile(excel_file)
+        
+        with transaction.atomic():
+            for sheet_name in xls.sheet_names:
+                df = pd.read_excel(xls, sheet_name).replace({pd.NaT: None, float('nan'): None})
+                model = None
+                if sheet_name == 'Students': model = Student
+                elif sheet_name == 'Courses': model = Course
+                elif sheet_name == 'CourseCategories': model = CourseCategory
+                elif sheet_name == 'Trainers': model = Trainer
+                elif sheet_name == 'Consultants': model = Consultant
+                elif sheet_name == 'Batches': model = Batch
+                elif sheet_name == 'Payments': model = Payment
+                elif sheet_name == 'Placements': model = Placement
+                elif sheet_name == 'CompanyInterviews': model = CompanyInterview
+                elif sheet_name == 'PlacementDrives': model = PlacementDrive
+                elif sheet_name == 'Users': model = CustomUser
+                elif sheet_name == 'SourceOfJoining': model = SourceOfJoining
+                elif sheet_name == 'PaymentAccounts': model = PaymentAccount
+
+                if model:
+                    for _, row in df.iterrows():
+                        model.objects.update_or_create(id=row['id'], defaults=row.to_dict())
+
+        return redirect('settings_dashboard')
+    return render(request, 'settingsdb/import_data.html')

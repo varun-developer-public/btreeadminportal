@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="payment-list-container">
-    <h2>Placement Records</h2>
+    <h2>{{ list_title|default:"Placement Records" }}</h2>
     <div class="accordion" id="filterAccordion">
         <div class="accordion-item">
             <h2 class="accordion-header" id="headingOne">

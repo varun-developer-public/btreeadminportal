@@ -64,39 +64,41 @@
 
     <div class="info-card mt-4">
         <div class="info-header">
-            <h4 class="info-title"><i class="fas fa-file-alt"></i> Resumes to Collect</h4>
+            <a href="{% url 'pending_resumes_list' %}" class="info-title-link" style="text-decoration: none; color: inherit;">
+                <h4 class="info-title"><i class="fas fa-file-alt"></i> Resumes to Collect</h4>
+            </a>
             <span class="info-count">{{ resumes_to_collect_count }} Total</span>
         </div>
         <div class="stats-overview">
-            <div class="stat-card">
+            <div class="stat-card clickable-stat" data-table-id="completed-table" style="cursor: pointer;">
                 <div class="stat-header">
                     <i class="fas fa-check-circle stat-icon" style="color: #2ecc71;"></i>
                     <h3 class="stat-title">Completed</h3>
                 </div>
                 <p class="stat-value">{{ completed_but_no_resume }}</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable-stat" data-table-id="progress-80-99-table" style="cursor: pointer;">
                 <div class="stat-header">
                     <i class="fas fa-tasks stat-icon" style="color: #f1c40f;"></i>
                     <h3 class="stat-title">80-99% Progress</h3>
                 </div>
                 <p class="stat-value">{{ in_progress_80_99_no_resume }}</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable-stat" data-table-id="progress-50-80-table" style="cursor: pointer;">
                 <div class="stat-header">
                     <i class="fas fa-tasks stat-icon" style="color: #f1c40f;"></i>
                     <h3 class="stat-title">50-80% Progress</h3>
                 </div>
                 <p class="stat-value">{{ in_progress_50_80_no_resume }}</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable-stat" data-table-id="progress-below-50-table" style="cursor: pointer;">
                 <div class="stat-header">
                     <i class="fas fa-spinner stat-icon" style="color: #3498db;"></i>
-                    <h3 class="stat-title"><50% Progress</h3>
+                    <h3 class="stat-title">50% Progress</h3>
                 </div>
                 <p class="stat-value">{{ in_progress_below_50_no_resume }}</p>
             </div>
-            <div class="stat-card">
+            <div class="stat-card clickable-stat" data-table-id="yts-table" style="cursor: pointer;">
                 <div class="stat-header">
                     <i class="fas fa-hourglass-start stat-icon" style="color: #95a5a6;"></i>
                     <h3 class="stat-title">Yet to Start</h3>
@@ -105,6 +107,22 @@
             </div>
         </div>
     </div>
+
+    {% with students=completed_list_paginated table_id="completed-table" title="Completed - Pending Resume" page_param="completed_page" %}
+        {% include "includes/student_resume_table.html" %}
+    {% endwith %}
+    {% with students=progress_80_99_list_paginated table_id="progress-80-99-table" title="80-99% Progress - Pending Resume" page_param="progress_80_99_page" %}
+        {% include "includes/student_resume_table.html" %}
+    {% endwith %}
+    {% with students=progress_50_80_list_paginated table_id="progress-50-80-table" title="50-80% Progress - Pending Resume" page_param="progress_50_80_page" %}
+        {% include "includes/student_resume_table.html" %}
+    {% endwith %}
+    {% with students=progress_below_50_list_paginated table_id="progress-below-50-table" title="<50% Progress - Pending Resume" page_param="progress_below_50_page" %}
+        {% include "includes/student_resume_table.html" %}
+    {% endwith %}
+    {% with students=yts_list_paginated table_id="yts-table" title="Yet to Start - Pending Resume" page_param="yts_page" %}
+        {% include "includes/student_resume_table.html" %}
+    {% endwith %}
 
     <div class="dashboard-grid mt-4">
         <div class="info-card">
@@ -174,4 +192,55 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const clickableStats = document.querySelectorAll('.clickable-stat');
+    const tables = document.querySelectorAll('.student-resume-table');
+
+    // Function to show a table and hide others
+    function showTable(tableId) {
+        tables.forEach(t => {
+            t.style.display = t.id === tableId ? 'block' : 'none';
+        });
+    }
+
+    // Check for page parameters on load to show the correct table
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageParams = ['completed_page', 'progress_80_99_page', 'progress_50_80_page', 'progress_below_50_page', 'yts_page'];
+    let activeTableId = null;
+
+    pageParams.forEach(param => {
+        if (urlParams.has(param)) {
+            switch(param) {
+                case 'completed_page': activeTableId = 'completed-table'; break;
+                case 'progress_80_99_page': activeTableId = 'progress-80-99-table'; break;
+                case 'progress_50_80_page': activeTableId = 'progress-50-80-table'; break;
+                case 'progress_below_50_page': activeTableId = 'progress-below-50-table'; break;
+                case 'yts_page': activeTableId = 'yts-table'; break;
+            }
+        }
+    });
+
+    if (activeTableId) {
+        showTable(activeTableId);
+    }
+
+    // Add click listeners to stat cards
+    clickableStats.forEach(stat => {
+        stat.addEventListener('click', function() {
+            const tableId = this.dataset.tableId;
+            const table = document.getElementById(tableId);
+            
+            if (table.style.display === 'none' || table.style.display === '') {
+                showTable(tableId);
+            } else {
+                table.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

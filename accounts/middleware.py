@@ -16,7 +16,7 @@ URL_ROLE_MAPPINGS = {
     ],
     'placement': [
         'placement_dashboard',
-        'placement_list', 'update_placement',
+        'placement_list', 'update_placement', 'pending_resumes_list',
         'student_list', 'update_student',
         'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses'
     ],

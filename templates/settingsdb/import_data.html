@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Import Data</h2>
+    <p>Upload an Excel file to import data into the system. The file should have sheets named after the models to import data into.</p>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="excel_file">Excel File</label>
+            <input type="file" class="form-control-file" id="excel_file" name="excel_file" accept=".xlsx, .xls">
+        </div>
+        <button type="submit" class="btn btn-primary">Import</button>
+    </form>
+</div>
+{% endblock %}

@@ -8,4 +8,6 @@ urlpatterns = [
     path('sources/remove/<int:pk>/', views.remove_source, name='remove_source'),
     path('accounts/remove/<int:pk>/', views.remove_payment_account, name='remove_payment_account'),
     path('logs/', views.transaction_log, name='transaction_log'),
+    path('export/', views.export_data, name='export_data'),
+    path('import/', views.import_data, name='import_data'),
 ]
