@@ -1,10 +1,13 @@
 from django import forms
 from .models import Consultant
+from django_select2.forms import Select2Widget
+from core.utils import get_country_code_choices
 
 class ConsultantForm(forms.ModelForm):
+    country_code = forms.CharField(widget=forms.HiddenInput())
     class Meta:
         model = Consultant
-        fields = ['name', 'phone_number', 'email', 'address', 'date_of_birth']
+        fields = ['name', 'country_code', 'phone_number', 'email', 'address', 'date_of_birth']
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
@@ -14,7 +17,7 @@ class ConsultantProfileForm(forms.ModelForm):
 
     class Meta:
         model = Consultant
-        fields = ['name', 'phone_number', 'email', 'address', 'date_of_birth']
+        fields = ['name', 'country_code', 'phone_number', 'email', 'address', 'date_of_birth']
         widgets = {
             'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }

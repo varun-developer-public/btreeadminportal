@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Student Creation Form{% endblock %}
-{% load static %}
+{% load static country_codes %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
@@ -86,11 +86,39 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="label-form">
+                                {{ student_form.country_code.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            <select name="country_code" id="id_country_code" class="form-control country-code-select">
+                                {% get_country_codes as countries %}
+                                {% for code, name, alpha2 in countries %}
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}"><span class="fi fi-{{ alpha2|lower }}"></span> {{ name }} (+{{ code }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
                                 {{ student_form.phone.label_tag }}
                                 <span class="required-indicator">*</span>
                             </div>
                             {{ student_form.phone }}
                             <div class="error-message"></div>
+                        </div>
+                    </div>
+                    
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ student_form.alternative_country_code.label_tag }}
+                            <select name="alternative_country_code" id="id_alternative_country_code" class="form-control country-code-select">
+                                {% get_country_codes as countries %}
+                                {% for code, name, alpha2 in countries %}
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}"><span class="fi fi-{{ alpha2|lower }}"></span> {{ name }} (+{{ code }})</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
                     <div class="col-md-6">

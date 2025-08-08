@@ -1,13 +1,53 @@
 {% extends "base.html" %}
+{% load static country_codes %}
 {% block title %}{{ title }}{% endblock %}
 {% block content %}
 <div class="card">
     <h2>{{ title }}</h2>
     <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {% if field.name == 'country_code' %}
+                    <select id="id_country_code_select" class="form-control country-code-select">
+                        {% get_country_codes as countries %}
+                        {% for code, name, alpha2 in countries %}
+                            <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.country_code == code %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                    {{ field }}
+                {% else %}
+                    {{ field }}
+                {% endif %}
+                {% if field.errors %}
+                    <div class="error-message">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
         <button type="submit" class="btn">Save</button>
         <a href="{% url 'consultant_list' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
 {% endblock %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const countryCodeSelect = document.getElementById('id_country_code_select');
+    const countryCodeInput = document.getElementById('id_country_code');
+
+    if (countryCodeSelect && countryCodeInput) {
+        // Set initial value
+        const selectedOption = countryCodeSelect.options[countryCodeSelect.selectedIndex];
+        if (selectedOption) {
+            countryCodeInput.value = selectedOption.dataset.code;
+        }
+
+        countryCodeSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption) {
+                countryCodeInput.value = selectedOption.dataset.code;
+            }
+        });
+    }
+});
+</script>

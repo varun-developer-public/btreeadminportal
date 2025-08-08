@@ -37,7 +37,7 @@ def create_consultant(request):
             return redirect('consultant_list')
     else:
         form = ConsultantForm()
-    return render(request, 'consultantdb/consultant_form.html', {'form': form, 'title': 'Add Consultant'})
+    return render(request, 'consultantdb/create_consultant.html', {'form': form, 'title': 'Add Consultant'})
 
 def update_consultant(request, pk):
     consultant = get_object_or_404(Consultant, pk=pk)
@@ -49,7 +49,7 @@ def update_consultant(request, pk):
             return redirect('consultant_list')
     else:
         form = ConsultantForm(instance=consultant)
-    return render(request, 'consultantdb/consultant_form.html', {'form': form, 'title': 'Update Consultant'})
+    return render(request, 'consultantdb/update_consultant.html', {'form': form, 'title': 'Update Consultant'})
 
 def delete_consultant(request, pk):
     consultant = get_object_or_404(Consultant, pk=pk)

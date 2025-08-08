@@ -103,7 +103,7 @@
             <td><span class="badge bg-secondary">{{ student.student_id }}</span></td>
             <td>{{ student.first_name }} {{ student.last_name|default:"" }}</td>
             <td><a href="mailto:{{ student.email }}" class="text-decoration-none text-primary">{{ student.email }}</a></td>
-            <td><a href="tel:{{ student.phone }}" class="text-decoration-none text-primary">{{ student.phone }}</a></td>
+            <td><a href="tel:{{ student.country_code }}{{ student.phone }}" class="text-decoration-none text-primary">{{ student.country_code }} {{ student.phone }}</a></td>
             <td>{{ student.location|default:"—" }}</td>
             <td>{{ student.consultant.name|default:"—" }}</td>
             <td>{{ student.course.name|default:"—" }}</td>

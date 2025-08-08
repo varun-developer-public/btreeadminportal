@@ -34,7 +34,7 @@
             <tr>
                 <td>{{ consultant.consultant_id }}</td>
                 <td>{{ consultant.name }}</td>
-                <td>{{ consultant.phone_number }}</td>
+                <td>{{ consultant.country_code }} {{ consultant.phone_number }}</td>
                 <td>{{ consultant.email }}</td>
                 <td>{{ consultant.address|default:'-' }}</td>
                 <td>{{ consultant.date_of_birth|date:"d M Y"|default:'-' }}</td>

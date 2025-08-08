@@ -6,6 +6,8 @@ from consultantdb.models import Consultant
 from settingsdb.models import SourceOfJoining, PaymentAccount
 
 from .models import CourseCategory, Course
+from django_select2.forms import Select2Widget
+from core.utils import get_country_code_choices
 
 class StudentForm(forms.ModelForm):
     source_of_joining = forms.ModelChoiceField(
@@ -29,10 +31,12 @@ class StudentForm(forms.ModelForm):
         empty_label="Select Course Category"
     )
 
+    country_code = forms.CharField(widget=forms.HiddenInput())
+    alternative_country_code = forms.CharField(widget=forms.HiddenInput())
     class Meta:
         model = Student
         fields = [
-            'first_name', 'last_name', 'phone', 'alternative_phone', 'email', 'location',
+            'first_name', 'last_name', 'country_code', 'phone', 'alternative_country_code', 'alternative_phone', 'email', 'location',
             'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
             'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
             'working_status', 'it_experience', 'course_category', 'course',
@@ -115,10 +119,12 @@ class StudentUpdateForm(forms.ModelForm):
         empty_label="Select Course Category"
     )
 
+    country_code = forms.CharField(widget=forms.HiddenInput())
+    alternative_country_code = forms.CharField(widget=forms.HiddenInput())
     class Meta:
         model = Student
         fields = [
-            'first_name', 'last_name', 'phone', 'alternative_phone', 'email', 'location',
+            'first_name', 'last_name', 'country_code', 'phone', 'alternative_country_code', 'alternative_phone', 'email', 'location',
             'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
             'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
             'working_status', 'it_experience', 'course_category', 'course', 'course_status', 'course_percentage',

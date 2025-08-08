@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Update Student{% endblock %}
-{% load static %}
+{% load static country_codes %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
@@ -57,11 +57,40 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="label-form">
+                                {{ form.country_code.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            <select id="id_country_code_select" class="form-control country-code-select">
+                                {% get_country_codes as countries %}
+                                {% for code, name, alpha2 in countries %}
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.country_code == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                            {{ form.country_code }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
                                 {{ form.phone.label_tag }}
                                 <span class="required-indicator">*</span>
                             </div>
                             {{ form.phone }}
                             <div class="error-message">{{ form.phone.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.alternative_country_code.label_tag }}
+                            <select id="id_alternative_country_code_select" class="form-control country-code-select">
+                                {% get_country_codes as countries %}
+                                {% for code, name, alpha2 in countries %}
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.alternative_country_code == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                            {{ form.alternative_country_code }}
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -439,6 +468,36 @@ $(document).ready(function() {
             });
         }
     });
+
+    var $countryCodeSelect = $('#id_country_code_select');
+    var $countryCodeHidden = $('#id_country_code');
+
+    $countryCodeSelect.on('change', function() {
+        var selectedOption = $(this).find('option:selected');
+        var countryCode = selectedOption.data('code');
+        $countryCodeHidden.val(countryCode);
+    });
+
+    // Set initial value for hidden input
+    var initialSelectedOption = $countryCodeSelect.find('option:selected');
+    if (initialSelectedOption.length) {
+        $countryCodeHidden.val(initialSelectedOption.data('code'));
+    }
+
+    var $altCountryCodeSelect = $('#id_alternative_country_code_select');
+    var $altCountryCodeHidden = $('#id_alternative_country_code');
+
+    $altCountryCodeSelect.on('change', function() {
+        var selectedOption = $(this).find('option:selected');
+        var countryCode = selectedOption.data('code');
+        $altCountryCodeHidden.val(countryCode);
+    });
+
+    // Set initial value for hidden input
+    var initialAltSelectedOption = $altCountryCodeSelect.find('option:selected');
+    if (initialAltSelectedOption.length) {
+        $altCountryCodeHidden.val(initialAltSelectedOption.data('code'));
+    }
 });
 </script>
 {% endblock %}

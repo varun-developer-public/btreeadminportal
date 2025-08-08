@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Update Consultant{% endblock %}
+{% load static country_codes %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container {
+        width: 100% !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Update Consultant</h1>
+    </div>
+
+    <form method="post" class="student-form">
+        {% csrf_token %}
+        {% if form.errors %}
+            <div class="alert alert-danger">
+                <strong>Error:</strong>
+                <ul>
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li>{{ field.label }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-user me-2" style="color: white;"></i>Consultant Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.name.label_tag }}
+                            {{ form.name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.email.label_tag }}
+                            {{ form.email }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.country_code.label_tag }}
+                            <select id="id_country_code_select" class="form-control country-code-select">
+                                {% get_country_codes as countries %}
+                                {% for code, name, alpha2 in countries %}
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.country_code == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
+                            {{ form.country_code }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.phone_number.label_tag }}
+                            {{ form.phone_number }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.address.label_tag }}
+                            {{ form.address }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            {{ form.date_of_birth.label_tag }}
+                            {{ form.date_of_birth }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update Consultant</button>
+        </div>
+    </form>
+</div>
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    var $countryCodeSelect = $('#id_country_code_select');
+    var $countryCodeHidden = $('#id_country_code');
+
+    $countryCodeSelect.on('change', function() {
+        var selectedOption = $(this).find('option:selected');
+        var countryCode = selectedOption.data('code');
+        $countryCodeHidden.val(countryCode);
+    });
+
+    // Set initial value for hidden input
+    var initialSelectedOption = $countryCodeSelect.find('option:selected');
+    if (initialSelectedOption.length) {
+        $countryCodeHidden.val(initialSelectedOption.data('code'));
+    }
+    $('select').select2();
+});
+</script>
+{% endblock %}
+{% endblock %}

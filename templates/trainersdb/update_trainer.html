@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Update Trainer{% endblock %}
-{% load static %}
+{% load static country_codes %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
@@ -71,60 +71,68 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-2">
+                    <div class="col-md-6">
                         <div class="form-group">
                             {{ form.country_code.label_tag }}
+                            <select id="id_country_code_select" class="form-control country-code-select">
+                                {% get_country_codes as countries %}
+                                {% for code, name, alpha2 in countries %}
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.country_code == code %}selected{% endif %}>{{ name }}</option>
+                                {% endfor %}
+                            </select>
                             {{ form.country_code }}
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group">
                             {{ form.phone_number.label_tag }}
                             {{ form.phone_number }}
                         </div>
                     </div>
+                </div>
+                <div class="row">   
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ form.location.label_tag }}
                             {{ form.location }}
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group" id="other_location_group" style="display: none;">
                             {{ form.other_location.label_tag }}
                             {{ form.other_location }}
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ form.years_of_experience.label_tag }}
                             {{ form.years_of_experience }}
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ form.stack.label_tag }}
                             {{ form.stack }}
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ form.employment_type.label_tag }}
                             {{ form.employment_type }}
                         </div>
                     </div>
-                </div>
-                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ form.profile.label_tag }}
                             {{ form.profile }}
                         </div>
                     </div>
+                </div>
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ form.demo_link.label_tag }}
@@ -186,6 +194,20 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
+    var $countryCodeSelect = $('#id_country_code_select');
+    var $countryCodeHidden = $('#id_country_code');
+
+    $countryCodeSelect.on('change', function() {
+        var selectedOption = $(this).find('option:selected');
+        var countryCode = selectedOption.data('code');
+        $countryCodeHidden.val(countryCode);
+    });
+
+    // Set initial value for hidden input
+    var initialSelectedOption = $countryCodeSelect.find('option:selected');
+    if (initialSelectedOption.length) {
+        $countryCodeHidden.val(initialSelectedOption.data('code'));
+    }
     $('#id_stack').select2();
 
     $('#id_location').change(function() {

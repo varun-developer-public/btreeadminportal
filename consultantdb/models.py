@@ -4,6 +4,7 @@ from django.conf import settings
 class Consultant(models.Model):
     consultant_id = models.CharField(max_length=10, unique=True, blank=True)
     name = models.CharField(max_length=100)
+    country_code = models.CharField(max_length=5, default="+91")
     phone_number = models.CharField(max_length=15)
     email = models.EmailField()
     address = models.TextField(blank=True, null=True)
@@ -11,7 +12,7 @@ class Consultant(models.Model):
     date_of_joining = models.DateField(auto_now_add=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'consultantdb_consultant'
 
     def __str__(self):
