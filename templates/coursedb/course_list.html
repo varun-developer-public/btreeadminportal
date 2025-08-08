@@ -74,7 +74,9 @@
                     <td>{{ course.total_duration }} hours</td>
                     <td class="text-center action-icons">
                         <a href="{% url 'coursedb:course_update' course.pk %}" class="text-success"><i class="fas fa-edit"></i></a>
+                        {% if request.user.role == 'admin' %}
                         <a href="{% url 'coursedb:course_delete' course.pk %}" class="text-danger"><i class="fas fa-trash"></i></a>
+                        {% endif %}
                     </td>
                 </tr>
                 <tr>

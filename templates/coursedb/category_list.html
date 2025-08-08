@@ -21,7 +21,9 @@
             <td>{{ category.name }}</td>
             <td>
                 <a href="{% url 'coursedb:category_update' category.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
+                {% if request.user.role == 'admin' %}
                 <a href="{% url 'coursedb:category_delete' category.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
+                {% endif %}
             </td>
         </tr>
         {% endfor %}

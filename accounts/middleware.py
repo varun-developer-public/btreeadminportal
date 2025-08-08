@@ -31,6 +31,12 @@ URL_ROLE_MAPPINGS = {
         'trainer_list', 'create_trainer', 'update_trainer',
         'update_user',
         'password_change',
+        'course_list',
+        'category_list',
+        'course_create',
+        'course_update',
+        'category_create',
+        'category_update',
     ],
     'consultant': [
         'consultant_profile',
