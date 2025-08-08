@@ -35,6 +35,12 @@
                 <i class="fas fa-home"></i><span>Dashboard</span>
             </a>
         </li>
+        {% elif user.role == 'batch_coordination' %}
+        <li>
+            <a href="{% url 'batch_coordination_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_coordination_dashboard' %}active{% endif %}">
+                <i class="fas fa-home"></i><span>Dashboard</span>
+            </a>
+        </li>
         {% elif user.role == 'placement' %}
         <li>
             <a href="{% url 'placement_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'placement_dashboard' %}active{% endif %}">
@@ -105,6 +111,12 @@
         {% if user.role == 'consultant' %}
         <li>
             <a href="{% url 'consultant_profile' %}" class="nav-link {% if request.resolver_match.url_name == 'consultant_profile' %}active{% endif %}">
+                <i class="fas fa-user"></i><span>My Profile</span>
+            </a>
+        </li>
+        {% elif user.role == 'batch_coordination' %}
+        <li>
+            <a href="{% url 'update_user' user.pk %}" class="nav-link {% if request.resolver_match.url_name == 'update_user' %}active{% endif %}">
                 <i class="fas fa-user"></i><span>My Profile</span>
             </a>
         </li>

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+{% endblock %}
+
+{% block title %}Batch Coordination Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="row my-4 ms-1">
+        <div class="col-md-12">
+            <h2>Hey, {{ user.name }}!</h2>
+        </div>
+    </div>
+    <div class="quick-actions">
+        <a href="{% url 'student_list' %}" class="quick-action-btn">
+            <i class="fas fa-user-graduate"></i>
+            <span>All Students</span>
+        </a>
+        <a href="{% url 'batch_list' %}" class="quick-action-btn">
+            <i class="fas fa-users"></i>
+            <span>All Batches</span>
+        <a href="{% url 'update_user' user.pk %}" class="quick-action-btn">
+            <i class="fas fa-user-edit"></i>
+            <span>Update Profile</span>
+        </a>
+        </a>
+        <a href="{% url 'trainer_list' %}" class="quick-action-btn">
+            <i class="fas fa-chalkboard-teacher"></i>
+            <span>All Trainers</span>
+        </a>
+        <a href="{% url 'password_change' %}" class="quick-action-btn">
+            <i class="fas fa-key"></i>
+            <span>Change Password</span>
+        </a>
+    </div>
+
+    <div class="stats-overview">
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class="fas fa-user-graduate stat-icon"></i>
+                <h3 class="stat-title">Total Students</h3>
+            </div>
+            <p class="stat-value">{{ total_students }}</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class="fas fa-users stat-icon"></i>
+                <h3 class="stat-title">Total Batches</h3>
+            </div>
+            <p class="stat-value">{{ total_batches }}</p>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <i class="fas fa-chalkboard-teacher stat-icon"></i>
+                <h3 class="stat-title">Total Trainers</h3>
+            </div>
+            <p class="stat-value">{{ total_trainers }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

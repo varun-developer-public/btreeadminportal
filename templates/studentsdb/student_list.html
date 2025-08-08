@@ -94,7 +94,9 @@
             <th>Current Batches</th>
             <th>Course Status</th>
             <th>Enrollment Date</th>
+            {% if request.user.role != 'batch_coordination' %}
             <th>Actions</th>
+            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -119,6 +121,7 @@
             </td>
             <td>{{ student.get_course_status_display }}</td>
             <td>{{ student.enrollment_date }}</td>
+            {% if request.user.role != 'batch_coordination' %}
             <td>
                 <div class="d-flex gap-2 justify-content-center">
                     <a href="{% url 'update_student' student.student_id %}" class="btn-update"><i class="fas fa-edit"></i></a>
@@ -127,6 +130,7 @@
                     {% endif %}
                 </div>
             </td>
+            {% endif %}
         </tr>
     {% empty %}
         <tr><td colspan="10" class="text-center py-4 text-muted">

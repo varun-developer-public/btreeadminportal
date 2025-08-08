@@ -16,7 +16,10 @@ def is_consultant(user):
 def is_placement(user):
     return user.is_authenticated and user.role == 'placement'
 
+def is_batch_coordinator(user):
+    return user.is_authenticated and user.role == 'batch_coordination'
 from django.db.models import Sum, Q
+from batchdb.models import Batch
 from django.db.models.functions import TruncMonth
 from studentsdb.models import Student
 from paymentdb.models import Payment
@@ -363,6 +366,20 @@ def placement_dashboard(request):
     }
     return render(request, 'accounts/placement_dashboard.html', context)
 
+@login_required
+@user_passes_test(is_batch_coordinator)
+def batch_coordination_dashboard(request):
+    total_students = Student.objects.count()
+    total_batches = Batch.objects.count()
+    total_trainers = Trainer.objects.count()
+
+    context = {
+        'total_students': total_students,
+        'total_batches': total_batches,
+        'total_trainers': total_trainers,
+    }
+    return render(request, 'accounts/batch_coordination_dashboard.html', context)
+
 @user_passes_test(is_admin)
 def user_list(request):
     users = CustomUser.objects.all().order_by('name')
@@ -392,6 +409,8 @@ def update_user(request, pk):
             return redirect('staff_dashboard')
         elif request.user.role == 'consultant':
             return redirect('consultant_dashboard')
+        elif request.user.role == 'batch_coordination':
+            return redirect('batch_coordination_dashboard')
         else:
             return redirect('login') # Fallback
 
@@ -441,6 +460,8 @@ def login_view(request):
                     return redirect('consultant_dashboard')
                 elif user.role == 'placement':
                     return redirect('placement_dashboard')
+                elif user.role == 'batch_coordination':
+                    return redirect('batch_coordination_dashboard')
                 else:
                     return redirect('staff_dashboard')
             else:
@@ -468,6 +489,8 @@ def password_change(request):
                 return redirect('admin_dashboard')
             elif request.user.role == 'consultant':
                 return redirect('consultant_dashboard')
+            elif request.user.role == 'batch_coordination':
+                return redirect('batch_coordination_dashboard')
             else:
                 return redirect('staff_dashboard')
     else:

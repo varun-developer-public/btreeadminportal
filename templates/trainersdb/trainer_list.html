@@ -149,7 +149,9 @@
                         <td>
                             <div class="d-flex gap-1">
                                 <a href="{% url 'update_trainer' trainer.pk %}" class="btn-update btn-sm action-btn"><i class="fas fa-edit"></i></a>
+                                 {% if request.user.role == 'admin' %}
                                 <a href="{% url 'delete_trainer' trainer.pk %}" class="btn-danger btn-sm action-btn"><i class="fas fa-trash"></i></a>
+                                 {% endif %}
                             </div>
                         </td>
                     </tr>

@@ -25,9 +25,12 @@ URL_ROLE_MAPPINGS = {
         'student_list',
     ],
     'batch_coordination': [
-        'batch_list', 'create_batch', 'update_batch', 'delete_batch',
+        'batch_coordination_dashboard',
+        'batch_list', 'create_batch', 'update_batch',
         'student_list',
-        'trainer_list',
+        'trainer_list', 'create_trainer', 'update_trainer',
+        'update_user',
+        'password_change',
     ],
     'consultant': [
         'consultant_profile',
