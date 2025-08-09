@@ -58,71 +58,56 @@ def course_create(request):
     return render(request, 'coursedb/course_form.html', context)
 
 
-from .forms import CourseForm, CourseCategoryForm, CourseModuleFormSet, TopicFormSet
+from .forms import CourseForm, CourseCategoryForm
 
 def course_update(request, pk):
-    course = get_object_or_404(Course, pk=pk)
-    
+    course = get_object_or_404(Course.objects.prefetch_related('modules__topics'), pk=pk)
+
     if request.method == 'POST':
         form = CourseForm(request.POST, instance=course)
-        module_formset = CourseModuleFormSet(request.POST, instance=course, prefix='modules')
-        
-        topic_formsets = {}
-        if module_formset.is_valid():
-            for module_form in module_formset:
-                if not module_form.cleaned_data.get('DELETE', False):
-                    module_instance = module_form.instance
-                    topic_prefix = f'topics-module-{module_instance.pk or module_form.prefix}'
-                    topic_formsets[module_form.prefix] = TopicFormSet(request.POST, instance=module_instance, prefix=topic_prefix)
-
-        all_topic_formsets_valid = all(tf.is_valid() for tf in topic_formsets.values())
-
-        if form.is_valid() and module_formset.is_valid() and all_topic_formsets_valid:
+        if form.is_valid():
             try:
                 with transaction.atomic():
                     course = form.save()
                     
-                    for module_form in module_formset:
-                        if module_form.cleaned_data.get('DELETE'):
-                            if module_form.instance.pk:
-                                module_form.instance.delete()
-                        elif module_form.has_changed():
-                            module = module_form.save(commit=False)
-                            module.course = course
-                            module.save()
-                            
-                            topic_formset = topic_formsets.get(module_form.prefix)
-                            if topic_formset:
-                                for topic_form in topic_formset:
-                                    if topic_form.cleaned_data.get('DELETE'):
-                                        if topic_form.instance.pk:
-                                            topic_form.instance.delete()
-                                    elif topic_form.has_changed():
-                                        topic = topic_form.save(commit=False)
-                                        topic.module = module
-                                        topic.save()
+                    # Clear existing modules and topics to handle updates and deletions
+                    course.modules.all().delete()
 
+                    module_names = request.POST.getlist('module_name')
+                    module_hours = request.POST.getlist('module_hours')
+                    
+                    for i in range(len(module_names)):
+                        has_topics = request.POST.get(f'has_topics_module_{i}') == 'on'
+                        
+                        module = CourseModule.objects.create(
+                            course=course,
+                            name=module_names[i],
+                            module_duration=module_hours[i],
+                            has_topics=has_topics
+                        )
+
+                        if has_topics:
+                            topic_names = request.POST.getlist(f'topic_name_module_{i}')
+                            topic_hours = request.POST.getlist(f'topic_hours_module_{i}')
+                            for j in range(len(topic_names)):
+                                Topic.objects.create(
+                                    module=module,
+                                    name=topic_names[j],
+                                    topic_duration=topic_hours[j]
+                                )
+                    
                     messages.success(request, "Course updated successfully.")
                     return redirect('coursedb:course_list')
             except Exception as e:
                 messages.error(request, f"An error occurred: {e}")
         else:
             messages.error(request, "Please correct the errors below.")
-
     else:
         form = CourseForm(instance=course)
-        module_formset = CourseModuleFormSet(instance=course, prefix='modules')
-        topic_formsets = {}
-        for module_form in module_formset:
-            module_instance = module_form.instance
-            topic_prefix = f'topics-module-{module_instance.pk or module_form.prefix}'
-            topic_formsets[module_form.prefix] = TopicFormSet(instance=module_instance, prefix=topic_prefix)
 
     context = {
         'form': form,
-        'module_formset': module_formset,
-        'topic_formsets': topic_formsets,
-        'course': course
+        'course': course,
     }
     return render(request, 'coursedb/course_update_form.html', context)
 
