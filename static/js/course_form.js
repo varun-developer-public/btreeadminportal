@@ -3,112 +3,78 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalDurationInput = document.getElementById('id_total_duration');
     const validationMessageDiv = document.getElementById('duration-validation-message');
     const addModuleBtn = document.getElementById('add-module-btn');
-    const categorySelect = document.getElementById('id_category');
-    const codeInput = document.getElementById('id_code');
     const saveButton = document.querySelector('button[type="submit"]');
 
-    let formInteracted = false;
-
-    function setFormInteracted() {
-        if (!formInteracted) {
-            formInteracted = true;
-        }
-        validateDurations();
-    }
-
-    function validateRequiredFields() {
-        let allRequiredFilled = true;
+    function updateFormPrefixes() {
         const moduleForms = modulesContainer.querySelectorAll('.module-form');
+        const totalModuleFormsInput = document.querySelector('input[name="modules-TOTAL_FORMS"]');
+        if (totalModuleFormsInput) {
+            totalModuleFormsInput.value = moduleForms.length;
+        }
 
-        moduleForms.forEach((moduleForm, index) => {
-            const moduleNameInput = moduleForm.querySelector('input[name="module_name"]');
-            const moduleHoursInput = moduleForm.querySelector('input[name="module_hours"]');
-            
-            if (!moduleNameInput.value) {
-                allRequiredFilled = false;
-                if (formInteracted) moduleNameInput.classList.add('is-invalid');
-            } else {
-                moduleNameInput.classList.remove('is-invalid');
-            }
+        moduleForms.forEach((moduleForm, moduleIndex) => {
+            const modulePrefix = `modules-${moduleIndex}`;
+            moduleForm.id = modulePrefix;
+            moduleForm.querySelectorAll('[name^="modules-"]').forEach(input => {
+                const name = input.name.replace(/modules-\d+-/, `${modulePrefix}-`);
+                input.name = name;
+                input.id = `id_${name}`;
+            });
 
-            if (!moduleHoursInput.value) {
-                allRequiredFilled = false;
-                if (formInteracted) moduleHoursInput.classList.add('is-invalid');
-            } else {
-                moduleHoursInput.classList.remove('is-invalid');
-            }
+            const topicFormsContainer = moduleForm.querySelector('.topic-forms-container');
+            if (topicFormsContainer) {
+                const topicForms = topicFormsContainer.querySelectorAll('.topic-form');
+                const totalTopicFormsInput = moduleForm.querySelector(`input[name^="topics-${modulePrefix}-TOTAL_FORMS"]`);
+                if (totalTopicFormsInput) {
+                    totalTopicFormsInput.value = topicForms.length;
+                }
 
-            const hasTopics = moduleForm.querySelector('.has-topics-checkbox').checked;
-            if (hasTopics) {
-                const topicNameInputs = moduleForm.querySelectorAll(`input[name^="topic_name_module_${index}"]`);
-                const topicHoursInputs = moduleForm.querySelectorAll(`input[name^="topic_hours_module_${index}"]`);
-
-                topicNameInputs.forEach(input => {
-                    if (!input.value) {
-                        allRequiredFilled = false;
-                        if (formInteracted) input.classList.add('is-invalid');
-                    } else {
-                        input.classList.remove('is-invalid');
-                    }
-                });
-
-                topicHoursInputs.forEach(input => {
-                    if (!input.value) {
-                        allRequiredFilled = false;
-                        if (formInteracted) input.classList.add('is-invalid');
-                    } else {
-                        input.classList.remove('is-invalid');
-                    }
+                topicForms.forEach((topicForm, topicIndex) => {
+                    const topicPrefix = `topics-${modulePrefix}-${topicIndex}`;
+                    topicForm.id = topicPrefix;
+                    topicForm.querySelectorAll('[name^="topics-"]').forEach(input => {
+                        const name = input.name.replace(/topics-modules-\d+-\d+-/, `${topicPrefix}-`);
+                        input.name = name;
+                        input.id = `id_${name}`;
+                    });
                 });
             }
         });
-        return allRequiredFilled;
     }
 
     function validateDurations() {
         let totalModulesDuration = 0;
-        const moduleForms = modulesContainer.querySelectorAll('.module-form');
+        modulesContainer.querySelectorAll('.module-form').forEach(moduleForm => {
+            if (moduleForm.querySelector('input[name$="-DELETE"]')?.checked) return;
 
-        moduleForms.forEach((moduleForm, index) => {
-            const hasTopics = moduleForm.querySelector('.has-topics-checkbox').checked;
-            const moduleHoursInput = moduleForm.querySelector('input[name="module_hours"]');
+            const hasTopics = moduleForm.querySelector('input[name$="-has_topics"]')?.checked;
+            const moduleHoursInput = moduleForm.querySelector('input[name$="-module_duration"]');
+            let moduleDuration = 0;
 
             if (hasTopics) {
-                const topicInputs = moduleForm.querySelectorAll(`input[name^="topic_hours_module_${index}"]`);
                 let totalTopicsDuration = 0;
-                topicInputs.forEach(input => {
-                    totalTopicsDuration += parseInt(input.value) || 0;
+                moduleForm.querySelectorAll('.topic-form').forEach(topicForm => {
+                    if (topicForm.querySelector('input[name$="-DELETE"]')?.checked) return;
+                    const topicHoursInput = topicForm.querySelector('input[name$="-topic_duration"]');
+                    totalTopicsDuration += parseInt(topicHoursInput?.value) || 0;
                 });
-                
-                moduleHoursInput.value = totalTopicsDuration;
-                moduleHoursInput.readOnly = true;
-                totalModulesDuration += totalTopicsDuration;
+                moduleDuration = totalTopicsDuration;
+                if (moduleHoursInput) {
+                    moduleHoursInput.value = moduleDuration;
+                    moduleHoursInput.readOnly = true;
+                }
             } else {
-                moduleHoursInput.readOnly = false;
-                totalModulesDuration += parseInt(moduleHoursInput.value) || 0;
+                if (moduleHoursInput) {
+                    moduleHoursInput.readOnly = false;
+                    moduleDuration = parseInt(moduleHoursInput.value) || 0;
+                }
             }
+            totalModulesDuration += moduleDuration;
         });
 
         const courseTotalDuration = parseInt(totalDurationInput.value) || 0;
-        const allRequiredFilled = validateRequiredFields();
-
-        if (!formInteracted) {
-            validationMessageDiv.style.display = 'none';
-            saveButton.disabled = false; // Enable by default on update page
-            return;
-        }
-        
-        validationMessageDiv.style.display = 'block';
-
-        if (totalModulesDuration !== courseTotalDuration || !allRequiredFilled) {
-            let errorMessages = [];
-            if (totalModulesDuration !== courseTotalDuration) {
-                errorMessages.push(`The sum of module durations (${totalModulesDuration} hours) must equal the total course duration (${courseTotalDuration} hours).`);
-            }
-            if (!allRequiredFilled) {
-                errorMessages.push('Please fill in all required fields.');
-            }
-            validationMessageDiv.textContent = errorMessages.join(' ');
+        if (totalModulesDuration !== courseTotalDuration) {
+            validationMessageDiv.textContent = `The sum of module durations (${totalModulesDuration} hours) must equal the total course duration (${courseTotalDuration} hours).`;
             validationMessageDiv.className = 'error';
             saveButton.disabled = true;
         } else {
@@ -118,117 +84,72 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function addTopicToModule(moduleDiv) {
-        const moduleIndex = Array.from(modulesContainer.children).indexOf(moduleDiv);
-        const tmpl = document.getElementById('topic-template').content.cloneNode(true);
-        const topicDiv = tmpl.querySelector('.topic-form');
+    function addTopicToModule(moduleForm) {
+        const modulePrefix = moduleForm.id;
+        const topicFormsContainer = moduleForm.querySelector('.topic-forms-container');
+        const topicFormCount = topicFormsContainer.querySelectorAll('.topic-form').length;
+        const topicTemplate = document.getElementById('topic-template').innerHTML;
+        const newTopicHtml = topicTemplate
+            .replace(/__module_prefix__/g, modulePrefix.replace('modules-',''))
+            .replace(/__prefix__/g, topicFormCount);
         
-        const topicNameInput = topicDiv.querySelector('input[name="topic_name"]');
-        topicNameInput.name = `topic_name_module_${moduleIndex}`;
-        
-        const topicHoursInput = topicDiv.querySelector('input[name="topic_hours"]');
-        topicHoursInput.name = `topic_hours_module_${moduleIndex}`;
+        topicFormsContainer.insertAdjacentHTML('beforeend', newTopicHtml);
+        const newTopicForm = topicFormsContainer.lastElementChild;
+        attachTopicEvents(newTopicForm);
+        updateFormPrefixes();
+    }
 
-        topicDiv.querySelector('.remove-topic-btn').onclick = function() {
-            topicDiv.remove();
+    function attachTopicEvents(topicForm) {
+        topicForm.querySelector('input[name$="-DELETE"]').addEventListener('change', function() {
+            topicForm.style.display = this.checked ? 'none' : 'block';
             validateDurations();
-        };
-        moduleDiv.querySelector('.topic-forms-container').appendChild(topicDiv);
-        
-        const topicInputs = topicDiv.querySelectorAll('input');
-        topicInputs.forEach(input => {
-            input.addEventListener('input', setFormInteracted);
-            input.addEventListener('blur', setFormInteracted);
+        });
+        topicForm.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+            input.addEventListener('input', validateDurations);
         });
     }
 
-    function attachModuleEvents(moduleDiv) {
-        moduleDiv.querySelector('.remove-module-btn').onclick = function() {
-            moduleDiv.remove();
+    function attachModuleEvents(moduleForm) {
+        moduleForm.querySelector('input[name$="-DELETE"]').addEventListener('change', function() {
+            moduleForm.style.display = this.checked ? 'none' : 'block';
             validateDurations();
-        };
+        });
 
-        const hasTopics = moduleDiv.querySelector('.has-topics-checkbox');
-        const topicsSection = moduleDiv.querySelector('.topics-section');
-        const addTopicBtn = moduleDiv.querySelector('.add-topic-btn');
-        const topicFormsContainer = moduleDiv.querySelector('.topic-forms-container');
-
-        hasTopics.onchange = function() {
-            const moduleIndex = Array.from(modulesContainer.children).indexOf(moduleDiv);
-            hasTopics.name = `has_topics_module_${moduleIndex}`;
-            if (hasTopics.checked) {
-                topicsSection.style.display = 'block';
-                if (!topicFormsContainer.querySelector('.topic-form')) {
-                    addTopicToModule(moduleDiv);
+        const hasTopicsCheckbox = moduleForm.querySelector('input[name$="-has_topics"]');
+        if (hasTopicsCheckbox) {
+            hasTopicsCheckbox.addEventListener('change', function() {
+                const topicsSection = moduleForm.querySelector('.topics-section');
+                topicsSection.classList.toggle('d-none', !this.checked);
+                if (!this.checked) {
+                    topicsSection.querySelector('.topic-forms-container').innerHTML = '';
                 }
-            } else {
-                topicsSection.style.display = 'none';
-                topicFormsContainer.innerHTML = '';
-            }
-            setFormInteracted();
-        };
-
-        addTopicBtn.onclick = function() {
-            addTopicToModule(moduleDiv);
-        };
-
-        const inputs = moduleDiv.querySelectorAll('input[name="module_name"], input[name="module_hours"], .has-topics-checkbox');
-        inputs.forEach(input => {
-            input.addEventListener('input', setFormInteracted);
-            input.addEventListener('blur', setFormInteracted);
-        });
-
-        const topicInputs = moduleDiv.querySelectorAll('.topic-form input');
-        topicInputs.forEach(input => {
-            input.addEventListener('input', setFormInteracted);
-            input.addEventListener('blur', setFormInteracted);
-        });
-
-        const removeTopicBtns = moduleDiv.querySelectorAll('.remove-topic-btn');
-        removeTopicBtns.forEach(btn => {
-            btn.onclick = function() {
-                btn.closest('.topic-form').remove();
                 validateDurations();
-            };
+            });
+        }
+
+        const addTopicBtn = moduleForm.querySelector('.add-topic-btn');
+        if (addTopicBtn) {
+            addTopicBtn.addEventListener('click', () => addTopicToModule(moduleForm));
+        }
+
+        moduleForm.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+            input.addEventListener('input', validateDurations);
         });
     }
 
-    function addModule() {
-        const tmpl = document.getElementById('module-template').content.cloneNode(true);
-        const moduleDiv = tmpl.querySelector('.module-form');
-        attachModuleEvents(moduleDiv);
-        modulesContainer.appendChild(moduleDiv);
-        validateDurations();
-    }
-
-    if (addModuleBtn) {
-        addModuleBtn.onclick = addModule;
-    }
-
-    // Attach events to existing modules on update page
-    const existingModules = modulesContainer.querySelectorAll('.module-form');
-    existingModules.forEach(moduleDiv => {
-        attachModuleEvents(moduleDiv);
+    addModuleBtn.addEventListener('click', function() {
+        const moduleTemplate = document.getElementById('module-template').innerHTML;
+        const totalForms = modulesContainer.querySelectorAll('.module-form').length;
+        const newModuleHtml = moduleTemplate.replace(/__prefix__/g, totalForms);
+        modulesContainer.insertAdjacentHTML('beforeend', newModuleHtml);
+        const newModuleForm = modulesContainer.lastElementChild;
+        attachModuleEvents(newModuleForm);
+        updateFormPrefixes();
     });
 
-    if (categorySelect && codeInput) {
-        categorySelect.addEventListener('change', function() {
-            const categoryId = this.value;
-            if (categoryId) {
-                fetch(`/coursedb/ajax/get_next_course_code/?category_id=${categoryId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.next_code) {
-                            codeInput.value = data.next_code;
-                        }
-                    })
-                    .catch(error => console.error('Error fetching next course code:', error));
-            }
-        });
-    }
+    modulesContainer.querySelectorAll('.module-form').forEach(attachModuleEvents);
+    modulesContainer.querySelectorAll('.topic-form').forEach(attachTopicEvents);
 
-    totalDurationInput.addEventListener('input', setFormInteracted);
-    totalDurationInput.addEventListener('blur', setFormInteracted);
-
+    totalDurationInput.addEventListener('input', validateDurations);
     validateDurations();
 });
