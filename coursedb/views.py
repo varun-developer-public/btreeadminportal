@@ -381,3 +381,10 @@ def download_sample_csv(request):
     writer.writerow(['C2', 'Web Development', 'C2001', 'HTML & CSS', '20', 'Module 1: HTML', '10', 'False', '', ''])
 
     return response
+@login_required
+def get_course_duration(request, pk):
+    try:
+        course = Course.objects.get(pk=pk)
+        return JsonResponse({'total_duration': course.total_duration})
+    except Course.DoesNotExist:
+        return JsonResponse({'error': 'Course not found'}, status=404)

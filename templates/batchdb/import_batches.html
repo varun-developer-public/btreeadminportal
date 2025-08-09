@@ -2,21 +2,27 @@
 {% block title %}Import Batches{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="card">
     <h2>Import Batches</h2>
-    <p>Upload an Excel file with batch data to create multiple batches at once.</p>
+    <p>Upload an Excel file to bulk-create batches.</p>
     
-    <div class="mb-3">
-        <a href="{% url 'download_batch_template' %}" class="btn btn-secondary">Download Template</a>
+    <div class="alert alert-info">
+        <strong>Instructions:</strong>
+        <ul>
+            <li>Download the template to see the required format.</li>
+            <li>Fill in the details for each batch.</li>
+            <li>The 'students' column should contain a comma-separated list of student IDs (e.g., BTR0001,BTR0002).</li>
+        </ul>
     </div>
 
-    <form method="post" enctype="multipart/form-data" action="{% url 'import_batches' %}">
+    <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="mb-3">
-            <label for="excel_file" class="form-label">Upload Excel File</label>
+        <div class="form-group">
+            <label for="excel_file">Upload Excel File</label>
             <input type="file" name="excel_file" class="form-control" required>
         </div>
-        <button type="submit" class="btn btn-primary">Import Batches</button>
+        <button type="submit" class="btn btn-primary">Import</button>
+        <a href="{% url 'download_batch_template' %}" class="btn btn-secondary">Download Template</a>
         <a href="{% url 'batch_list' %}" class="btn btn-secondary">Cancel</a>
     </form>
 </div>

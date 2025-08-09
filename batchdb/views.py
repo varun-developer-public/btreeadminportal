@@ -1,26 +1,16 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
-from .forms import BatchCreationForm
-from .models import Batch
-from placementdb.models import Placement
 from django.contrib.auth.decorators import login_required
-from django.utils import timezone
-import pandas as pd
-from django.http import HttpResponse
-from django.db import transaction
+from django.http import JsonResponse
 from datetime import datetime
-from dateutil.relativedelta import relativedelta
-from studentsdb.models import Student
-from trainersdb.models import Trainer
+import json
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-def get_next_batch_id():
-    last_batch = Batch.objects.order_by('-id').first()
-    if last_batch and last_batch.batch_id.startswith('BAT_'):
-        last_num = int(last_batch.batch_id.replace('BAT_', ''))
-        return f"BAT_{last_num + 1:03d}"
-    return "BAT_001"
+from .forms import BatchCreationForm, BatchUpdateForm
+from .models import Batch
+from coursedb.models import Course, CourseCategory
+from trainersdb.models import Trainer
+from studentsdb.models import Student
 
 def batch_list(request):
     query = request.GET.get('q')
@@ -28,12 +18,13 @@ def batch_list(request):
 
     if query:
         batch_list = batch_list.filter(
-            Q(batch_name__icontains=query) |
+            Q(course__course_name__icontains=query) |
             Q(trainer__name__icontains=query) |
-            Q(students__student_id__icontains=query)
+            Q(students__first_name__icontains=query) |
+            Q(batch_id__icontains=query)
         ).distinct()
 
-    paginator = Paginator(batch_list, 10)  # Show 10 batches per page
+    paginator = Paginator(batch_list, 10)
     page = request.GET.get('page')
 
     try:
@@ -45,72 +36,114 @@ def batch_list(request):
 
     return render(request, 'batchdb/batch_list.html', {'batches': batches, 'query': query})
 
-
+@login_required
 def create_batch(request):
-    next_batch_id = get_next_batch_id()
     if request.method == 'POST':
         form = BatchCreationForm(request.POST)
         if form.is_valid():
             batch = form.save(commit=False)
-            batch.batch_id = next_batch_id # Assign the pre-fetched ID
-            
-            # Handle custom time slot
-            if form.cleaned_data['time_slot'] == 'custom':
-                batch.time_slot = form.cleaned_data['custom_time_slot']
-            else:
-                batch.time_slot = form.cleaned_data['time_slot']
-
+            batch.created_by = request.user
             batch.save()
-            form.save_m2m()  # Save ManyToMany relationships
-
+            form.save_m2m()
             messages.success(request, "Batch created successfully.")
             return redirect('batch_list')
     else:
-        today = timezone.now().date()
-        end_date = today + relativedelta(months=2)
-        form = BatchCreationForm(initial={
-            'batch_id': next_batch_id,
-            'start_date': today,
-            'end_date': end_date
-        })
+        form = BatchCreationForm()
+    return render(request, 'batchdb/create_batch.html', {'form': form})
 
-    return render(request, 'batchdb/create_batch.html', {'form': form, 'next_batch_id': next_batch_id})
-
-
+@login_required
 def update_batch(request, pk):
     batch = get_object_or_404(Batch, pk=pk)
-
     if request.method == 'POST':
-        form = BatchCreationForm(request.POST, instance=batch)
+        form = BatchUpdateForm(request.POST, instance=batch)
         if form.is_valid():
             batch = form.save(commit=False)
-            selected_students = form.cleaned_data['students']
-
+            batch.updated_by = request.user
             batch.save()
-            # Replace the batch's students with the updated selection
-            batch.students.set(selected_students)
-
-            # Sync Placement DB for all currently assigned students who require placement
-            for student in selected_students:
-                if student.pl_required:
-                    Placement.objects.get_or_create(student=student)
-
-            messages.success(request, f"Batch {batch.batch_id} updated and students synced.")
+            form.save_m2m()
+            messages.success(request, f"Batch {batch.batch_id} updated successfully.")
             return redirect('batch_list')
     else:
-        form = BatchCreationForm(instance=batch)
+        form = BatchUpdateForm(instance=batch)
+    context = {
+        'form': form,
+        'batch': batch,
+        'batch_days': json.dumps(list(batch.batch_days))
+    }
+    return render(request, 'batchdb/update_batch.html', context)
 
-    return render(request, 'batchdb/update_batch.html', {'form': form, 'batch': batch})
-
-
-
+@login_required
 def delete_batch(request, pk):
     batch = get_object_or_404(Batch, pk=pk)
     if request.method == 'POST':
         batch.delete()
-        messages.success(request, "Batch deleted.")
+        messages.success(request, "Batch deleted successfully.")
         return redirect('batch_list')
     return render(request, 'batchdb/delete_confirm.html', {'batch': batch})
+
+# AJAX Views
+@login_required
+def get_courses_by_category(request):
+    category_id = request.GET.get('category_id')
+    courses = Course.objects.filter(category_id=category_id).values('id', 'course_name')
+    return JsonResponse(list(courses), safe=False)
+
+@login_required
+def get_trainers_for_course(request):
+    course_id = request.GET.get('course_id')
+    trainers = Trainer.objects.filter(stack__id=course_id).values('id', 'name')
+    return JsonResponse(list(trainers), safe=False)
+
+@login_required
+def get_trainer_slots(request):
+    trainer_id = request.GET.get('trainer_id')
+    try:
+        trainer = Trainer.objects.get(id=trainer_id)
+        active_batches = Batch.objects.filter(trainer=trainer, batch_status='In Progress')
+        taken_slots = [batch.time_slot for batch in active_batches]
+        available_slots = [slot for slot in trainer.timing_slots if slot not in taken_slots]
+        
+        formatted_slots = []
+        for slot in available_slots:
+            if isinstance(slot, dict):
+                start_time = slot.get('start_time', '')
+                end_time = slot.get('end_time', '')
+                # Format the time string for display
+                def format_time(time_str):
+                    if not time_str:
+                        return ''
+                    try:
+                        t = datetime.strptime(time_str, '%H:%M').time()
+                        return t.strftime('%I:%M %p')
+                    except ValueError:
+                        return time_str # Return original if format is wrong
+
+                name = f"{format_time(start_time)} - {format_time(end_time)}"
+                # The ID should be a string representation of the JSON object
+                # so that it can be stored in the Batch model
+                formatted_slots.append({'id': json.dumps(slot), 'name': name})
+            else:
+                # Handle cases where the slot is just a string
+                formatted_slots.append({'id': slot, 'name': slot})
+
+        return JsonResponse(formatted_slots, safe=False)
+    except Trainer.DoesNotExist:
+        return JsonResponse([], safe=False)
+
+@login_required
+def get_students_for_course(request):
+    course_id = request.GET.get('course_id')
+    students = Student.objects.filter(
+        course_id=course_id,
+        course_status__in=['YTS', 'IP']
+    ).values('id', 'first_name', 'last_name')
+    return JsonResponse(list(students), safe=False)
+
+import pandas as pd
+from django.http import HttpResponse
+from django.db import transaction
+from datetime import datetime
+from placementdb.models import Placement
 
 @login_required
 def download_batch_template(request):

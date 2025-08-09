@@ -1,14 +1,137 @@
 {% extends "base.html" %}
 {% block title %}Update Batch{% endblock %}
+{% load static %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<style>
+    .select2-container--default .select2-selection--multiple {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        min-height: 38px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h2>Update Batch - {{ batch.batch_id }}</h2>
-    <form method="post">
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Update Batch - {{ batch.batch_id }}</h1>
+        <p class="form-subtitle">Modify the details for this batch.</p>
+    </div>
+
+    <form method="post" class="student-form" id="batch-form">
         {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn">Update Batch</button>
-        <a href="{% url 'batch_list' %}" class="btn btn-secondary">Cancel</a>
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-cubes me-2"></i>Batch Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_course_category">Course Category</label>
+                            {{ form.course_category }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_course">Course</label>
+                            {{ form.course }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_trainer">Trainer</label>
+                            {{ form.trainer }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_time_slot">Time Slot</label>
+                            {{ form.time_slot }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="id_students">Students</label>
+                            {{ form.students }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Batch Days</label>
+                            <div class="checkbox-group">
+                                {{ form.batch_days }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_hours_per_day">Hours Per Day</label>
+                            {{ form.hours_per_day }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_start_date">Start Date</label>
+                            {{ form.start_date }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_end_date">End Date</label>
+                            {{ form.end_date }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_batch_status">Batch Status</label>
+                            {{ form.batch_status }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="id_batch_percentage">Batch Percentage</label>
+                            {{ form.batch_percentage }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Update Batch</button>
+            <a href="{% url 'batch_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    const batchData = {
+        courseId: "{{ batch.course.id }}",
+        trainerId: "{{ batch.trainer.id }}",
+        timeSlot: "{{ batch.time_slot|escapejs }}",
+        batchDays: `{{ batch_days|safe }}`,
+        studentIds: JSON.parse(document.getElementById('student-data').textContent)
+    };
+</script>
+<script type="application/json" id="student-data">
+    {{ batch.students.all|map(attribute='id')|list|safe }}
+</script>
+<script src="{% static 'js/batch_form.js' %}"></script>
 {% endblock %}

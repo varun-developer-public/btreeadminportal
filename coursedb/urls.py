@@ -9,6 +9,7 @@ urlpatterns = [
     path('courses/create/', views.course_create, name='course_create'),
     path('courses/<int:pk>/update/', views.course_update, name='course_update'),
     path('courses/<int:pk>/delete/', views.course_delete, name='course_delete'),
+    path('ajax/course/<int:pk>/get-duration/', views.get_course_duration, name='get_course_duration'),
     path('ajax/get_next_course_code/', views.get_next_course_code, name='get_next_course_code'),
     path('courses/export/', views.export_courses_csv, name='export_courses_csv'),
     path('courses/import/', views.import_courses_csv, name='import_courses_csv'),
