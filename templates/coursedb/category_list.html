@@ -69,8 +69,8 @@
     <div class="pagination">
         <span class="step-links">
             {% if categories.has_previous %}
-                <a href="?page=1&q={{ query }}">&laquo; first</a>
-                <a href="?page={{ categories.previous_page_number }}&q={{ query }}">previous</a>
+                <a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; first</a>
+                <a href="?page={{ categories.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">previous</a>
             {% endif %}
 
             <span class="current">
@@ -78,8 +78,8 @@
             </span>
 
             {% if categories.has_next %}
-                <a href="?page={{ categories.next_page_number }}&q={{ query }}">next</a>
-                <a href="?page={{ categories.paginator.num_pages }}&q={{ query }}">last &raquo;</a>
+                <a href="?page={{ categories.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
+                <a href="?page={{ categories.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">last &raquo;</a>
             {% endif %}
         </span>
     </div>

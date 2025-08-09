@@ -173,8 +173,8 @@
     <div class="pagination">
         <span class="step-links">
             {% if courses.has_previous %}
-                <a href="?page=1">&laquo; first</a>
-                <a href="?page={{ courses.previous_page_number }}">previous</a>
+                <a href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">&laquo; first</a>
+                <a href="?page={{ courses.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">previous</a>
             {% endif %}
 
             <span class="current">
@@ -182,8 +182,8 @@
             </span>
 
             {% if courses.has_next %}
-                <a href="?page={{ courses.next_page_number }}">next</a>
-                <a href="?page={{ courses.paginator.num_pages }}">last &raquo;</a>
+                <a href="?page={{ courses.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">next</a>
+                <a href="?page={{ courses.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}">last &raquo;</a>
             {% endif %}
         </span>
     </div>
