@@ -419,8 +419,20 @@ def update_user(request, pk):
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully.")
-            # Redirect back to the same page to show changes
-            return redirect('update_user', pk=pk)
+            # Redirect based on user role
+            if user_to_update.role == 'admin':
+                return redirect('admin_dashboard')
+            elif user_to_update.role == 'staff':
+                return redirect('staff_dashboard')
+            elif user_to_update.role == 'consultant':
+                return redirect('consultant_dashboard')
+            elif user_to_update.role == 'batch_coordination':
+                return redirect('batch_coordination_dashboard')
+            elif user_to_update.role == 'placement':
+                return redirect('placement_dashboard')
+            else:
+                # Fallback for any other roles or if role is not set
+                return redirect('user_list')
     else:
         form = UserUpdateForm(instance=user_to_update, user=request.user)
 

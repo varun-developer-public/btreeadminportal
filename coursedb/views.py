@@ -6,14 +6,41 @@ import csv
 import io
 from django.http import HttpResponse
 from django.contrib.auth.decorators import user_passes_test
+from django.db.models import Q
 from .models import Course, CourseCategory, CourseModule, Topic
 from .forms import CourseForm, CourseCategoryForm
 from django.db import transaction
+from django.core.paginator import Paginator
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def course_list(request):
-    courses = Course.objects.prefetch_related('modules__topics').all()
-    return render(request, 'coursedb/course_list.html', {'courses': courses})
+    query = request.GET.get('q')
+    category_id = request.GET.get('category')
 
+    courses_list = Course.objects.prefetch_related('modules__topics').all()
+    
+    if query:
+        courses_list = courses_list.filter(
+            Q(course_name__icontains=query) | Q(code__icontains=query)
+        )
+    
+    if category_id:
+        courses_list = courses_list.filter(category_id=category_id)
+        
+    paginator = Paginator(courses_list, 10)  # Show 10 courses per page.
+    page_number = request.GET.get('page')
+    courses = paginator.get_page(page_number)
+        
+    categories = CourseCategory.objects.all()
+
+    context = {
+        'courses': courses,
+        'categories': categories,
+    }
+    return render(request, 'coursedb/course_list.html', context)
+
+@login_required
 def course_create(request):
     if request.method == 'POST':
         form = CourseForm(request.POST)
@@ -60,6 +87,7 @@ def course_create(request):
 
 from .forms import CourseForm, CourseCategoryForm
 
+@login_required
 def course_update(request, pk):
     course = get_object_or_404(Course.objects.prefetch_related('modules__topics'), pk=pk)
 
@@ -111,7 +139,7 @@ def course_update(request, pk):
     }
     return render(request, 'coursedb/course_update_form.html', context)
 
-
+@login_required
 def course_delete(request, pk):
     course = get_object_or_404(Course, pk=pk)
     if request.method == 'POST':
@@ -120,10 +148,20 @@ def course_delete(request, pk):
         return redirect('coursedb:course_list')
     return render(request, 'coursedb/course_confirm_delete.html', {'object': course})
 
+@login_required
 def category_list(request):
-    categories = CourseCategory.objects.all()
-    return render(request, 'coursedb/category_list.html', {'categories': categories})
+    query = request.GET.get('q')
+    categories_list = CourseCategory.objects.all()
+    if query:
+        categories_list = categories_list.filter(
+            Q(name__icontains=query) | Q(code__icontains=query)
+        )
+    paginator = Paginator(categories_list, 10)  # Show 10 categories per page.
+    page_number = request.GET.get('page')
+    categories = paginator.get_page(page_number)
+    return render(request, 'coursedb/category_list.html', {'categories': categories, 'query': query})
 
+@login_required
 def category_create(request):
     if request.method == 'POST':
         form = CourseCategoryForm(request.POST)
@@ -141,6 +179,7 @@ def category_create(request):
         form = CourseCategoryForm(initial={'code': next_code})
     return render(request, 'coursedb/category_form.html', {'form': form})
 
+@login_required
 def category_update(request, pk):
     category = get_object_or_404(CourseCategory, pk=pk)
     if request.method == 'POST':
@@ -153,6 +192,7 @@ def category_update(request, pk):
         form = CourseCategoryForm(instance=category)
     return render(request, 'coursedb/category_form.html', {'form': form})
 
+@login_required
 def category_delete(request, pk):
     category = get_object_or_404(CourseCategory, pk=pk)
     if request.method == 'POST':
@@ -161,6 +201,7 @@ def category_delete(request, pk):
         return redirect('coursedb:category_list')
     return render(request, 'coursedb/category_confirm_delete.html', {'object': category})
 
+@login_required
 def get_next_course_code(request):
     category_id = request.GET.get('category_id')
     if not category_id:
@@ -327,6 +368,7 @@ def import_courses_csv(request):
             return response
 
     return render(request, 'coursedb/import_form.html')
+@login_required
 def download_sample_csv(request):
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="sample_import_template.csv"'

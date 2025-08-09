@@ -1,33 +1,88 @@
 {% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
+<style>
+    .table-wrapper {
+        width: 60%;
+        margin: auto;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>Course Categories</h2>
-        <a href="{% url 'coursedb:category_create' %}" class="btn">+ Add Category</a>
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-sitemap me-2"></i>Course Categories</h2>
+        <a href="{% url 'coursedb:category_create' %}" class="btn-primary">
+            <i class="fas fa-plus me-2"></i>Add New Category
+        </a>
     </div>
 
-    <table>
-    <thead>
-        <tr>
-            <th>Code</th>
-            <th>Name</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for category in categories %}
-        <tr>
-            <td>{{ category.code }}</td>
-            <td>{{ category.name }}</td>
-            <td>
-                <a href="{% url 'coursedb:category_update' category.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
-                {% if request.user.role == 'admin' %}
-                <a href="{% url 'coursedb:category_delete' category.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    </table>
+    <form method="get" class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                <input type="text" name="q" class="form-control" placeholder="Search by category name or code..." value="{{ request.GET.q }}">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary"><i class="fas fa-search me-2"></i>Filter</button>
+            <a href="{% url 'coursedb:category_list' %}" class="btn-secondary"><i class="fas fa-undo me-2"></i>Reset</a>
+        </div>
+    </form>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category.code }}</td>
+                    <td>{{ category.name }}</td>
+                    <td>
+                        <a href="{% url 'coursedb:category_update' category.pk %}" class="btn-update"><i class="fas fa-edit"></i></a>
+                        {% if request.user.role == 'admin' %}
+                        <a href="{% url 'coursedb:category_delete' category.pk %}" class="btn-danger"><i class="fas fa-trash"></i></a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center py-4 text-muted">
+                        <i class="fas fa-folder-open me-2"></i>No categories found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if categories.has_other_pages %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if categories.has_previous %}
+                <a href="?page=1&q={{ query }}">&laquo; first</a>
+                <a href="?page={{ categories.previous_page_number }}&q={{ query }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ categories.number }} of {{ categories.paginator.num_pages }}.
+            </span>
+
+            {% if categories.has_next %}
+                <a href="?page={{ categories.next_page_number }}&q={{ query }}">next</a>
+                <a href="?page={{ categories.paginator.num_pages }}&q={{ query }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

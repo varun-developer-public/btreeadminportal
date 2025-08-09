@@ -4,39 +4,68 @@
 {% block title %}Course List{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
 <style>
-    .table-wrapper {
-        overflow-x: auto;
+    .list-container {
+        padding: 2rem;
+        background-color: #f8f9fa;
+        border-radius: 15px;
     }
     .action-icons a {
-        margin: 0 5px;
-        font-size: 1.1rem;
-        text-decoration: none;
+        margin: 0 0.5rem;
+        font-size: 1.2rem;
+        transition: color 0.3s;
     }
-    .expandable-row {
-        cursor: pointer;
+    .action-icons a.text-success:hover {
+        color: #218838 !important;
+    }
+    .action-icons a.text-danger:hover {
+        color: #c82333 !important;
+    }
+    .accordion-button {
+        background-color: #f8f9fa;
+        color: #343a40;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+    }
+    .accordion-button:hover {
+        background-color: #e9ecef;
     }
     .accordion-button:not(.collapsed) {
-        color: #0c63e4;
-        background-color: #e7f1ff;
+        background-color: #c6dcf3;
+        color: #000;
     }
-    .accordion-button:focus {
-        z-index: 3;
-        border-color: #86b7fe;
-        outline: 0;
-        box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+    .accordion-button:not(.collapsed):hover {
+        background-color: #a9d1fc;
     }
-    .accordion-button::after {
-        flex-shrink: 0;
-        width: 1.25rem;
-        height: 1.25rem;
-        margin-left: auto;
-        content: "";
-        background-image: var(--bs-accordion-btn-icon);
-        background-repeat: no-repeat;
-        background-size: 1.25rem;
-        transition: transform .2s ease-in-out;
+    .accordion-button:focus{
+        box-shadow: none;
+    }
+    .accordion-body {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-top: none;
+        font-size: 1rem; /* Increased font size */
+    }
+    .module-header {
+        font-size: 0.9rem; /* Decreased font size */
+        font-weight: 500;
+    }
+    .topic-list {
+        list-style-type: none;
+        padding-left: 1.5rem;
+    }
+    .topic-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    .topic-list li:last-child {
+        border-bottom: none;
+    }
+    .category-badge {
+        background-color: var(--primary-blue);
+        color: white;
     }
 </style>
 {% endblock %}
@@ -44,14 +73,14 @@
 {% block content %}
 <div class="list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0"><i class="fas fa-book me-2"></i>Course List</h2>
-        <div>
+        <h2 class="mb-0"><i class="fas fa-book-open me-2"></i>Course List</h2>
+        <div class="d-flex" style="gap: 10px;">
             {% if user.is_superuser %}
             <a href="{% url 'coursedb:import_courses_csv' %}" class="btn-secondary">
-                <i class="fas fa-file-import me-2"></i>Import Courses
+                <i class="fas fa-file-import me-2"></i>Import
             </a>
             <a href="{% url 'coursedb:export_courses_csv' %}" class="btn-secondary">
-                <i class="fas fa-file-export me-2"></i>Export Courses
+                <i class="fas fa-file-export me-2"></i>Export
             </a>
             {% endif %}
             <a href="{% url 'coursedb:course_create' %}" class="btn-primary">
@@ -60,78 +89,102 @@
         </div>
     </div>
 
-    <div class="table-wrapper">
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Type</th>
-                    <th>Duration</th>
-                    <th class="text-center">Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for course in courses %}
-                <tr class="expandable-row" data-bs-toggle="collapse" data-bs-target="#collapse-course-{{ course.pk }}">
-                    <td><i class="fas fa-chevron-down"></i></td>
-                    <td>{{ course.code }}</td>
-                    <td>{{ course.course_name }}</td>
-                    <td>{{ course.category }}</td>
-                    <td>{{ course.course_type }}</td>
-                    <td>{{ course.total_duration }} hours</td>
-                    <td class="text-center action-icons">
-                        <a href="{% url 'coursedb:course_update' course.pk %}" class="text-success"><i class="fas fa-edit"></i></a>
-                        {% if request.user.role == 'admin' %}
-                        <a href="{% url 'coursedb:course_delete' course.pk %}" class="text-danger"><i class="fas fa-trash"></i></a>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <td colspan="7" class="p-0">
-                        <div id="collapse-course-{{ course.pk }}" class="accordion-collapse collapse">
-                            <div class="accordion-body">
-                                {% if course.modules.all %}
-                                <div class="accordion" id="module-accordion-{{ course.pk }}">
-                                    {% for module in course.modules.all %}
-                                    <div class="accordion-item">
-                                        <h2 class="accordion-header" id="heading-module-{{ module.pk }}">
-                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-module-{{ module.pk }}">
-                                                {{ module.name }} - {{ module.module_duration }} hours
-                                            </button>
-                                        </h2>
-                                        <div id="collapse-module-{{ module.pk }}" class="accordion-collapse collapse" data-bs-parent="#module-accordion-{{ course.pk }}">
-                                            <div class="accordion-body">
-                                                {% if module.has_topics and module.topics.all %}
-                                                    <ul class="list-group">
-                                                        {% for topic in module.topics.all %}
-                                                            <li class="list-group-item">{{ topic.name }} - {{ topic.topic_duration }} hours</li>
-                                                        {% endfor %}
-                                                    </ul>
-                                                {% else %}
-                                                    <p>No topics for this module.</p>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {% endfor %}
-                                </div>
-                                {% else %}
-                                <p>No modules for this course.</p>
-                                {% endif %}
-                            </div>
+    <form method="get" class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                <input type="text" name="q" class="form-control" placeholder="Search by course name or code..." value="{{ request.GET.q }}">
+            </div>
+            <div class="filter-group">
+                <select name="category" class="form-select form-control">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category.pk }}" {% if request.GET.category|add:"0" == category.pk %}selected{% endif %}>{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary"><i class="fas fa-search me-2"></i>Filter</button>
+            <a href="{% url 'coursedb:course_list' %}" class="btn-secondary"><i class="fas fa-undo me-2"></i>Reset</a>
+        </div>
+    </form>
+
+    <div class="accordion" id="courseAccordion">
+        {% for course in courses %}
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="heading-{{ course.pk }}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ course.pk }}" aria-expanded="false" aria-controls="collapse-{{ course.pk }}">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <span><strong>{{ course.course_name }}</strong> ({{ course.code }})</span>
+                        <span class="badge category-badge me-3">{{ course.category }}</span>
+                        <span class="me-3">{{ course.total_duration }} hours</span>
+                        <div class="action-icons">
+                            <a href="{% url 'coursedb:course_update' course.pk %}" title="Edit" class="text-success"><i class="fas fa-edit"></i></a>
+                            {% if request.user.role == 'admin' %}
+                            <a href="{% url 'coursedb:course_delete' course.pk %}" title="Delete" class="text-danger"><i class="fas fa-trash"></i></a>
+                            {% endif %}
                         </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" class="text-center py-4 text-muted">No courses found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapse-{{ course.pk }}" class="accordion-collapse collapse" aria-labelledby="heading-{{ course.pk }}" data-bs-parent="#courseAccordion">
+                <div class="accordion-body">
+                    {% if course.modules.all %}
+                        <div class="accordion" id="module-accordion-{{ course.pk }}">
+                            {% for module in course.modules.all %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading-module-{{ module.pk }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-module-{{ module.pk }}">
+                                        <span class="module-header">{{ module.name }} - {{ module.module_duration }} hours</span>
+                                    </button>
+                                </h2>
+                                <div id="collapse-module-{{ module.pk }}" class="accordion-collapse collapse" data-bs-parent="#module-accordion-{{ course.pk }}">
+                                    <div class="accordion-body">
+                                        {% if module.has_topics and module.topics.all %}
+                                            <ul class="topic-list">
+                                                {% for topic in module.topics.all %}
+                                                    <li>{{ topic.name }} - {{ topic.topic_duration }} hours</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% else %}
+                                            <p>No topics for this module.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p>No modules for this course.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <p class="text-muted">No courses found.</p>
+            <a href="{% url 'coursedb:course_create' %}" class="btn btn-primary">Create the First Course</a>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
+    {% if courses.has_other_pages %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if courses.has_previous %}
+                <a href="?page=1">&laquo; first</a>
+                <a href="?page={{ courses.previous_page_number }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ courses.number }} of {{ courses.paginator.num_pages }}.
+            </span>
+
+            {% if courses.has_next %}
+                <a href="?page={{ courses.next_page_number }}">next</a>
+                <a href="?page={{ courses.paginator.num_pages }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}

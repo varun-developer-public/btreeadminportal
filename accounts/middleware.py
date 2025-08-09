@@ -37,6 +37,7 @@ URL_ROLE_MAPPINGS = {
         'course_update',
         'category_create',
         'category_update',
+        'get_next_course_code'
     ],
     'consultant': [
         'consultant_profile',

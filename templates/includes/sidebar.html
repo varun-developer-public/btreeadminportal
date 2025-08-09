@@ -101,7 +101,9 @@
             </a>
             <ul class="submenu collapse {% if request.resolver_match.app_name == 'coursedb' %}show{% endif %}" id="course-submenu">
                 <li><a href="{% url 'coursedb:course_list' %}" class="nav-link {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}">Course List</a></li>
+                {% if user.role != 'batch_coordination' %}
                 <li><a href="{% url 'coursedb:category_list' %}" class="nav-link {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}">Category List</a></li>
+                {% endif %}
             </ul>
         </li>
         {% endif %}
