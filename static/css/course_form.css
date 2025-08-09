@@ -39,7 +39,6 @@
     margin-top: 1rem;
     padding: 1rem;
     border-radius: var(--form-border-radius);
-    display: none;
 }
 
 #duration-validation-message.error {

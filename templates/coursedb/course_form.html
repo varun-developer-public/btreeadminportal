@@ -14,7 +14,7 @@
         <p class="form-subtitle">Enter the details to create a new course</p>
     </div>
 
-    <form method="post" class="student-form">
+    <form method="post" class="student-form" id="course-form">
         {% csrf_token %}
         {% if form.non_field_errors %}
             <div class="alert alert-danger">
@@ -30,29 +30,10 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <div class="label-form">
-                                {{ form.code.label_tag }}
-                            </div>
-                            {{ form.code }}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="label-form">
                                 {{ form.course_name.label_tag }}
                                 <span class="required-indicator">*</span>
                             </div>
                             {{ form.course_name }}
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <div class="label-form">
-                                {{ form.course_type.label_tag }}
-                                <span class="required-indicator">*</span>
-                            </div>
-                            {{ form.course_type }}
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -62,6 +43,25 @@
                                 <span class="required-indicator">*</span>
                             </div>
                             {{ form.category }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.code.label_tag }}
+                            </div>
+                            {{ form.code }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ form.course_type.label_tag }}
+                                <span class="required-indicator">*</span>
+                            </div>
+                            {{ form.course_type }}
                         </div>
                     </div>
                 </div>
@@ -88,7 +88,7 @@
                 <button type="button" class="btn btn-primary" id="add-module-btn">Add Module</button>
             </div>
         </div>
-        <div id="duration-validation-message"></div>
+        <div id="duration-validation-message" class="mt-3"></div>
          <div class="form-actions">
              <button type="submit" class="btn btn-success">Save Course</button>
          </div>
@@ -147,5 +147,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/course_form.js' %}"></script>
+<script src="{% static 'js/course_create_form.js' %}"></script>
 {% endblock %}

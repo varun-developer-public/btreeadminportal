@@ -26,7 +26,42 @@
                 <h5 style="color: white;"><i class="fas fa-book me-2" style="color: white;"></i>Course Details</h5>
             </div>
             <div class="form-section-body">
-                {{ form.as_p }}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.course_name.id_for_label }}">Course Name<span class="required-indicator">*</span></label>
+                            {{ form.course_name }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.category.id_for_label }}">Category<span class="required-indicator">*</span></label>
+                            {{ form.category }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.code.id_for_label }}">Course Code<span class="required-indicator">*</span></label>
+                            {{ form.code }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.course_type.id_for_label }}">Course Type<span class="required-indicator">*</span></label>
+                            {{ form.course_type }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.total_duration.id_for_label }}">Total Duration (hours)<span class="required-indicator">*</span></label>
+                            {{ form.total_duration }}
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -95,13 +130,14 @@
             </div>
         </div>
         <div id="duration-validation-message"></div>
-         <div class="form-actions">
-             <button type="submit" class="btn btn-success">Update Course</button>
-         </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">Update Course</button>
+            <span id="realtime-calculation" class="me-3 mx-5"></span>
+        </div>
     </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/course_form.js' %}"></script>
+<script src="{% static 'js/course_update_form.js' %}"></script>
 {% endblock %}
