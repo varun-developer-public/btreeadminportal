@@ -11,8 +11,8 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('coursedb', '0005_coursemodule_has_topics_topic'),
         ('studentsdb', '0023_remove_student_course_student_course_id'),
+        ('coursedb', '0005_coursemodule_has_topics_topic'),
         ('trainersdb', '0007_trainer_commercials_trainer_demo_link_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
