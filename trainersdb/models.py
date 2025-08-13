@@ -85,4 +85,3 @@ class Trainer(models.Model):
 
     def __str__(self):
         return f"{self.trainer_id} - {self.name}"
-

@@ -6,8 +6,10 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import pandas as pd
 from django.http import HttpResponse
 from io import BytesIO
+import csv
 
-from studentsdb.models import Student, Course, CourseCategory
+from coursedb.models import Course, CourseCategory
+from studentsdb.models import Student
 from trainersdb.models import Trainer
 from consultantdb.models import Consultant
 from batchdb.models import Batch
@@ -161,3 +163,101 @@ def import_data(request):
 
         return redirect('settings_dashboard')
     return render(request, 'settingsdb/import_data.html')
+
+@staff_member_required
+def delete_all_courses(request):
+    if not request.user.is_superuser:
+        return redirect('settings_dashboard')
+    Course.objects.all().delete()
+    return redirect('settings_dashboard')
+
+@staff_member_required
+def delete_all_course_categories(request):
+    if not request.user.is_superuser:
+        return redirect('settings_dashboard')
+    CourseCategory.objects.all().delete()
+    return redirect('settings_dashboard')
+
+@staff_member_required
+def import_student_courses(request):
+    if request.method == 'POST':
+        csv_file = request.FILES['csv_file']
+        if not csv_file.name.endswith('.csv'):
+            return render(request, 'settingsdb/import_courses.html', {'error': 'Please upload a valid CSV file.'})
+
+        try:
+            decoded_file = csv_file.read().decode('utf-8').splitlines()
+            reader = csv.DictReader(decoded_file)
+            errors = []
+            
+            for row in reader:
+                student_id = row.get('student_id')
+                course_category_name = row.get('course_category')
+                course_name = row.get('course_name')
+
+                if not all([student_id, course_category_name, course_name]):
+                    errors.append({**row, 'error': 'Missing required fields.'})
+                    continue
+
+                try:
+                    student = Student.objects.get(student_id=student_id)
+                    category = CourseCategory.objects.get(name=course_category_name)
+                    course = Course.objects.get(course_name=course_name, category=category)
+                    student.course_id = course.id
+                    student.save()
+                except Student.DoesNotExist:
+                    errors.append({**row, 'error': f'Student with ID {student_id} not found.'})
+                except CourseCategory.DoesNotExist:
+                    errors.append({**row, 'error': f'Course category "{course_category_name}" not found.'})
+                except Course.DoesNotExist:
+                    errors.append({**row, 'error': f'Course "{course_name}" in category "{course_category_name}" not found.'})
+
+            if errors:
+                response = HttpResponse(content_type='text/csv')
+                response['Content-Disposition'] = 'attachment; filename="error.csv"'
+                writer = csv.writer(response)
+                writer.writerow(errors[0].keys())
+                for error in errors:
+                    writer.writerow(error.values())
+                return response
+
+        except Exception as e:
+            return render(request, 'settingsdb/import_courses.html', {'error': f'An error occurred: {e}'})
+
+        return redirect('settings_dashboard')
+
+    return render(request, 'settingsdb/import_courses.html')
+
+@staff_member_required
+def download_course_template(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="course_template.csv"'
+    writer = csv.writer(response)
+    writer.writerow(['student_id', 'course_category', 'course_name'])
+    return response
+
+@staff_member_required
+def export_student_courses(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="student_courses.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['student_id', 'category_name', 'course_name'])
+
+    students = Student.objects.all().prefetch_related('course__category')
+
+    for student in students:
+        if student.course:
+            writer.writerow([
+                student.student_id,
+                student.course.category.name,
+                student.course.course_name
+            ])
+        else:
+            writer.writerow([
+                student.student_id,
+                'N/A',
+                'N/A'
+            ])
+
+    return response

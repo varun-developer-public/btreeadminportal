@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from accounts.models import CustomUser
-from studentsdb.models import CourseCategory
+from coursedb.models import CourseCategory
 
 class PlacementDrive(models.Model):
     company_code = models.CharField(max_length=20, unique=True, editable=False)

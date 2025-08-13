@@ -9,28 +9,26 @@
         <li style="margin-bottom: 10px;"><a href="{% url 'source_list' %}" class="btn">Manage Source of Joining</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'payment_account_list' %}" class="btn">Manage Payment Accounts</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'import_data' %}" class="btn">Import Data</a></li>
+        <li style="margin-bottom: 10px;"><a href="{% url 'import_student_courses' %}" class="btn">Import Student Courses</a></li>
+        <li style="margin-bottom: 10px;"><a href="{% url 'export_student_courses' %}" class="btn">Export Student Courses</a></li>
         <li style="margin-bottom: 10px;"><a href="{% url 'export_data' %}" class="btn">Export Data</a></li>
         {% if request.user.role == 'admin' %}
         <li style="margin-bottom: 10px;"><a href="{% url 'transaction_log' %}" class="btn">View Transaction Logs</a></li>
         {% endif %}
-        <!-- <li style="margin-bottom: 10px;">
-            <form id="delete-all-students-form" action="{% url 'delete_all_students' %}" method="post" style="display: inline;">
+        {% if request.user.is_superuser %}
+        <li style="margin-bottom: 10px;">
+            <form id="delete-all-courses-form" action="{% url 'delete_all_courses' %}" method="post" style="display: inline;">
                 {% csrf_token %}
-                <button type="button" class="btn btn-danger" onclick="confirmDeletion()">Delete All Students</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCourseDeletion()">Delete All Courses</button>
             </form>
         </li>
         <li style="margin-bottom: 10px;">
-            <form id="delete-all-trainers-form" action="{% url 'delete_all_trainers' %}" method="post" style="display: inline;">
+            <form id="delete-all-course-categories-form" action="{% url 'delete_all_course_categories' %}" method="post" style="display: inline;">
                 {% csrf_token %}
-                <button type="button" class="btn btn-danger" onclick="confirmTrainerDeletion()">Delete All Trainers</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCourseCategoryDeletion()">Delete All Course Categories</button>
             </form>
         </li>
-        <li style="margin-bottom: 10px;">
-            <form id="delete-all-consultants-form" action="{% url 'delete_all_consultants' %}" method="post" style="display: inline;">
-                {% csrf_token %}
-                <button type="button" class="btn btn-danger" onclick="confirmConsultantDeletion()">Delete All Consultants</button>
-            </form>
-        </li> -->
+        {% endif %}
     </ul>
     <a href="{% url 'admin:index' %}" class="btn btn-secondary">Go to Django Admin</a>
 </div>
@@ -51,6 +49,18 @@ function confirmTrainerDeletion() {
 function confirmConsultantDeletion() {
     if (confirm("Are you sure you want to delete all consultants? This action cannot be undone.")) {
         document.getElementById('delete-all-consultants-form').submit();
+    }
+}
+
+function confirmCourseDeletion() {
+    if (confirm("Are you sure you want to delete all courses? This action cannot be undone.")) {
+        document.getElementById('delete-all-courses-form').submit();
+    }
+}
+
+function confirmCourseCategoryDeletion() {
+    if (confirm("Are you sure you want to delete all course categories? This action cannot be undone.")) {
+        document.getElementById('delete-all-course-categories-form').submit();
     }
 }
 </script>

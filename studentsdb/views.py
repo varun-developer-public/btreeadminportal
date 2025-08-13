@@ -4,7 +4,8 @@ from consultantdb.models import Consultant
 from settingsdb.models import PaymentAccount, SourceOfJoining
 from trainersdb.models import Trainer
 from .forms import StudentForm, StudentFilterForm
-from .models import Course, Student, CourseCategory
+from .models import Student
+from coursedb.models import Course, CourseCategory
 from paymentdb.models import Payment
 from paymentdb.forms import PaymentForm
 from django.contrib import messages
@@ -28,7 +29,16 @@ def create_student(request):
 
         if student_form.is_valid() and payment_form.is_valid():
             # Save student first
-            student = student_form.save()
+            student = student_form.save(commit=False)
+            
+            # Get course_id from the form and assign it to the student
+            course = student_form.cleaned_data.get('course')
+            if course:
+                student.course_id = course.id
+            
+            student.country_code = request.POST.get('country_code')
+            student.alternative_country_code = request.POST.get('alternative_country_code')
+            student.save()
 
             # Create payment object but don't commit yet
             payment = payment_form.save(commit=False)
@@ -91,10 +101,10 @@ def student_list(request):
                 Q(phone__icontains=query) |
                 Q(student_id__icontains=query)
             )
-        if course_category:
-            student_list = student_list.filter(course__category=course_category)
         if course:
-            student_list = student_list.filter(course=course)
+            student_list = student_list.filter(course_id=course.id)
+        elif course_category:
+            student_list = student_list.filter(course__category=course_category)
         if course_status:
             student_list = student_list.filter(course_status=course_status)
         if start_date:
@@ -133,6 +143,11 @@ def update_student(request, student_id):
         form = StudentUpdateForm(request.POST, instance=student, user=request.user)
         if form.is_valid():
             updated_student = form.save(commit=False)
+
+            # Get course_id from the form and assign it to the student
+            course = form.cleaned_data.get('course')
+            if course:
+                updated_student.course_id = course.id
 
             # Auto-set end_date if not already set
             if not updated_student.end_date:
@@ -199,7 +214,7 @@ def download_student_template(request):
         'pgpercentage': [78.0, '', 70.0, ''],
         'working_status': ['NO', 'YES', 'NO', 'YES'],
         'course_status': ['IP', 'YTS', 'C', 'D'],
-        'course': ['Python Full Stack', 'Java Full Stack', 'Data Science', 'MERN Stack'],
+        'course_id': [1, 2, 3, 4],
         'enrollment_date': ['2025-07-18', '2025-07-19', '2025-07-20', '2025-07-21'],
         'start_date': ['2025-07-20', '2025-07-21', '2025-07-22', '2025-07-23'],
         'end_date': ['2025-11-20', '2025-11-21', '2025-11-22', '2025-11-23'],
@@ -252,7 +267,7 @@ def import_students(request):
             'student_id', 'first_name', 'last_name', 'email', 'location',
             'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
             'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
-            'working_status', 'course_status', 'course', 'enrollment_date', 'start_date', 'end_date',
+            'working_status', 'course_status', 'course_id', 'enrollment_date', 'start_date', 'end_date',
             'pl_required', 'source_of_joining', 'mode_of_class', 'week_type', 'consultant',
             'trainer', 'phone', 'payment_account',
             'total_fees', 'amount_paid', 'emi_type', 'emi_1_amount', 'emi_1_date',
@@ -281,7 +296,7 @@ def import_students(request):
                     week_type = row.get('week_type')
                     consultant_name = row.get('consultant')
                     trainer_name = row.get('trainer')
-                    course_name = row.get('course')
+                    course_id = row.get('course_id')
                     phone_val = row.get('phone')
                     if pd.notna(phone_val):
                         phone = str(int(phone_val))
@@ -329,20 +344,8 @@ def import_students(request):
                     if pd.notna(trainer_name) and str(trainer_name).strip():
                         trainer, _ = Trainer.objects.get_or_create(name=trainer_name)
                     payment_account, _ = PaymentAccount.objects.get_or_create(name=payment_account_name)
-                    course = None
-                    if pd.notna(course_name) and str(course_name).strip():
-                        default_category, _ = CourseCategory.objects.get_or_create(name='Default Category')
-                        import uuid
-                        unique_code = uuid.uuid4().hex[:10].upper()
-
-                        course_name_str = str(course_name).strip()
-                        course = Course.objects.filter(name=course_name_str).first()
-                        if not course:
-                            course = Course.objects.create(
-                                name=course_name_str,
-                                category=default_category,
-                                code=unique_code
-                            )
+                    if not pd.notna(course_id):
+                        raise ValueError("course_id is required.")
 
                     # Clean numeric fields that can be null
                     ugpassout = row.get('ugpassout') if pd.notna(row.get('ugpassout')) else None
@@ -368,7 +371,7 @@ def import_students(request):
                         pgpercentage=pgpercentage,
                         working_status=row.get('working_status') if pd.notna(row.get('working_status')) else 'NO',
                         course_status=row.get('course_status', 'YTS'),
-                        course=course,
+                        course_id=course_id,
                         start_date=row.get('start_date') if pd.notna(row.get('start_date')) else None,
                         end_date=row.get('end_date') if pd.notna(row.get('end_date')) else None,
                         source_of_joining=source_of_joining,
@@ -461,11 +464,3 @@ def delete_all_students(request):
             messages.error(request, f"An error occurred while deleting students: {e}", extra_tags='student_message')
     
     return redirect('student_list')
-
-
-from django.http import JsonResponse
-
-def get_courses(request):
-    category_id = request.GET.get('category_id')
-    courses = Course.objects.filter(category_id=category_id).order_by('name')
-    return JsonResponse(list(courses.values('id', 'name')), safe=False)

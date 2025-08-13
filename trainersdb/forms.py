@@ -23,6 +23,7 @@ class TrainerForm(forms.ModelForm):
             'demo_link': forms.URLInput(attrs={'class': 'form-control'}),
         }
 
+
     def clean_timing_slots(self):
         timing_slots_str = self.cleaned_data.get('timing_slots')
         if not timing_slots_str:
@@ -69,3 +70,4 @@ class TrainerForm(forms.ModelForm):
             instance.save()
             self.save_m2m()
         return instance
+

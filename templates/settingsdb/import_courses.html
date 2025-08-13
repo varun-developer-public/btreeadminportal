@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Import Student Courses{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Import Student Courses</h2>
+    <p>Upload a CSV file with student course information. The file should have the following columns: <strong>student_id, course_category, course_name</strong>.</p>
+    
+    <div class="card">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="csv_file">Upload CSV File</label>
+                    <input type="file" name="csv_file" class="form-control-file" id="csv_file" accept=".csv" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Import Courses</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'download_course_template' %}" class="btn btn-secondary">Download Sample Template</a>
+    </div>
+</div>
+{% endblock %}

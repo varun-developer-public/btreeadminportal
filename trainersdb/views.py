@@ -126,5 +126,5 @@ def delete_all_trainers(request):
                 Trainer.objects.all().delete()
             messages.success(request, "All trainers have been successfully deleted.")
         except Exception as e:
-            messages.error(request, f"An error occurred while deleting trainers: {e}")
+            messages.error(request, f"An error occurred while deleting all trainers: {e}")
     return redirect('trainer_list')

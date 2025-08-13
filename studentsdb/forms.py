@@ -5,7 +5,7 @@ from studentsdb.models import Student
 from consultantdb.models import Consultant
 from settingsdb.models import SourceOfJoining, PaymentAccount
 
-from .models import CourseCategory, Course
+from coursedb.models import CourseCategory, Course
 from django_select2.forms import Select2Widget
 from core.utils import get_country_code_choices
 
@@ -31,6 +31,11 @@ class StudentForm(forms.ModelForm):
         empty_label="Select Course Category"
     )
 
+    course = forms.ModelChoiceField(
+        queryset=Course.objects.none(),  # Start with an empty queryset
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
     country_code = forms.CharField(widget=forms.HiddenInput())
     alternative_country_code = forms.CharField(widget=forms.HiddenInput())
     class Meta:
@@ -39,7 +44,7 @@ class StudentForm(forms.ModelForm):
             'first_name', 'last_name', 'country_code', 'phone', 'alternative_country_code', 'alternative_phone', 'email', 'location',
             'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
             'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
-            'working_status', 'it_experience', 'course_category', 'course',
+            'working_status', 'it_experience',
             'start_date', 'end_date',
             'pl_required', 'source_of_joining',
             'mode_of_class', 'week_type', 'consultant', 'payment_account'
@@ -57,16 +62,28 @@ class StudentForm(forms.ModelForm):
         today = timezone.now().date()
         self.fields['start_date'].initial = today
         self.fields['end_date'].initial = today + relativedelta(months=4)
+
+        # Set default country code
+        if not self.instance.pk:
+            self.fields['country_code'].initial = 'IN'
+            self.fields['alternative_country_code'].initial = '+91'
+
         self.fields['course'].queryset = Course.objects.none()
 
         if 'course_category' in self.data:
             try:
                 category_id = int(self.data.get('course_category'))
-                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('name')
+                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('course_name')
             except (ValueError, TypeError):
                 pass  # invalid input from the client; ignore and fallback to empty queryset
-        elif self.instance.pk:
-            self.fields['course'].queryset = self.instance.course_category.course_set.order_by('name')
+        elif self.instance.pk and self.instance.course_id:
+            try:
+                course = Course.objects.get(pk=self.instance.course_id)
+                self.fields['course_category'].initial = course.category
+                self.fields['course'].queryset = Course.objects.filter(category=course.category).order_by('course_name')
+                self.fields['course'].initial = course
+            except Course.DoesNotExist:
+                pass
 
         # Filter consultants based on user role
         if request:
@@ -119,6 +136,11 @@ class StudentUpdateForm(forms.ModelForm):
         empty_label="Select Course Category"
     )
 
+    course = forms.ModelChoiceField(
+        queryset=Course.objects.none(),  # Start with an empty queryset
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
     country_code = forms.CharField(widget=forms.HiddenInput())
     alternative_country_code = forms.CharField(widget=forms.HiddenInput())
     class Meta:
@@ -127,7 +149,7 @@ class StudentUpdateForm(forms.ModelForm):
             'first_name', 'last_name', 'country_code', 'phone', 'alternative_country_code', 'alternative_phone', 'email', 'location',
             'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
             'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
-            'working_status', 'it_experience', 'course_category', 'course', 'course_status', 'course_percentage',
+            'working_status', 'it_experience', 'course_status', 'course_percentage',
             'start_date', 'end_date',
             'pl_required', 'source_of_joining',
             'mode_of_class', 'week_type', 'consultant'
@@ -146,12 +168,17 @@ class StudentUpdateForm(forms.ModelForm):
         if 'course_category' in self.data:
             try:
                 category_id = int(self.data.get('course_category'))
-                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('name')
+                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('course_name')
             except (ValueError, TypeError):
                 pass
-        elif self.instance.pk and self.instance.course:
-            self.fields['course_category'].initial = self.instance.course.category
-            self.fields['course'].queryset = self.instance.course.category.course_set.order_by('name')
+        elif self.instance.pk and self.instance.course_id:
+            try:
+                course = Course.objects.get(pk=self.instance.course_id)
+                self.fields['course_category'].initial = course.category
+                self.fields['course'].queryset = Course.objects.filter(category=course.category).order_by('course_name')
+                self.fields['course'].initial = course
+            except Course.DoesNotExist:
+                pass
 
 
         if user and user.role == 'placement':

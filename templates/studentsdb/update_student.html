@@ -456,13 +456,13 @@ $(document).ready(function() {
 
         if (categoryId) {
             $.ajax({
-                url: '{% url "get_courses" %}',
+                url: '{% url "batchdb:get_courses_by_category" %}',
                 data: {
                     'category_id': categoryId
                 },
                 success: function(data) {
                     data.forEach(function(course) {
-                        courseSelect.append(`<option value="${course.id}">${course.name}</option>`);
+                        courseSelect.append(`<option value="${course.id}">${course.course_name}</option>`);
                     });
                 }
             });

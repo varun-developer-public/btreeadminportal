@@ -5,26 +5,38 @@ from trainersdb.models import Trainer
 from coursedb.models import Course
 from studentsdb.models import Student
 
+import json
+from datetime import datetime
+
 class Batch(models.Model):
-    BATCH_STATUS_CHOICES = [
-        ('In Progress', 'In Progress'),
-        ('Completed', 'Completed'),
-        ('On Hold', 'On Hold'),
+    STATUS_CHOICES = [
+        ('YTS', 'Yet to Start'),
+        ('IP', 'In Progress'),
+        ('C', 'Completed'),
+    ]
+    
+    BATCH_TYPE_CHOICES = [
+        ('WD', 'Weekday'),
+        ('WE', 'Weekend'),
+        ('WDWE', 'Weekday & Weekend'),
+        ('Hybrid', 'Hybrid'),
     ]
 
-    batch_id = models.CharField(max_length=50, unique=True, blank=True)
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True)
-    trainer = models.ForeignKey(Trainer, on_delete=models.SET_NULL, null=True)
-    students = models.ManyToManyField(Student, related_name='batches')
+    batch_id = models.CharField(max_length=50, unique=True, blank=True, editable=False)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='batches', null=True, blank=True)
+    trainer = models.ForeignKey(Trainer, on_delete=models.SET_NULL, null=True, blank=True, related_name='batches')
+    students = models.ManyToManyField(Student, related_name='batches', blank=True)
     
-    start_date = models.DateField(default=timezone.now)
+    start_date = models.DateField()
     end_date = models.DateField()
     
-    time_slot = models.CharField(max_length=50)
-    batch_days = models.JSONField(default=list) 
-    hours_per_day = models.PositiveIntegerField(default=2)
+    batch_type = models.CharField(max_length=10, choices=BATCH_TYPE_CHOICES, default='WD')
+    batch_status = models.CharField(max_length=3, choices=STATUS_CHOICES, default='YTS')
     
-    batch_status = models.CharField(max_length=20, choices=BATCH_STATUS_CHOICES, default='In Progress')
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    days = models.JSONField(default=list)
+    hours_per_day = models.PositiveIntegerField(default=2)
     batch_percentage = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(default=timezone.now)
@@ -32,40 +44,37 @@ class Batch(models.Model):
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_batches', on_delete=models.SET_NULL, null=True, blank=True)
     updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='updated_batches', on_delete=models.SET_NULL, null=True, blank=True)
 
+    class Meta:
+        ordering = ['-start_date']
+
     def __str__(self):
-        return f"{self.batch_id} - {self.course.course_name if self.course else 'N/A'}"
+        return self.batch_id
+
+    @property
+    def get_slottime(self):
+        if self.start_time and self.end_time:
+            return f"{self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
+        return "Not Set"
 
     def save(self, *args, **kwargs):
         if not self.batch_id:
-            course_code = self.course.course_name.replace(" ", "")[:2].upper()
+            course_code = self.course.course_name.replace(" ", "")[:3].upper()
+            trainer_initials = self.trainer.name.split(" ")[0][0].upper() if self.trainer else 'T'
             
-            days = sorted([day.lower() for day in self.batch_days])
-            if days == ['saturday', 'sunday']:
-                week_type = 'WE'
-            elif days == ['friday', 'monday', 'thursday', 'tuesday', 'wednesday']:
-                week_type = 'WD'
-            else:
-                week_type = 'WEWD'
-
-            trainer_id_num = self.trainer.trainer_id.replace('TRN', '')
-            trainer_code = f"T{int(trainer_id_num)}"
-
             last_batch = Batch.objects.filter(
                 course=self.course,
-                trainer=self.trainer,
-            ).order_by('-id').first()
-
+                trainer=self.trainer
+            ).order_by('id').last()
+            
             if last_batch and last_batch.batch_id:
                 try:
-                    last_id_num = int(last_batch.batch_id[-4:])
-                    new_id = last_id_num + 1
+                    last_num = int(last_batch.batch_id.split('-')[-1])
+                    new_num = last_num + 1
                 except (ValueError, IndexError):
-                    new_id = 1
+                    new_num = 1
             else:
-                new_id = 1
+                new_num = 1
             
-            batch_number = f"B{new_id:04d}"
-
-            self.batch_id = f"{course_code}{week_type}{trainer_code}{batch_number}"
-
+            self.batch_id = f"B-{course_code}-{trainer_initials}-{new_num:03d}"
+            
         super().save(*args, **kwargs)

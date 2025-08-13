@@ -90,7 +90,7 @@ def admin_dashboard(request):
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
 
     # Fetch upcoming payments
-    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__course', 'student__consultant')
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__consultant')
     upcoming_payments_list = []
     today = timezone.now().date()
 
@@ -109,7 +109,7 @@ def admin_dashboard(request):
                     'student_id': payment.student.student_id,
                     'student_name': f"{payment.student.first_name} {payment.student.last_name or ''}",
                     'mobile': payment.student.phone,
-                    'course': payment.student.course.name if payment.student.course else 'N/A',
+                    'course': 'N/A', # Course information is no longer directly accessible
                     'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
                     'emi_number': i,
                     'course_fee': payment.total_fees or 0,
@@ -198,7 +198,7 @@ def staff_dashboard(request):
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
     
      # Fetch upcoming payments
-    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__course', 'student__consultant')
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__consultant')
     upcoming_payments_list = []
     today = timezone.now().date()
 
@@ -217,7 +217,7 @@ def staff_dashboard(request):
                     'student_id': payment.student.student_id,
                     'student_name': f"{payment.student.first_name} {payment.student.last_name or ''}",
                     'mobile': payment.student.phone,
-                    'course': payment.student.course.name if payment.student.course else 'N/A',
+                    'course': 'N/A', # Course information is no longer directly accessible
                     'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
                     'emi_number': i,
                     'course_fee': payment.total_fees or 0,
@@ -296,7 +296,7 @@ def placement_dashboard(request):
     )
     
     # 3. Calculate the total and segregated counts.
-    students_no_resume_list = students_no_resume.select_related('course', 'placement')
+    students_no_resume_list = students_no_resume.select_related('placement')
     
     resumes_to_collect_count = students_no_resume_list.count()
     
@@ -333,7 +333,7 @@ def placement_dashboard(request):
     # Table Data
     recently_placed = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
     upcoming_interviews = CompanyInterview.objects.filter(interview_date__gte=timezone.now().date()).select_related('placement__student', 'company').order_by('interview_date')[:5]
-    students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student', 'student__course')[:10]
+    students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student')[:10]
 
     context = {
         # Stat Cards

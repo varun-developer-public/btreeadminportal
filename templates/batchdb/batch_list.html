@@ -1,4 +1,7 @@
 {% extends "base.html" %}
+{% load custom_filter %}
+{% block title %}Batch List{% endblock %}
+
 {% block content %}
 <style>
     .student-list-cell {
@@ -11,71 +14,124 @@
         display: none;
     }
 </style>
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2>Batch List</h2>
-        <div>
-            <a href="{% url 'create_batch' %}" class="btn">+ Add Batch</a>
-            <a href="{% url 'import_batches' %}" class="btn btn-secondary" style="margin-left: 10px;">Import Batches</a>
+
+{% if messages %}
+<div class="messages mb-4">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
+        <i class="fas {% if message.level_tag == 'success' %}fa-check-circle{% elif message.level_tag == 'error' %}fa-times-circle{% elif message.level_tag == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-users me-2"></i>Batch List</h2>
+        <div class="d-flex gap-2">
+            <a href="{% url 'batchdb:create_batch' %}" class="btn-primary">
+                <i class="fas fa-plus me-2"></i>Add New Batch
+            </a>
+            <a href="{% url 'batchdb:import_batches' %}" class="btn-secondary">
+                <i class="fas fa-file-import me-2"></i>Import from Excel
+            </a>
         </div>
     </div>
 
-    <form method="get" class="mb-4">
-        <div class="input-group">
-            <input type="text" class="form-control" name="q" placeholder="Search by batch name, trainer, or student ID" value="{{ query }}">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-search me-2"></i>Search
-            </button>
+    <form method="get" class="filters mb-4">
+        <div class="filter-row">
+            <div class="filter-group">
+                {{ form.q.label_tag }}
+                {{ form.q }}
+            </div>
+            <div class="filter-group">
+                {{ form.course.label_tag }}
+                {{ form.course }}
+            </div>
+            <div class="filter-group">
+                {{ form.trainer.label_tag }}
+                {{ form.trainer }}
+            </div>
+            <div class="filter-group">
+                {{ form.batch_status.label_tag }}
+                <div class="checkbox-group">
+                    {{ form.batch_status }}
+                </div>
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filters</button>
+            <a href="{% url 'batchdb:batch_list' %}" class="btn-secondary">Reset</a>
         </div>
     </form>
 
-    <table>
-    <thead>
-        <tr>
-            <th>Batch ID</th>
-            <th>Trainer</th>
-            <th>Module Name</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Slot</th>
-            <th>Students</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for batch in batches %}
-        <tr>
-            <td>{{ batch.batch_id }}</td>
-            <td>{{ batch.trainer }}</td>
-            <td>{{ batch.module_name }}</td>
-            <td>{{ batch.start_date }}</td>
-            <td>{{ batch.end_date }}</td>
-            <td>{{ batch.get_slottime }}</td>
-            <td>
-                <div class="student-list-cell">
-                    {% if batch.students.all %}
-                        {% for student in batch.students.all %}
-                            <span class="badge bg-secondary">{{ student.student_id }}</span>
-                        {% endfor %}
-                    {% else %}
-                        No students assigned
-                    {% endif %}
-                </div>
-            </td>
-            <td>
-                <a href="{% url 'update_batch' batch.pk %}" class="btn btn-secondary"><i class="fas fa-edit"></i> Edit</a>
-                <a href="{% url 'delete_batch' batch.pk %}" class="btn btn-danger"><i class="fas fa-trash"></i> Delete</a>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-    </table>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Batch ID</th>
+                    <th>Course</th>
+                    <th>Trainer</th>
+                    <th>Students</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Time Slot</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for batch in batches %}
+                <tr>
+                    <td><span class="badge bg-secondary">{{ batch.batch_id }}</span></td>
+                    <td>{{ batch.course.course_name }}</td>
+                    <td>{{ batch.trainer.name }}</td>
+                    <td>
+                        <div class="student-list-cell">
+                            {% for student in batch.students.all %}
+                                <span class="badge bg-light text-dark">{{ student.first_name }} {{ student.last_name|default:"" }}</span>
+                            {% empty %}
+                                <span class="text-muted">No students</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>{{ batch.start_date|date:"d-m-Y" }}</td>
+                    <td>{{ batch.end_date|date:"d-m-Y" }}</td>
+                    <td>{{ batch.get_slottime }}</td>
+                    <td>
+                        <span class="badge
+                            {% if batch.batch_status == 'YTS' %}bg-warning text-dark
+                            {% elif batch.batch_status == 'IP' %}bg-success
+                            {% elif batch.batch_status == 'C' %}bg-secondary
+                            {% else %}bg-light text-dark{% endif %}">
+                            {{ batch.get_batch_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{% url 'batchdb:update_batch' batch.pk %}" class="btn-update"><i class="fas fa-edit"></i></a>
+                            <a href="{% url 'batchdb:delete_batch' batch.pk %}" class="btn-danger"><i class="fas fa-trash"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center py-4 text-muted">
+                        <i class="fas fa-search me-2"></i>No batches found.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
-    <div class="pagination justify-content-center mt-4">
+    <div class="pagination">
         <span class="step-links">
             {% if batches.has_previous %}
-                <a href="?page=1{% if query %}&q={{ query }}{% endif %}">&laquo; first</a>
-                <a href="?page={{ batches.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">previous</a>
+                <a href="?page=1&{{ request.GET.urlencode }}">&laquo; first</a>
+                <a href="?page={{ batches.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
             {% endif %}
 
             <span class="current">
@@ -83,8 +139,8 @@
             </span>
 
             {% if batches.has_next %}
-                <a href="?page={{ batches.next_page_number }}{% if query %}&q={{ query }}{% endif %}">next</a>
-                <a href="?page={{ batches.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}">last &raquo;</a>
+                <a href="?page={{ batches.next_page_number }}&{{ request.GET.urlencode }}">next</a>
+                <a href="?page={{ batches.paginator.num_pages }}&{{ request.GET.urlencode }}">last &raquo;</a>
             {% endif %}
         </span>
     </div>

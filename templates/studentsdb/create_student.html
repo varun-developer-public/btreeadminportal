@@ -89,12 +89,13 @@
                                 {{ student_form.country_code.label_tag }}
                                 <span class="required-indicator">*</span>
                             </div>
-                            <select name="country_code" id="id_country_code" class="form-control country-code-select">
+                            <select name="country_code_select" id="id_country_code_select" class="form-control country-code-select">
                                 {% get_country_codes as countries %}
                                 {% for code, name, alpha2 in countries %}
-                                    <option value="{{ alpha2 }}" data-code="{{ code }}"><span class="fi fi-{{ alpha2|lower }}"></span> {{ name }} (+{{ code }})</option>
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if alpha2 == 'in' %}selected{% endif %}><span class="fi fi-{{ alpha2|lower }}"></span> {{ name }} (+{{ code }})</option>
                                 {% endfor %}
                             </select>
+                            <input type="hidden" name="country_code" id="id_country_code" value="+91">
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -113,12 +114,13 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             {{ student_form.alternative_country_code.label_tag }}
-                            <select name="alternative_country_code" id="id_alternative_country_code" class="form-control country-code-select">
+                            <select name="alternative_country_code_select" id="id_alternative_country_code_select" class="form-control country-code-select">
                                 {% get_country_codes as countries %}
                                 {% for code, name, alpha2 in countries %}
-                                    <option value="{{ alpha2 }}" data-code="{{ code }}"><span class="fi fi-{{ alpha2|lower }}"></span> {{ name }} (+{{ code }})</option>
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if alpha2 == 'in' %}selected{% endif %}><span class="fi fi-{{ alpha2|lower }}"></span> {{ name }} (+{{ code }})</option>
                                 {% endfor %}
                             </select>
+                            <input type="hidden" name="alternative_country_code" id="id_alternative_country_code" value="+91">
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -528,17 +530,15 @@
         </div>
 
         <div class="form-actions">
-            <button type="submit" id="submit-button" class="btn btn-primary">
-                <i class="fas fa-save me-2"></i>Save Student
-            </button>
-            <a href="{% url 'student_list' %}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left me-2"></i>Back to Student List
-            </a>
+            <button type="submit" class="btn btn-primary" id="submit-button">Create Student</button>
+            <a href="{% url 'student_list' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+            </form>
             <div id="emi-error-message" class="error-message" style="display: none;"></div>
         </div>
     </form>
 </div>
-
+{% endblock %}
 {% block extra_js %}
 <script>
 $(document).ready(function () {
@@ -678,42 +678,6 @@ $(document).ready(function () {
     setupNumericInput('id_phone');
     setupNumericInput('id_alternative_phone');
     
-    // Course filtering
-    const $categorySelect = $("#id_course_category");
-    const $courseSelect = $("#id_course");
-
-    if ($categorySelect.length && $courseSelect.length) {
-        let lastCategoryId = null;
-
-        $categorySelect.on("change", function () {
-            const categoryId = this.value;
-
-            if (categoryId && categoryId !== lastCategoryId) {
-                lastCategoryId = categoryId;
-                $courseSelect.html('<option value="">Select Course</option>').trigger('change');
-
-                fetch(`/students/get-courses/?category_id=${categoryId}`)
-                    .then(response => response.ok ? response.json() : Promise.reject('Network response was not ok'))
-                    .then(data => {
-                        if ($categorySelect.val() === categoryId) {
-                            data.forEach(course => {
-                                if (!$courseSelect.find(`option[value="${course.id}"]`).length) {
-                                    $courseSelect.append(new Option(course.name, course.id));
-                                }
-                            });
-                            $courseSelect.trigger('change');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                        lastCategoryId = null;
-                    });
-            } else if (!categoryId) {
-                $courseSelect.html('<option value="">Select Course</option>').trigger('change');
-                lastCategoryId = null;
-            }
-        });
-    }
     
     // EMI script
     const $emiType = $("#id_emi_type");
@@ -944,5 +908,71 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 </script>
-{% endblock %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize select2 on all select elements
+    $('select').select2({
+        width: '100%'
+    });
+
+    const categorySelect = $('#id_course_category');
+    const courseSelect = $('#id_course');
+
+    categorySelect.on('change', function() {
+        const categoryId = $(this).val();
+        courseSelect.empty().append('<option value="">Select a course</option>');
+
+        if (categoryId) {
+            $.ajax({
+                url: '{% url "batchdb:get_courses_by_category" %}',
+                data: {
+                    'category_id': categoryId
+                },
+                success: function(data) {
+                    data.forEach(function(course) {
+                        courseSelect.append(`<option value="${course.id}">${course.course_name}</option>`);
+                    });
+                }
+            });
+        }
+    });
+
+    var $countryCodeSelect = $('#id_country_code');
+    var $countryCodeHidden = $('input[name="country_code"]');
+
+    $countryCodeSelect.on('change', function() {
+        var selectedOption = $(this).find('option:selected');
+        var countryCode = selectedOption.data('code');
+        $countryCodeHidden.val(countryCode);
+    });
+
+    // Set initial value for hidden input
+    var initialSelectedOption = $countryCodeSelect.find('option:selected');
+    if (initialSelectedOption.length) {
+        $countryCodeHidden.val(initialSelectedOption.data('code'));
+    } else {
+        // Set default to India (+91)
+        $countryCodeSelect.val('IN').trigger('change');
+        $countryCodeHidden.val('91');
+    }
+
+
+    var $altCountryCodeSelect = $('#id_alternative_country_code');
+    var $altCountryCodeHidden = $('input[name="alternative_country_code"]');
+
+    $altCountryCodeSelect.on('change', function() {
+        var selectedOption = $(this).find('option:selected');
+        var countryCode = selectedOption.data('code');
+        $altCountryCodeHidden.val(countryCode);
+    });
+
+    // Set initial value for hidden input
+    var initialAltSelectedOption = $altCountryCodeSelect.find('option:selected');
+    if (initialAltSelectedOption.length) {
+        $altCountryCodeHidden.val(initialAltSelectedOption.data('code'));
+    }
+});
+</script>
 {% endblock %}

@@ -1,5 +1,6 @@
 from django import forms
-from studentsdb.models import Student, Course, CourseCategory
+from studentsdb.models import Student
+from coursedb.models import Course, CourseCategory
 from .models import Placement, CompanyInterview
 
 class PlacementUpdateForm(forms.ModelForm):
@@ -78,7 +79,12 @@ class PlacementFilterForm(forms.Form):
         self.fields['pg_branch'].choices = [('', 'All Branches')] + [(b, b) for b in Student.objects.values_list('pgbranch', flat=True).distinct().order_by('pgbranch') if b]
         self.fields['pg_passout'].choices = [('', 'All Years')] + [(y, y) for y in Student.objects.values_list('pgpassout', flat=True).distinct().order_by('-pgpassout') if y]
 
-        courses = Course.objects.select_related('category').all()
-        self.fields['course'].choices = [('', 'All Courses')] + [
-            (course.id, f"{course.category.name} - {course.name}") for course in courses
-        ]
+        self.fields['course_category'].queryset = CourseCategory.objects.all()
+        self.fields['course'].queryset = Course.objects.none()
+
+        if 'course_category' in self.data:
+            try:
+                category_id = int(self.data.get('course_category'))
+                self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('course_name')
+            except (ValueError, TypeError):
+                pass  # invalid input from the client; ignore and fallback to empty queryset

@@ -108,12 +108,12 @@
             <td><a href="tel:{{ student.country_code }}{{ student.phone }}" class="text-decoration-none text-primary">{{ student.country_code }} {{ student.phone }}</a></td>
             <td>{{ student.location|default:"—" }}</td>
             <td>{{ student.consultant.name|default:"—" }}</td>
-            <td>{{ student.course.name|default:"—" }}</td>
+            <td>{{ student.course.course_name|default:"—" }}</td>
             <td>{{ student.course.category.name|default:"—" }}</td>
             <td>
                 <div class="batch-list-cell">
                     {% for batch in student.batches.all %}
-                        <span class="badge bg-secondary">{{ batch.batch_id }} - {{ batch.module_name }}</span>
+                        <span class="badge bg-secondary">{{ batch.batch_id }} - {{ batch.course.course_name }}</span>
                     {% empty %}
                         No batches
                     {% endfor %}
@@ -184,11 +184,11 @@ document.addEventListener("DOMContentLoaded", function () {
             courseSelect.innerHTML = '<option value="">All Courses</option>'; // Clear existing options
 
             if (categoryId) {
-                fetch(`/students/get-courses/?category_id=${categoryId}`)
+                fetch(`/api/courses-by-category/${categoryId}/`)
                     .then(response => response.json())
                     .then(data => {
                         data.forEach(course => {
-                            const option = new Option(course.name, course.id);
+                            const option = new Option(course.course_name, course.id);
                             courseSelect.add(option);
                         });
                     });

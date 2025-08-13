@@ -128,7 +128,7 @@
                             {{ batch.batch_id }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     </td>
-                    <td>{{ placement.student.course.name|default:"-" }}</td>
+                    <td>{{ placement.student.course.course_name|default:"-" }}</td>
                     <td>{{ placement.student.first_name }} {{ placement.student.last_name|default:"" }}</td>
                     <td>{{ placement.student.phone|default:"-" }}</td>
                     <td>{{ placement.student.email|default:"-" }}</td>
@@ -288,55 +288,26 @@
 </style>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const categorySelect = document.querySelector('[name="course_category"]');
-    const courseSelect = document.querySelector('[name="course"]');
-    const originalCourses = Array.from(courseSelect.options);
+    const categorySelect = document.getElementById('id_course_category');
+    const courseSelect = document.getElementById('id_course');
 
-    // Store course options organized by category
-    const coursesByCategory = {};
-    originalCourses.forEach(option => {
-        if (option.value) {
-            const text = option.text;
-            const categoryName = text.split(' - ')[0];
-            if (!coursesByCategory[categoryName]) {
-                coursesByCategory[categoryName] = [];
-            }
-            coursesByCategory[categoryName].push(option);
+    categorySelect.addEventListener('change', function() {
+        const categoryId = this.value;
+        courseSelect.innerHTML = '<option value="">All Courses</option>';
+
+        if (categoryId) {
+            fetch(`/api/courses-by-category/${categoryId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(course => {
+                        const option = document.createElement('option');
+                        option.value = course.id;
+                        option.textContent = course.course_name;
+                        courseSelect.appendChild(option);
+                    });
+                });
         }
     });
-
-    // Function to update course options
-    function updateCourseOptions() {
-        const selectedCategoryId = categorySelect.value;
-        const selectedCategoryName = categorySelect.options[categorySelect.selectedIndex].text;
-        const currentCourseValue = courseSelect.value;
-
-        // Clear current options
-        courseSelect.innerHTML = '';
-
-        // Add back the "All Courses" option
-        courseSelect.add(originalCourses[0]);
-
-        if (selectedCategoryId && coursesByCategory[selectedCategoryName]) {
-            // Add courses for the selected category
-            coursesByCategory[selectedCategoryName].forEach(option => {
-                courseSelect.add(option.cloneNode(true));
-            });
-        } else if (!selectedCategoryId) {
-            // If no category is selected, add all courses back
-            Object.values(coursesByCategory).flat().forEach(option => {
-                courseSelect.add(option.cloneNode(true));
-            });
-        }
-
-        // Restore previous selection if possible
-        courseSelect.value = currentCourseValue;
-    }
-
-    categorySelect.addEventListener('change', updateCourseOptions);
-
-    // Initial call to set the correct course options on page load
-    updateCourseOptions();
 });
 </script>
 {% endblock %}

@@ -6,23 +6,39 @@ from datetime import datetime
 import json
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from .forms import BatchCreationForm, BatchUpdateForm
+from .forms import BatchCreationForm, BatchUpdateForm, BatchFilterForm
 from .models import Batch
 from coursedb.models import Course, CourseCategory
 from trainersdb.models import Trainer
 from studentsdb.models import Student
 
 def batch_list(request):
-    query = request.GET.get('q')
     batch_list = Batch.objects.all().order_by('-id')
+    form = BatchFilterForm(request.GET)
 
-    if query:
-        batch_list = batch_list.filter(
-            Q(course__course_name__icontains=query) |
-            Q(trainer__name__icontains=query) |
-            Q(students__first_name__icontains=query) |
-            Q(batch_id__icontains=query)
-        ).distinct()
+    if form.is_valid():
+        query = form.cleaned_data.get('q')
+        courses = form.cleaned_data.get('course')
+        trainers = form.cleaned_data.get('trainer')
+        statuses = form.cleaned_data.get('batch_status')
+
+        if query:
+            batch_list = batch_list.filter(
+                Q(students__first_name__icontains=query) |
+                Q(students__last_name__icontains=query) |
+                Q(batch_id__icontains=query) |
+                Q(course__course_name__icontains=query) |
+                Q(trainer__name__icontains=query)
+            ).distinct()
+        
+        if courses:
+            batch_list = batch_list.filter(course__in=courses).distinct()
+        
+        if trainers:
+            batch_list = batch_list.filter(trainer__in=trainers).distinct()
+
+        if statuses:
+            batch_list = batch_list.filter(batch_status__in=statuses).distinct()
 
     paginator = Paginator(batch_list, 10)
     page = request.GET.get('page')
@@ -34,7 +50,10 @@ def batch_list(request):
     except EmptyPage:
         batches = paginator.page(paginator.num_pages)
 
-    return render(request, 'batchdb/batch_list.html', {'batches': batches, 'query': query})
+    return render(request, 'batchdb/batch_list.html', {
+        'batches': batches,
+        'form': form
+    })
 
 @login_required
 def create_batch(request):
@@ -42,6 +61,23 @@ def create_batch(request):
         form = BatchCreationForm(request.POST)
         if form.is_valid():
             batch = form.save(commit=False)
+            
+            time_slot = form.cleaned_data.get('time_slot')
+            if time_slot:
+                batch.start_time, batch.end_time = time_slot
+
+            days = form.cleaned_data.get('days')
+            
+            if not days:
+                if batch.batch_type == 'WD':
+                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                elif batch.batch_type == 'WE':
+                    days = ['Saturday', 'Sunday']
+                elif batch.batch_type == 'WDWE':
+                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+            
+            batch.days = days
+            batch.batch_status = 'YTS'  # Set default status
             batch.created_by = request.user
             batch.save()
             form.save_m2m()
@@ -58,17 +94,32 @@ def update_batch(request, pk):
         form = BatchUpdateForm(request.POST, instance=batch)
         if form.is_valid():
             batch = form.save(commit=False)
+
+            time_slot = form.cleaned_data.get('time_slot')
+            if time_slot:
+                batch.start_time, batch.end_time = time_slot
+
+            days = form.cleaned_data.get('days')
+
+            if not days:
+                if batch.batch_type == 'WD':
+                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+                elif batch.batch_type == 'WE':
+                    days = ['Saturday', 'Sunday']
+                elif batch.batch_type == 'WDWE':
+                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+            batch.days = days
             batch.updated_by = request.user
             batch.save()
             form.save_m2m()
             messages.success(request, f"Batch {batch.batch_id} updated successfully.")
             return redirect('batch_list')
     else:
-        form = BatchUpdateForm(instance=batch)
+        form = BatchUpdateForm(instance=batch, initial={'days': batch.days})
     context = {
         'form': form,
         'batch': batch,
-        'batch_days': json.dumps(list(batch.batch_days))
     }
     return render(request, 'batchdb/update_batch.html', context)
 
@@ -99,32 +150,24 @@ def get_trainer_slots(request):
     trainer_id = request.GET.get('trainer_id')
     try:
         trainer = Trainer.objects.get(id=trainer_id)
-        active_batches = Batch.objects.filter(trainer=trainer, batch_status='In Progress')
-        taken_slots = [batch.time_slot for batch in active_batches]
-        available_slots = [slot for slot in trainer.timing_slots if slot not in taken_slots]
+        active_batches = Batch.objects.filter(trainer=trainer, batch_status__in=['IP', 'YTS'])
+        taken_slots = [(batch.start_time, batch.end_time) for batch in active_batches]
+
+        if not isinstance(trainer.timing_slots, list):
+            return JsonResponse([], safe=False)
+
+        available_slots = [
+            slot for slot in trainer.timing_slots
+            if isinstance(slot, dict) and
+                (datetime.strptime(slot['start_time'], '%H:%M').time(), datetime.strptime(slot['end_time'], '%H:%M').time()) not in taken_slots
+        ]
         
         formatted_slots = []
         for slot in available_slots:
-            if isinstance(slot, dict):
-                start_time = slot.get('start_time', '')
-                end_time = slot.get('end_time', '')
-                # Format the time string for display
-                def format_time(time_str):
-                    if not time_str:
-                        return ''
-                    try:
-                        t = datetime.strptime(time_str, '%H:%M').time()
-                        return t.strftime('%I:%M %p')
-                    except ValueError:
-                        return time_str # Return original if format is wrong
-
-                name = f"{format_time(start_time)} - {format_time(end_time)}"
-                # The ID should be a string representation of the JSON object
-                # so that it can be stored in the Batch model
-                formatted_slots.append({'id': json.dumps(slot), 'name': name})
-            else:
-                # Handle cases where the slot is just a string
-                formatted_slots.append({'id': slot, 'name': slot})
+            start_time = slot.get('start_time', '')
+            end_time = slot.get('end_time', '')
+            name = f"{datetime.strptime(start_time, '%H:%M').strftime('%I:%M %p')} - {datetime.strptime(end_time, '%H:%M').strftime('%I:%M %p')}"
+            formatted_slots.append({'id': f"{start_time}-{end_time}", 'name': name})
 
         return JsonResponse(formatted_slots, safe=False)
     except Trainer.DoesNotExist:
@@ -142,16 +185,12 @@ def get_students_for_course(request):
 import pandas as pd
 from django.http import HttpResponse
 from django.db import transaction
-from datetime import datetime
 from placementdb.models import Placement
 
 @login_required
 def download_batch_template(request):
-    """
-    Downloads an Excel template for bulk batch creation.
-    """
     data = {
-        'batch_id': ['BAT_101', ''],  # Optional: Leave empty to auto-generate
+        'batch_id': ['BAT_101', ''],
         'module_name': ['Python', 'Java'],
         'batch_type': ['Weekday', 'Weekend'],
         'trainer': ['Trainer A', 'Trainer B'],
@@ -170,26 +209,23 @@ def download_batch_template(request):
 
 @login_required
 def import_batches(request):
-    """
-    Imports batches from an Excel file.
-    """
     if request.method == 'POST':
         excel_file = request.FILES.get('excel_file')
         if not excel_file:
-            messages.error(request, "No file was uploaded.")
+            messages.error(request, "No batch file was uploaded.")
             return redirect('batch_list')
 
         try:
             df = pd.read_excel(excel_file)
         except Exception as e:
-            messages.error(request, f"Error reading Excel file: {e}")
+            messages.error(request, f"Error reading batch Excel file: {e}")
             return redirect('batch_list')
 
         required_columns = [
             'module_name', 'batch_type', 'trainer', 'start_date', 'end_date', 'time_slot', 'students'
         ]
         if not all(col in df.columns for col in required_columns):
-            messages.error(request, f"Excel file must contain the following columns: {', '.join(required_columns)}")
+            messages.error(request, f"Batch Excel file must contain the following columns: {', '.join(required_columns)}")
             return redirect('batch_list')
 
         error_rows = []
@@ -219,7 +255,6 @@ def import_batches(request):
 
                     trainer, _ = Trainer.objects.get_or_create(name=trainer_name)
                     
-                    # Handle optional batch_id
                     batch_id_from_sheet = row.get('batch_id')
                     if pd.notna(batch_id_from_sheet) and str(batch_id_from_sheet).strip():
                         batch_id = str(batch_id_from_sheet).strip()
@@ -227,7 +262,6 @@ def import_batches(request):
                             raise ValueError(f"Batch with ID '{batch_id}' already exists.")
                         batch = Batch(batch_id=batch_id)
                     else:
-                        # Let the model's save() method generate the ID
                         batch = Batch()
 
                     batch.module_name = module_name
@@ -272,9 +306,6 @@ def import_batches(request):
 
 @login_required
 def download_error_report_batch(request):
-    """
-    Downloads a CSV file with the rows that failed during batch import.
-    """
     error_rows = request.session.get('error_rows_batch', [])
     if not error_rows:
         messages.error(request, "No error report to download.")

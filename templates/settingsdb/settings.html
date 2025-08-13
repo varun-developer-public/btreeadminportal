@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Settings</h2>
+    <div class="card">
+        <div class="card-header">
+            Database Management
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Course Management</h5>
+            <p class="card-text">Permanently delete all courses from the database. This action cannot be undone.</p>
+            <a href="{% url 'delete_all_courses' %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all courses? This action is irreversible.');">Delete All Courses</a>
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">Course Category Management</h5>
+            <p class="card-text">Permanently delete all course categories from the database. This action cannot be undone.</p>
+            <a href="{% url 'delete_all_course_categories' %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete all course categories? This action is irreversible.');">Delete All Course Categories</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

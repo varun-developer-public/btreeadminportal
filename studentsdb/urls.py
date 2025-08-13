@@ -8,11 +8,9 @@ from .views import (
     import_students,
     download_error_report,
     delete_all_students,
-    get_courses,
 )
 
 urlpatterns = [
-    path('get-courses/', get_courses, name='get_courses'),
     path('', student_list, name='student_list'),
     path('create/', create_student, name='create_student'),
     path('<str:student_id>/update/', update_student, name='update_student'),

@@ -1,0 +1,540 @@
+{
+    "courses": [
+        {
+            "id": 1,
+            "code": "C101",
+            "name": "Python",
+            "category_id": 1
+        },
+        {
+            "id": 2,
+            "code": "C102",
+            "name": "Java",
+            "category_id": 1
+        },
+        {
+            "id": 3,
+            "code": "C103",
+            "name": "Advance Java",
+            "category_id": 1
+        },
+        {
+            "id": 4,
+            "code": "C104",
+            "name": "PHP",
+            "category_id": 1
+        },
+        {
+            "id": 5,
+            "code": "C105",
+            "name": "Dot Net",
+            "category_id": 1
+        },
+        {
+            "id": 6,
+            "code": "C106",
+            "name": "C & C++",
+            "category_id": 1
+        },
+        {
+            "id": 7,
+            "code": "C107",
+            "name": "C#",
+            "category_id": 1
+        },
+        {
+            "id": 8,
+            "code": "C108",
+            "name": "SQL",
+            "category_id": 1
+        },
+        {
+            "id": 9,
+            "code": "C109",
+            "name": "Linux",
+            "category_id": 1
+        },
+        {
+            "id": 10,
+            "code": "C201",
+            "name": "Front End",
+            "category_id": 2
+        },
+        {
+            "id": 11,
+            "code": "C202",
+            "name": "React JS",
+            "category_id": 2
+        },
+        {
+            "id": 12,
+            "code": "C203",
+            "name": "Angular JS",
+            "category_id": 2
+        },
+        {
+            "id": 13,
+            "code": "C204",
+            "name": "Node JS",
+            "category_id": 2
+        },
+        {
+            "id": 14,
+            "code": "C205",
+            "name": "Python Django",
+            "category_id": 2
+        },
+        {
+            "id": 15,
+            "code": "C206",
+            "name": "MEAN Stack",
+            "category_id": 2
+        },
+        {
+            "id": 16,
+            "code": "C207",
+            "name": "Mern Stack",
+            "category_id": 2
+        },
+        {
+            "id": 17,
+            "code": "C301",
+            "name": "AWS",
+            "category_id": 3
+        },
+        {
+            "id": 18,
+            "code": "C302",
+            "name": "AWS & DevOps",
+            "category_id": 3
+        },
+        {
+            "id": 19,
+            "code": "C303",
+            "name": "AWS Solution Architect",
+            "category_id": 3
+        },
+        {
+            "id": 20,
+            "code": "C304",
+            "name": "DevOps",
+            "category_id": 3
+        },
+        {
+            "id": 21,
+            "code": "C305",
+            "name": "Openstack",
+            "category_id": 3
+        },
+        {
+            "id": 22,
+            "code": "C306",
+            "name": "Azure",
+            "category_id": 3
+        },
+        {
+            "id": 23,
+            "code": "C307",
+            "name": "Azure & DevOps",
+            "category_id": 3
+        },
+        {
+            "id": 24,
+            "code": "C308",
+            "name": "Terraform",
+            "category_id": 3
+        },
+        {
+            "id": 25,
+            "code": "C309",
+            "name": "Kubernetes Docker",
+            "category_id": 3
+        },
+        {
+            "id": 26,
+            "code": "C310",
+            "name": "GCP",
+            "category_id": 3
+        },
+        {
+            "id": 27,
+            "code": "C401",
+            "name": "AWS Data Engineering",
+            "category_id": 4
+        },
+        {
+            "id": 28,
+            "code": "C402",
+            "name": "Azure Data Engineering",
+            "category_id": 4
+        },
+        {
+            "id": 29,
+            "code": "C403",
+            "name": "PySpark",
+            "category_id": 4
+        },
+        {
+            "id": 30,
+            "code": "C404",
+            "name": "Data Analyst",
+            "category_id": 4
+        },
+        {
+            "id": 31,
+            "code": "C405",
+            "name": "Tableau",
+            "category_id": 4
+        },
+        {
+            "id": 32,
+            "code": "C406",
+            "name": "Snowflake",
+            "category_id": 4
+        },
+        {
+            "id": 33,
+            "code": "C407",
+            "name": "Red Shift",
+            "category_id": 4
+        },
+        {
+            "id": 34,
+            "code": "C408",
+            "name": "Microsoft Power BI",
+            "category_id": 4
+        },
+        {
+            "id": 35,
+            "code": "C409",
+            "name": "Bussiness Analyst",
+            "category_id": 4
+        },
+        {
+            "id": 37,
+            "code": "C501",
+            "name": "UiPath",
+            "category_id": 5
+        },
+        {
+            "id": 38,
+            "code": "C502",
+            "name": "Blue Prism",
+            "category_id": 5
+        },
+        {
+            "id": 39,
+            "code": "C503",
+            "name": "Power Automate",
+            "category_id": 5
+        },
+        {
+            "id": 40,
+            "code": "C504",
+            "name": "Automation Anywhere",
+            "category_id": 5
+        },
+        {
+            "id": 41,
+            "code": "C601",
+            "name": "Selenium Python",
+            "category_id": 6
+        },
+        {
+            "id": 42,
+            "code": "C602",
+            "name": "Selenium Java",
+            "category_id": 6
+        },
+        {
+            "id": 43,
+            "code": "C603",
+            "name": "QTP UFT",
+            "category_id": 6
+        },
+        {
+            "id": 44,
+            "code": "C604",
+            "name": "Manual Testing",
+            "category_id": 6
+        },
+        {
+            "id": 45,
+            "code": "C701",
+            "name": "Android development",
+            "category_id": 7
+        },
+        {
+            "id": 46,
+            "code": "C702",
+            "name": "iOS Development",
+            "category_id": 7
+        },
+        {
+            "id": 47,
+            "code": "C703",
+            "name": "Salesforce",
+            "category_id": 7
+        },
+        {
+            "id": 48,
+            "code": "C704",
+            "name": "Digital Marketing",
+            "category_id": 7
+        },
+        {
+            "id": 49,
+            "code": "C705",
+            "name": "SAP",
+            "category_id": 7
+        },
+        {
+            "id": 50,
+            "code": "C706",
+            "name": "Primavera",
+            "category_id": 7
+        },
+        {
+            "id": 51,
+            "code": "C707",
+            "name": "Scrum Master",
+            "category_id": 7
+        },
+        {
+            "id": 52,
+            "code": "C708",
+            "name": "IoT",
+            "category_id": 7
+        },
+        {
+            "id": 53,
+            "code": "C709",
+            "name": "SAS",
+            "category_id": 7
+        },
+        {
+            "id": 54,
+            "code": "C710",
+            "name": "CCNA",
+            "category_id": 7
+        },
+        {
+            "id": 55,
+            "code": "C801",
+            "name": "Python FSD",
+            "category_id": 8
+        },
+        {
+            "id": 56,
+            "code": "C802",
+            "name": "Java FSD",
+            "category_id": 8
+        },
+        {
+            "id": 57,
+            "code": "C803",
+            "name": "UIUX",
+            "category_id": 8
+        },
+        {
+            "id": 58,
+            "code": "C804",
+            "name": "Data Science",
+            "category_id": 8
+        },
+        {
+            "id": 59,
+            "code": "C805",
+            "name": "Machine Learning",
+            "category_id": 8
+        },
+        {
+            "id": 60,
+            "code": "C806",
+            "name": "Artificial Intelligence",
+            "category_id": 8
+        },
+        {
+            "id": 61,
+            "code": "C807",
+            "name": "Block Chain",
+            "category_id": 8
+        },
+        {
+            "id": 62,
+            "code": "C808",
+            "name": "Cyber security",
+            "category_id": 8
+        },
+        {
+            "id": 63,
+            "code": "C809",
+            "name": "AIML",
+            "category_id": 8
+        },
+        {
+            "id": 64,
+            "code": "C110",
+            "name": "Dot Net+React",
+            "category_id": 1
+        },
+        {
+            "id": 65,
+            "code": "8185CF5C7C",
+            "name": "AWS Devops",
+            "category_id": 9
+        },
+        {
+            "id": 66,
+            "code": "E68D6E0C1F",
+            "name": "Devops",
+            "category_id": 9
+        },
+        {
+            "id": 67,
+            "code": "FD119BA3DB",
+            "name": "Hardware Networking",
+            "category_id": 9
+        },
+        {
+            "id": 68,
+            "code": "F4F95EA467",
+            "name": "Frontend",
+            "category_id": 9
+        },
+        {
+            "id": 69,
+            "code": "9F92571DDD",
+            "name": "Pyspark",
+            "category_id": 9
+        },
+        {
+            "id": 70,
+            "code": "0FDDBDBB6D",
+            "name": "Azure Devops",
+            "category_id": 9
+        },
+        {
+            "id": 71,
+            "code": "B3939BA56E",
+            "name": "Azure 104 & 400",
+            "category_id": 9
+        },
+        {
+            "id": 72,
+            "code": "1B88EDF12D",
+            "name": "Power Automation",
+            "category_id": 9
+        },
+        {
+            "id": 73,
+            "code": "A9705EF0D4",
+            "name": "AWS, Terraform",
+            "category_id": 9
+        },
+        {
+            "id": 74,
+            "code": "63C141B1DD",
+            "name": "Java Advanced",
+            "category_id": 9
+        },
+        {
+            "id": 75,
+            "code": "C2D2763EB2",
+            "name": "AWS /Terraform",
+            "category_id": 9
+        },
+        {
+            "id": 76,
+            "code": "EA5608C0D9",
+            "name": "Azure 104",
+            "category_id": 9
+        },
+        {
+            "id": 77,
+            "code": "114EB8B736",
+            "name": "Python FSd",
+            "category_id": 9
+        },
+        {
+            "id": 78,
+            "code": "5B0E4EEB9C",
+            "name": "Aws Devops",
+            "category_id": 9
+        },
+        {
+            "id": 79,
+            "code": "6145DD4E92",
+            "name": "React js",
+            "category_id": 9
+        },
+        {
+            "id": 80,
+            "code": "D37A3A113C",
+            "name": "Aws SA",
+            "category_id": 9
+        },
+        {
+            "id": 81,
+            "code": "8099530737",
+            "name": "Python Fsd",
+            "category_id": 9
+        },
+        {
+            "id": 82,
+            "code": "2A88CCF23F",
+            "name": "Python & Cyber Security",
+            "category_id": 9
+        },
+        {
+            "id": 83,
+            "code": "BC165AECB3",
+            "name": "Aws DevOps",
+            "category_id": 9
+        },
+        {
+            "id": 84,
+            "code": "B4FB0EDA2F",
+            "name": "Power BI",
+            "category_id": 9
+        }
+    ],
+    "categories": [
+        {
+            "id": 1,
+            "name": "Programming Courses"
+        },
+        {
+            "id": 2,
+            "name": "Web Development"
+        },
+        {
+            "id": 3,
+            "name": "Cloud Courses"
+        },
+        {
+            "id": 4,
+            "name": "Data Courses"
+        },
+        {
+            "id": 5,
+            "name": "RPA Courses"
+        },
+        {
+            "id": 6,
+            "name": "Testing Courses"
+        },
+        {
+            "id": 7,
+            "name": "Other Courses"
+        },
+        {
+            "id": 8,
+            "name": "Master Courses"
+        },
+        {
+            "id": 9,
+            "name": "Default Category"
+        }
+    ]
+}

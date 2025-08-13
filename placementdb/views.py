@@ -48,11 +48,14 @@ def placement_list(request):
         if pg_passout:
             placements = placements.filter(student__pgpassout=pg_passout)
         if batch_id:
-            placements = placements.filter(student__batches__batch_id__icontains=batch_id)
+            placements = placements.filter(student__batches__batch_id__icontains=batch_id).distinct()
         if course_category:
-            placements = placements.filter(student__course__category=course_category)
+            # Get all course IDs for the selected category
+            course_ids = course_category.courses.values_list('id', flat=True)
+            # Filter students who are enrolled in any of these courses
+            placements = placements.filter(student__course_id__in=course_ids)
         if course:
-            placements = placements.filter(student__course=course)
+            placements = placements.filter(student__course_id=course.id)
         if course_status:
             placements = placements.filter(student__course_status=course_status)
         if location:
@@ -130,11 +133,14 @@ def pending_resumes_list(request):
         if pg_passout:
             placements = placements.filter(student__pgpassout=pg_passout)
         if batch_id:
-            placements = placements.filter(student__batches__batch_id__icontains=batch_id)
+            placements = placements.filter(student__batches__batch_id__icontains=batch_id).distinct()
         if course_category:
-            placements = placements.filter(student__course__category=course_category)
+            # Get all course IDs for the selected category
+            course_ids = course_category.courses.values_list('id', flat=True)
+            # Filter students who are enrolled in any of these courses
+            placements = placements.filter(student__course_id__in=course_ids)
         if course:
-            placements = placements.filter(student__course=course)
+            placements = placements.filter(student__course_id=course.id)
         if course_status:
             placements = placements.filter(student__course_status=course_status)
         if location:

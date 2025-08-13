@@ -71,7 +71,7 @@
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' or user.role == 'trainer' %}
         <li>
-            <a href="{% url 'batch_list' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_list' %}active{% endif %}">
+            <a href="{% url 'batchdb:batch_list' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_list' %}active{% endif %}">
                 <i class="fas fa-calendar-alt"></i><span>Batch</span>
             </a>
         </li>

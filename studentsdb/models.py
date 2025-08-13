@@ -3,20 +3,7 @@ from django.utils import timezone
 from consultantdb.models import Consultant
 from settingsdb.models import SourceOfJoining
 from .field_choices import DEGREE_CHOICES, BRANCH_CHOICES
-
-class CourseCategory(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-    def __str__(self):
-        return self.name
-
-class Course(models.Model):
-    code = models.CharField(max_length=10, unique=True)
-    name = models.CharField(max_length=100)
-    category = models.ForeignKey(CourseCategory, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.name
+ 
 class Student(models.Model):
     MODE_CHOICES = [
         ('ON', 'Online'),
@@ -66,7 +53,7 @@ class Student(models.Model):
         ('P', 'Placed')
     ]
     course_status = models.CharField(max_length=3, choices=COURSE_STATUS_CHOICES, default='YTS')
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True)
+    course_id = models.IntegerField(null=True, blank=True)
     trainer = models.ForeignKey('trainersdb.Trainer', on_delete=models.SET_NULL, null=True, blank=True)
     enrollment_date = models.DateField(default=timezone.now, editable=False)
     start_date = models.DateField(blank=True, null=True)
@@ -77,6 +64,16 @@ class Student(models.Model):
     mode_of_class = models.CharField(max_length=3, choices=MODE_CHOICES)
     week_type = models.CharField(max_length=2, choices=WEEK_TYPE)
     consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True)
+
+    @property
+    def course(self):
+        from coursedb.models import Course
+        if self.course_id:
+            try:
+                return Course.objects.get(id=self.course_id)
+            except Course.DoesNotExist:
+                return None
+        return None
 
     def __str__(self):
         return f"{self.student_id} - {self.first_name} {self.last_name}"
