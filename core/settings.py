@@ -129,14 +129,14 @@ LOGOUT_REDIRECT_URL = 'login'
 
 # local development settings
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-# ALLOWED_HOSTS = ['*']
+DEBUG = True
+ALLOWED_HOSTS = ['*']
 
 
-# # developement db
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+# developement db
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}

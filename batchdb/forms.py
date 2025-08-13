@@ -36,7 +36,9 @@ class BatchCreationForm(forms.ModelForm):
     class Meta:
         model = Batch
         fields = [
-            'course_category', 'course', 'trainer', 'students',
+            'course_category', 
+            'course',
+            'trainer', 'students',
             'start_date', 'end_date', 'batch_type', 'days',
             'time_slot', 'hours_per_day'
         ]
@@ -129,7 +131,8 @@ class BatchUpdateForm(forms.ModelForm):
     class Meta:
         model = Batch
         fields = [
-            'course', 'trainer', 'students', 'start_date', 'end_date',
+            'course',
+            'trainer', 'students', 'start_date', 'end_date',
             'batch_type', 'days', 'batch_status', 'hours_per_day'
         ]
         widgets = {
