@@ -6,7 +6,6 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('batchdb', '0006_alter_batch_time_slot'),
         ('trainersdb', '0009_remove_trainer_timing_slots_old'),
     ]
 
