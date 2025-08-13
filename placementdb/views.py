@@ -8,7 +8,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
 def placement_list(request):
-    placements = Placement.objects.select_related('student').all().order_by('-student__student_id')
+    placements = Placement.objects.select_related('student').prefetch_related('student__batches', 'student__batches__trainer').all().order_by('-student__student_id')
     form = PlacementFilterForm(request.GET)
 
     if form.is_valid():

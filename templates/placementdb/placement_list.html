@@ -125,7 +125,9 @@
                     </td>
                     <td>
                         {% for batch in placement.student.batches.all %}
-                            {{ batch.batch_id }}{% if not forloop.last %}, {% endif %}
+                            <span class="badge bg-info">{{ batch.batch_id }}</span>
+                        {% empty %}
+                            -
                         {% endfor %}
                     </td>
                     <td>{{ placement.student.course.course_name|default:"-" }}</td>
@@ -134,7 +136,11 @@
                     <td>{{ placement.student.email|default:"-" }}</td>
                     <td>
                         {% for batch in placement.student.batches.all %}
-                            {{ batch.trainer.name|default:"-" }}{% if not forloop.last %}, {% endif %}
+                            {% if batch.trainer %}
+                                <span class="badge bg-secondary">{{ batch.trainer.name }}</span>
+                            {% else %}
+                                -
+                            {% endif %}
                         {% endfor %}
                     </td>
                     <td>{{ placement.student.location|default:"-" }}</td>

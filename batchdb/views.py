@@ -82,7 +82,7 @@ def create_batch(request):
             batch.save()
             form.save_m2m()
             messages.success(request, "Batch created successfully.")
-            return redirect('batch_list')
+            return redirect('batchdb:batch_list')
     else:
         form = BatchCreationForm()
     return render(request, 'batchdb/create_batch.html', {'form': form})
@@ -114,7 +114,7 @@ def update_batch(request, pk):
             batch.save()
             form.save_m2m()
             messages.success(request, f"Batch {batch.batch_id} updated successfully.")
-            return redirect('batch_list')
+            return redirect('batchdb:batch_list')
     else:
         form = BatchUpdateForm(instance=batch, initial={'days': batch.days})
     context = {
@@ -129,7 +129,7 @@ def delete_batch(request, pk):
     if request.method == 'POST':
         batch.delete()
         messages.success(request, "Batch deleted successfully.")
-        return redirect('batch_list')
+        return redirect('batchdb:batch_list')
     return render(request, 'batchdb/delete_confirm.html', {'batch': batch})
 
 # AJAX Views
@@ -213,20 +213,20 @@ def import_batches(request):
         excel_file = request.FILES.get('excel_file')
         if not excel_file:
             messages.error(request, "No batch file was uploaded.")
-            return redirect('batch_list')
+            return redirect('batchdb:batch_list')
 
         try:
             df = pd.read_excel(excel_file)
         except Exception as e:
             messages.error(request, f"Error reading batch Excel file: {e}")
-            return redirect('batch_list')
+            return redirect('batchdb:batch_list')
 
         required_columns = [
             'module_name', 'batch_type', 'trainer', 'start_date', 'end_date', 'time_slot', 'students'
         ]
         if not all(col in df.columns for col in required_columns):
             messages.error(request, f"Batch Excel file must contain the following columns: {', '.join(required_columns)}")
-            return redirect('batch_list')
+            return redirect('batchdb:batch_list')
 
         error_rows = []
         success_count = 0
@@ -300,7 +300,7 @@ def import_batches(request):
             return redirect('download_error_report_batch')
         else:
             messages.success(request, f"Successfully created {success_count} batches.")
-            return redirect('batch_list')
+            return redirect('batchdb:batch_list')
 
     return render(request, 'batchdb/import_batches.html')
 
@@ -309,7 +309,7 @@ def download_error_report_batch(request):
     error_rows = request.session.get('error_rows_batch', [])
     if not error_rows:
         messages.error(request, "No error report to download.")
-        return redirect('batch_list')
+        return redirect('batchdb:batch_list')
 
     df = pd.DataFrame(error_rows)
     response = HttpResponse(content_type='text/csv')

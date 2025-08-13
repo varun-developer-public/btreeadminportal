@@ -91,6 +91,15 @@ def admin_dashboard(request):
 
     # Fetch upcoming payments
     pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__consultant')
+    
+    # Get all unique course IDs from the students in pending payments
+    student_course_ids = [p.student.course_id for p in pending_payments if p.student and p.student.course_id]
+    
+    # Fetch all relevant courses in a single query
+    from coursedb.models import Course
+    courses = Course.objects.filter(id__in=student_course_ids)
+    course_map = {course.id: course.course_name for course in courses}
+
     upcoming_payments_list = []
     today = timezone.now().date()
 
@@ -104,12 +113,14 @@ def admin_dashboard(request):
                 total_paid_by_student = payment.amount_paid or 0
                 for j in range(1, 5):
                     total_paid_by_student += getattr(payment, f'emi_{j}_paid_amount') or 0
+                
+                course_name = course_map.get(payment.student.course_id, 'N/A') if payment.student else 'N/A'
 
                 upcoming_payments_list.append({
                     'student_id': payment.student.student_id,
                     'student_name': f"{payment.student.first_name} {payment.student.last_name or ''}",
                     'mobile': payment.student.phone,
-                    'course': 'N/A', # Course information is no longer directly accessible
+                    'course': course_name,
                     'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
                     'emi_number': i,
                     'course_fee': payment.total_fees or 0,
@@ -197,8 +208,17 @@ def staff_dashboard(request):
     recent_activities = TransactionLog.objects.order_by('-timestamp')[:10]
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
     
-     # Fetch upcoming payments
+    # Fetch upcoming payments
     pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__consultant')
+
+    # Get all unique course IDs from the students in pending payments
+    student_course_ids = [p.student.course_id for p in pending_payments if p.student and p.student.course_id]
+    
+    # Fetch all relevant courses in a single query
+    from coursedb.models import Course
+    courses = Course.objects.filter(id__in=student_course_ids)
+    course_map = {course.id: course.course_name for course in courses}
+
     upcoming_payments_list = []
     today = timezone.now().date()
 
@@ -213,11 +233,13 @@ def staff_dashboard(request):
                 for j in range(1, 5):
                     total_paid_by_student += getattr(payment, f'emi_{j}_paid_amount') or 0
 
+                course_name = course_map.get(payment.student.course_id, 'N/A') if payment.student else 'N/A'
+
                 upcoming_payments_list.append({
                     'student_id': payment.student.student_id,
                     'student_name': f"{payment.student.first_name} {payment.student.last_name or ''}",
                     'mobile': payment.student.phone,
-                    'course': 'N/A', # Course information is no longer directly accessible
+                    'course': course_name,
                     'consultant': payment.student.consultant.name if payment.student.consultant else 'N/A',
                     'emi_number': i,
                     'course_fee': payment.total_fees or 0,

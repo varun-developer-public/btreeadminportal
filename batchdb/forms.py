@@ -198,6 +198,8 @@ class BatchUpdateForm(forms.ModelForm):
                 raise forms.ValidationError("Invalid time slot format.")
         return None
 
+from django_select2.forms import Select2MultipleWidget
+
 class BatchFilterForm(forms.Form):
     q = forms.CharField(
         required=False,
@@ -208,20 +210,20 @@ class BatchFilterForm(forms.Form):
     course = forms.ModelMultipleChoiceField(
         queryset=Course.objects.all(),
         required=False,
-        widget=forms.SelectMultiple(attrs={'class': 'form-control', 'size': '5'}),
+        widget=Select2MultipleWidget(attrs={'class': 'form-control', 'data-placeholder': 'Select Courses'}),
         label="Course"
     )
 
     trainer = forms.ModelMultipleChoiceField(
         queryset=Trainer.objects.all(),
         required=False,
-        widget=forms.SelectMultiple(attrs={'class': 'form-control', 'size': '5'}),
+        widget=Select2MultipleWidget(attrs={'class': 'form-control', 'data-placeholder': 'Select Trainers'}),
         label="Trainer"
     )
 
     batch_status = forms.MultipleChoiceField(
         choices=Batch.STATUS_CHOICES,
         required=False,
-        widget=forms.CheckboxSelectMultiple,
+        widget=forms.Select(attrs={'class': 'form-control'}),
         label="Batch Status"
     )

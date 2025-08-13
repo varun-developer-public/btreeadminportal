@@ -56,9 +56,7 @@
             </div>
             <div class="filter-group">
                 {{ form.batch_status.label_tag }}
-                <div class="checkbox-group">
-                    {{ form.batch_status }}
-                </div>
+                {{ form.batch_status }}
             </div>
         </div>
         <div class="filter-actions">
@@ -145,4 +143,17 @@
         </span>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('.django-select2').select2();
+    });
+</script>
+{{ form.media.js }}
+{% endblock %}
+
+{% block extra_css %}
+{{ form.media.css }}
 {% endblock %}
