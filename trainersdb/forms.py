@@ -5,16 +5,21 @@ from django_select2.forms import Select2Widget
 from core.utils import get_country_code_choices
 
 class TrainerForm(forms.ModelForm):
-    country_code = forms.CharField(widget=forms.HiddenInput())
+    country_code = forms.CharField(widget=forms.HiddenInput(), required=False)
     timing_slots = forms.CharField(widget=forms.HiddenInput(), required=False)
     commercials = forms.CharField(widget=forms.HiddenInput(), required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.initial['timing_slots'] = json.dumps(self.instance.timing_slots)
+            self.initial['commercials'] = json.dumps(self.instance.commercials)
 
     class Meta:
         model = Trainer
         fields = [
             'name', 'country_code', 'phone_number', 'email', 'location',
-            'other_location', 'years_of_experience', 'stack', 'mode',
-            'availability', 'employment_type', 'timing_slots', 'profile',
+            'other_location', 'years_of_experience', 'stack', 'employment_type', 'timing_slots', 'profile',
             'demo_link', 'commercials'
         ]
         widgets = {
@@ -35,8 +40,8 @@ class TrainerForm(forms.ModelForm):
                 raise forms.ValidationError("Invalid format for timing slots.")
 
             for slot in timing_slots:
-                if not isinstance(slot, dict) or 'start_time' not in slot or 'end_time' not in slot:
-                    raise forms.ValidationError("Each slot must have a start and end time.")
+                if not isinstance(slot, dict) or 'start_time' not in slot or 'end_time' not in slot or 'mode' not in slot or 'availability' not in slot:
+                    raise forms.ValidationError("Each slot must have a start time, end time, mode, and availability.")
                 if slot['start_time'] >= slot['end_time']:
                     raise forms.ValidationError("End time must be after start time.")
             
@@ -63,9 +68,9 @@ class TrainerForm(forms.ModelForm):
             raise forms.ValidationError("Invalid JSON in commercials.")
 
     def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.timing_slots = self.cleaned_data.get('timing_slots', [])
-        instance.commercials = self.cleaned_data.get('commercials', [])
+        instance = super(TrainerForm, self).save(commit=False)
+        instance.timing_slots = self.cleaned_data.get('timing_slots')
+        instance.commercials = self.cleaned_data.get('commercials')
         if commit:
             instance.save()
             self.save_m2m()

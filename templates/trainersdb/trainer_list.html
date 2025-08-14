@@ -143,8 +143,8 @@
                                 -
                             {% endfor %}
                         </td>
-                        <td>{{ trainer.get_mode_display|default:"-" }}</td>
-                        <td>{{ trainer.get_availability_display|default:"-" }}</td>
+                        <td>{{ trainer.mode_of_delivery|default:"-" }}</td>
+                        <td>{{ trainer.availability|default:"-" }}</td>
                         <td>{{ trainer.get_employment_type_display|default:"-" }}</td>
                         <td>
                             <div class="d-flex gap-1">
@@ -177,10 +177,19 @@
                                     </div>
                                 </div>
                                 <hr>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Mode:</strong> {{ trainer.mode_of_delivery|default:"-" }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Availability:</strong> {{ trainer.availability|default:"-" }}
+                                    </div>
+                                </div>
+                                <hr>
                                 <strong>Timing Slots:</strong>
                                 <ul>
                                     {% for slot in trainer.timing_slots %}
-                                        <li>{{ slot.start_time|format_time }} - {{ slot.end_time|format_time }}</li>
+                                        <li>{{ slot.start_time|format_time }} - {{ slot.end_time|format_time }} ({{ slot.availability }}) - {{ slot.mode }}</li>
                                     {% empty %}
                                         <li>-</li>
                                     {% endfor %}

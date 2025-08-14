@@ -63,11 +63,11 @@ class Trainer(models.Model):
     other_location = models.CharField(max_length=100, blank=True, null=True)
     years_of_experience = models.PositiveIntegerField(default=0)
     stack = models.ManyToManyField(Course, blank=True)
-    mode = models.CharField(max_length=10, choices=MODE_CHOICES, blank=True, null=True)
-    availability = models.CharField(max_length=10, choices=AVAILABILITY_CHOICES, blank=True, null=True)
     employment_type = models.CharField(max_length=2, choices=EMPLOYMENT_TYPE_CHOICES)
     date_of_joining = models.DateField(auto_now_add=True, null=True)
     timing_slots = models.JSONField(default=list, blank=True, null=True)
+    mode_of_delivery = models.CharField(max_length=100, blank=True, null=True)
+    availability = models.CharField(max_length=100, blank=True, null=True)
     profile = models.FileField(upload_to='trainer_profiles/', blank=True, null=True)
     demo_link = models.URLField(blank=True, null=True)
     commercials = models.JSONField(default=list, blank=True, null=True)
@@ -81,6 +81,29 @@ class Trainer(models.Model):
                 self.trainer_id = f'TRN{last_id + 1:04d}'
             else:
                 self.trainer_id = 'TRN0001'
+
+        # Auto-populate mode_of_delivery and availability
+        if self.timing_slots:
+            modes = set(slot.get('mode') for slot in self.timing_slots)
+            availabilities = set(slot.get('availability') for slot in self.timing_slots)
+
+            mode_parts = []
+            if 'Online' in modes:
+                mode_parts.append('Online')
+            if 'Offline' in modes:
+                mode_parts.append('Offline')
+            self.mode_of_delivery = '/'.join(sorted(mode_parts))
+
+            availability_parts = []
+            if 'WD' in availabilities:
+                availability_parts.append('WD')
+            if 'WE' in availabilities:
+                availability_parts.append('WE')
+            self.availability = '/'.join(sorted(availability_parts))
+        else:
+            self.mode_of_delivery = None
+            self.availability = None
+
         super().save(*args, **kwargs)
 
     def __str__(self):

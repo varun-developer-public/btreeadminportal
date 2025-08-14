@@ -12,9 +12,9 @@ def trainer_list(request):
     stack_query = request.GET.get('stack')
     location_query = request.GET.get('location')
     experience_query = request.GET.get('experience')
-    availability_query = request.GET.get('availability')
-    mode_query = request.GET.get('mode')
     employment_query = request.GET.get('employment')
+    mode_query = request.GET.get('mode')
+    availability_query = request.GET.get('availability')
 
     trainer_list = Trainer.objects.all().order_by('-id')
 
@@ -34,14 +34,15 @@ def trainer_list(request):
     if experience_query:
         trainer_list = trainer_list.filter(years_of_experience__gte=experience_query)
 
-    if availability_query:
-        trainer_list = trainer_list.filter(availability=availability_query)
-
-    if mode_query:
-        trainer_list = trainer_list.filter(mode=mode_query)
 
     if employment_query:
         trainer_list = trainer_list.filter(employment_type=employment_query)
+
+    if mode_query:
+        trainer_list = trainer_list.filter(mode_of_delivery__icontains=mode_query)
+
+    if availability_query:
+        trainer_list = trainer_list.filter(availability__icontains=availability_query)
 
     paginator = Paginator(trainer_list, 10)
     page = request.GET.get('page')
@@ -59,9 +60,17 @@ def trainer_list(request):
 
     all_courses = Course.objects.all()
     location_choices = Trainer.TAMIL_NADU_LOCATIONS
-    availability_choices = Trainer.AVAILABILITY_CHOICES
-    mode_choices = Trainer.MODE_CHOICES
     employment_choices = Trainer.EMPLOYMENT_TYPE_CHOICES
+    mode_choices = [
+        ('Online', 'Online'),
+        ('Offline', 'Offline'),
+        ('Online/Offline', 'Online/Offline')
+    ]
+    availability_choices = [
+        ('WD', 'WD'),
+        ('WE', 'WE'),
+        ('WD/WE', 'WD/WE')
+    ]
 
     context = {
         'trainers': trainers,
@@ -69,14 +78,14 @@ def trainer_list(request):
         'stack_query': stack_query,
         'location_query': location_query,
         'experience_query': experience_query,
-        'availability_query': availability_query,
-        'mode_query': mode_query,
         'employment_query': employment_query,
+        'mode_query': mode_query,
+        'availability_query': availability_query,
         'all_courses': all_courses,
         'location_choices': location_choices,
-        'availability_choices': availability_choices,
-        'mode_choices': mode_choices,
         'employment_choices': employment_choices,
+        'mode_choices': mode_choices,
+        'availability_choices': availability_choices,
         'query_params': query_params.urlencode(),
     }
     return render(request, 'trainersdb/trainer_list.html', context)
@@ -104,10 +113,7 @@ def update_trainer(request, pk):
             messages.success(request, "Trainer updated successfully!")
             return redirect('trainer_list')
     else:
-        form = TrainerForm(instance=trainer, initial={
-            'timing_slots': json.dumps(trainer.timing_slots or []),
-            'commercials': json.dumps(trainer.commercials or [])
-        })
+        form = TrainerForm(instance=trainer)
     return render(request, 'trainersdb/update_trainer.html', {'form': form, 'title': 'Update Trainer'})
 
 def delete_trainer(request, pk):

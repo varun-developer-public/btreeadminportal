@@ -148,20 +148,6 @@
                 <h5 style="color: white;"><i class="fas fa-clock me-2" style="color: white;"></i>Available Slots</h5>
             </div>
             <div class="form-section-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            {{ form.mode.label_tag }}
-                            {{ form.mode }}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            {{ form.availability.label_tag }}
-                            {{ form.availability }}
-                        </div>
-                    </div>
-                </div>
                 {{ form.timing_slots }}
                 <div id="timing-slots-container">
                     <!-- Timing slots will be added here dynamically -->
@@ -227,13 +213,27 @@ $(document).ready(function() {
         slots.forEach((slot, index) => {
             const slotHtml = `
                 <div class="row mb-2" data-index="${index}">
-                    <div class="col-md-5">
+                    <div class="col-md-3">
                         <label>Start Time</label>
                         <input type="time" class="form-control start-time" value="${slot.start_time}">
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-3">
                         <label>End Time</label>
                         <input type="time" class="form-control end-time" value="${slot.end_time}">
+                    </div>
+                    <div class="col-md-2">
+                        <label>Availability</label>
+                        <select class="form-control availability">
+                            <option value="WE" ${slot.availability === 'WE' ? 'selected' : ''}>Weekend</option>
+                            <option value="WD" ${slot.availability === 'WD' ? 'selected' : ''}>Weekday</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label>Mode</label>
+                        <select class="form-control mode">
+                            <option value="Online" ${slot.mode === 'Online' ? 'selected' : ''}>Online</option>
+                            <option value="Offline" ${slot.mode === 'Offline' ? 'selected' : ''}>Offline</option>
+                        </select>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button type="button" class="btn btn-danger remove-slot-btn">Remove</button>
@@ -246,7 +246,7 @@ $(document).ready(function() {
     }
 
     $('#add-slot-btn').click(function() {
-        slots.push({ start_time: '', end_time: '' });
+        slots.push({ start_time: '', end_time: '', availability: 'WE', mode: 'Online' });
         renderSlots();
     });
 
@@ -256,11 +256,13 @@ $(document).ready(function() {
         renderSlots();
     });
 
-    slotsContainer.on('change', '.start-time, .end-time', function() {
+    slotsContainer.on('change', '.start-time, .end-time, .mode, .availability', function() {
         const index = $(this).closest('.row').data('index');
         const startTime = $(this).closest('.row').find('.start-time').val();
         const endTime = $(this).closest('.row').find('.end-time').val();
-        slots[index] = { start_time: startTime, end_time: endTime };
+        const availability = $(this).closest('.row').find('.availability').val();
+        const mode = $(this).closest('.row').find('.mode').val();
+        slots[index] = { start_time: startTime, end_time: endTime, availability: availability, mode: mode };
         hiddenInput.val(JSON.stringify(slots));
     });
 
@@ -290,7 +292,7 @@ $(document).ready(function() {
                         <input type="number" class="form-control first-student-payment" value="${commercial.first_student_payment || ''}">
                     </div>
                     <div class="col-md-4">
-                        <label>2nd Student Payment</label>
+                        <label>Other Students Payment</label>
                         <input type="number" class="form-control second-student-payment" value="${commercial.second_student_payment || ''}">
                     </div>
                 `;
