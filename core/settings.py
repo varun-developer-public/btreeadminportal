@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
     'accounts',
     'studentsdb',
+    'placementdrive',
     'placementdb',
     'batchdb',
     'trainersdb',
@@ -37,7 +38,6 @@ INSTALLED_APPS = [
     'settingsdb',
     'paymentdb',
     'coursedb',
-    'placementdrive',
     'django_select2',
     'core',
 ]
