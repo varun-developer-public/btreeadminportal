@@ -361,10 +361,26 @@ def placement_dashboard(request):
     # Table Data
     recently_placed_students = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
     
-    # Manually fetch courses for recently placed students
+    # Manually fetch courses for all student lists
     from coursedb.models import Course
-    course_ids = [student.course_id for student in recently_placed_students if student.course_id]
-    courses_dict = {c.id: c.course_name for c in Course.objects.filter(id__in=course_ids)}
+    
+    # Collect all course_ids from all relevant student querysets
+    all_student_lists = [
+        recently_placed_students,
+        completed_but_no_resume_list,
+        in_progress_80_99_no_resume_list,
+        in_progress_50_80_no_resume_list,
+        in_progress_below_50_no_resume_list,
+        yts_no_resume_list
+    ]
+    
+    all_course_ids = set()
+    for student_list in all_student_lists:
+        for student in student_list:
+            if student.course_id:
+                all_course_ids.add(student.course_id)
+    
+    courses_dict = {c.id: c.course_name for c in Course.objects.filter(id__in=list(all_course_ids))}
     upcoming_interviews = CompanyInterview.objects.filter(interview_date__gte=timezone.now().date()).select_related('placement__student', 'company').order_by('interview_date')[:5]
     students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student')[:10]
 
