@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('placementdrive', '0005_alter_placementdrive_stack'),
         ('studentsdb', '0023_remove_student_course_student_course_id'),
     ]
 

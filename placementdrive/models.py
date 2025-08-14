@@ -1,14 +1,13 @@
 from django.db import models
 from django.utils import timezone
 from accounts.models import CustomUser
-from coursedb.models import CourseCategory
+from coursedb.models import Course
 
-class PlacementDrive(models.Model):
+class Company(models.Model):
     company_code = models.CharField(max_length=20, unique=True, editable=False)
     date = models.DateField(default=timezone.now)
     portal = models.CharField(max_length=100)
     company_name = models.CharField(max_length=255)
-    stack = models.ForeignKey(CourseCategory, on_delete=models.SET_NULL, null=True, blank=True)
     spoc = models.CharField(max_length=255)
     mobile = models.CharField(max_length=15)
     email = models.EmailField()
@@ -21,7 +20,7 @@ class PlacementDrive(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.company_code:
-            last_company = PlacementDrive.objects.all().order_by('id').last()
+            last_company = Company.objects.all().order_by('id').last()
             if not last_company:
                 self.company_code = 'COMP0001'
             else:
@@ -30,3 +29,14 @@ class PlacementDrive(models.Model):
                 new_number = last_number + 1
                 self.company_code = f'COMP{new_number:04d}'
         super().save(*args, **kwargs)
+
+class ApplyingRole(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='roles')
+    role_name = models.CharField(max_length=255)
+    courses = models.ManyToManyField(Course)
+    salary = models.CharField(max_length=255, blank=True)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
+
+    def __str__(self):
+        course_names = ", ".join([course.course_name for course in self.courses.all()])
+        return f"{self.role_name} ({course_names}) at {self.company.company_name}"

@@ -4,8 +4,8 @@ from . import views
 app_name = 'placementdrive'
 
 urlpatterns = [
-    path('', views.placement_drive_list, name='drive_list'),
-    path('add/', views.placement_drive_create, name='drive_add'),
-    path('<int:pk>/edit/', views.placement_drive_update, name='drive_edit'),
-    path('<int:pk>/delete/', views.placement_drive_delete, name='drive_delete'),
+    path('', views.company_list, name='company_list'),
+    path('add/', views.company_create, name='company_add'),
+    path('<int:pk>/edit/', views.company_update, name='company_edit'),
+    path('<int:pk>/delete/', views.company_delete, name='company_delete'),
 ]

@@ -25,6 +25,7 @@ DEGREE_CHOICES = [
     ('B.Des', 'B.Des (Bachelor of Design)'),
     ('BMM', 'BMM (Media and Mass Communication)'),
     ('BJMC', 'BJMC (Journalism and Mass Comm)'),
+    ('B.Arch', 'B.Arch (Bachelor of Architecture)'),
 
     # PG Courses
     ('M.Tech / M.E.', 'M.Tech / M.E.'),
@@ -46,6 +47,7 @@ DEGREE_CHOICES = [
     ('LLM', 'LLM (Master of Law)'),
     ('M.Des', 'M.Des (Master of Design)'),
     ('MJMC', 'MJMC (Master in Journalism and Mass Communication)'),
+    ('M.Arch', 'M.Arch (Master of Architecture)'),
 ]
 
 BRANCH_CHOICES = [

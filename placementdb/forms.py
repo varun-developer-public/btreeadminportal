@@ -2,6 +2,7 @@ from django import forms
 from studentsdb.models import Student
 from coursedb.models import Course, CourseCategory
 from .models import Placement, CompanyInterview
+from placementdrive.models import Company, ApplyingRole
 
 class PlacementUpdateForm(forms.ModelForm):
     class Meta:
@@ -17,15 +18,31 @@ class PlacementUpdateForm(forms.ModelForm):
 class CompanyInterviewForm(forms.ModelForm):
     class Meta:
         model = CompanyInterview
-        fields = ['company', 'applying_for', 'interview_date', 'interview_time', 'attended']
-        
+        fields = ['company', 'applying_for', 'location', 'other_location', 'interview_date', 'interview_time', 'attended', 'feedback']
+        widgets = {
+            'company': forms.Select(attrs={'class': 'form-control'}),
+            'applying_for': forms.Select(attrs={'class': 'form-control'}),
+            'location': forms.Select(attrs={'class': 'form-control'}),
+            'other_location': forms.TextInput(attrs={'class': 'form-control'}),
+            'interview_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'interview_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
+            'attended': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'feedback': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['company'].required = False
-        widgets = {
-            'interview_date': forms.DateInput(attrs={'type': 'date'}),
-            'interview_time': forms.TimeInput(attrs={'type': 'time'}),
-        }
+        self.fields['company'].queryset = Company.objects.all()
+        self.fields['applying_for'].queryset = ApplyingRole.objects.none()
+
+        if 'company' in self.data:
+            try:
+                company_id = int(self.data.get('company'))
+                self.fields['applying_for'].queryset = ApplyingRole.objects.filter(company_id=company_id).order_by('role_name')
+            except (ValueError, TypeError):
+                pass
+        elif self.instance.pk and self.instance.company:
+            self.fields['applying_for'].queryset = self.instance.company.roles.order_by('role_name')
 
 class PlacementFilterForm(forms.Form):
     q = forms.CharField(
@@ -87,4 +104,4 @@ class PlacementFilterForm(forms.Form):
                 category_id = int(self.data.get('course_category'))
                 self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('course_name')
             except (ValueError, TypeError):
-                pass  # invalid input from the client; ignore and fallback to empty queryset
+                pass

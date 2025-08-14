@@ -57,14 +57,14 @@
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'placement' %}
         <li>
-            <a href="{% url 'placement_list' %}" class="nav-link {% if request.resolver_match.url_name == 'placement_list' %}active{% endif %}">
+            <a href="{% url 'placementdb:placement_list' %}" class="nav-link {% if request.resolver_match.url_name == 'placement_list' %}active{% endif %}">
                 <i class="fas fa-clipboard-list"></i><span>Placement DB</span>
             </a>
         </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'placement' %}
         <li>
-            <a href="{% url 'placementdrive:drive_list' %}" class="nav-link {% if request.resolver_match.app_name == 'placementdrive' %}active{% endif %}">
+            <a href="{% url 'placementdrive:company_list' %}" class="nav-link {% if request.resolver_match.app_name == 'placementdrive' %}active{% endif %}">
                 <i class="fas fa-bullhorn"></i><span>Placement Resources</span>
             </a>
         </li>

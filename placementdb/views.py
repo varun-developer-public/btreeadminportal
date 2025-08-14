@@ -1,10 +1,14 @@
-from .models import Placement
+from .models import Placement, CompanyInterview
+# from .models import Company
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import PlacementUpdateForm, PlacementFilterForm
+from .forms import PlacementUpdateForm, PlacementFilterForm, CompanyInterviewForm
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from placementdrive.models import Company, ApplyingRole
+import json
+from django.http import JsonResponse
 
 @login_required
 def placement_list(request):
@@ -50,9 +54,7 @@ def placement_list(request):
         if batch_id:
             placements = placements.filter(student__batches__batch_id__icontains=batch_id).distinct()
         if course_category:
-            # Get all course IDs for the selected category
             course_ids = course_category.courses.values_list('id', flat=True)
-            # Filter students who are enrolled in any of these courses
             placements = placements.filter(student__course_id__in=course_ids)
         if course:
             placements = placements.filter(student__course_id=course.id)
@@ -73,7 +75,7 @@ def placement_list(request):
             elif is_active == 'no':
                 placements = placements.filter(is_active=False)
 
-    paginator = Paginator(placements, 10)  # Show 10 placements per page
+    paginator = Paginator(placements, 10)
     page = request.GET.get('page')
 
     try:
@@ -92,6 +94,7 @@ def placement_list(request):
         'form': form,
         'query_params': query_params.urlencode(),
     })
+
 @login_required
 def pending_resumes_list(request):
     placements = Placement.objects.select_related('student').filter(Q(resume_link__isnull=True) | Q(resume_link='')).order_by('-student__student_id')
@@ -135,9 +138,7 @@ def pending_resumes_list(request):
         if batch_id:
             placements = placements.filter(student__batches__batch_id__icontains=batch_id).distinct()
         if course_category:
-            # Get all course IDs for the selected category
             course_ids = course_category.courses.values_list('id', flat=True)
-            # Filter students who are enrolled in any of these courses
             placements = placements.filter(student__course_id__in=course_ids)
         if course:
             placements = placements.filter(student__course_id=course.id)
@@ -153,7 +154,7 @@ def pending_resumes_list(request):
             elif is_active == 'no':
                 placements = placements.filter(is_active=False)
 
-    paginator = Paginator(placements, 10)  # Show 10 placements per page
+    paginator = Paginator(placements, 10)
     page = request.GET.get('page')
 
     try:
@@ -174,10 +175,6 @@ def pending_resumes_list(request):
         'list_title': 'Students with Pending Resumes'
     })
 
-from .forms import PlacementUpdateForm, CompanyInterviewForm
-from placementdrive.models import PlacementDrive
-import json
-
 @login_required
 def update_placement(request, pk):
     placement = get_object_or_404(Placement, pk=pk)
@@ -189,7 +186,7 @@ def update_placement(request, pk):
             if form.is_valid():
                 form.save()
                 messages.success(request, "Placement updated successfully.")
-                return redirect('placement_list')
+                return redirect('placementdb:placement_list')
         elif 'add_interview' in request.POST:
             interview_form = CompanyInterviewForm(request.POST)
             if interview_form.is_valid():
@@ -197,16 +194,17 @@ def update_placement(request, pk):
                 interview.placement = placement
                 interview.save()
                 messages.success(request, "Interview added successfully.")
-                return redirect('update_placement', pk=pk)
+                return redirect('placementdb:update_placement', pk=pk)
 
     form = PlacementUpdateForm(instance=placement)
     interviews = placement.interviews.all()
     
-    companies = PlacementDrive.objects.all()
+    companies = Company.objects.all()
     company_details = {
         c.id: {
             'name': c.company_name,
             'location': c.location,
+            'roles': list(c.roles.values('id', 'role_name'))
         } for c in companies
     }
 
@@ -217,3 +215,22 @@ def update_placement(request, pk):
         'interviews': interviews,
         'company_details_json': json.dumps(company_details)
     })
+
+@login_required
+def get_roles_for_company(request):
+    company_id = request.GET.get('company_id')
+    roles = ApplyingRole.objects.filter(company_id=company_id).values('id', 'role_name')
+    return JsonResponse(list(roles), safe=False)
+
+@login_required
+def update_interview(request, pk):
+    interview = get_object_or_404(CompanyInterview, pk=pk)
+    if request.method == 'POST':
+        form = CompanyInterviewForm(request.POST, instance=interview)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Interview updated successfully.")
+            return redirect('placementdb:update_placement', pk=interview.placement.pk)
+    else:
+        form = CompanyInterviewForm(instance=interview)
+    return render(request, 'placementdb/update_interview.html', {'form': form})

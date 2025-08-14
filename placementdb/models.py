@@ -1,6 +1,6 @@
 from django.db import models
 from studentsdb.models import Student
-from placementdrive.models import PlacementDrive
+from placementdrive.models import Company, ApplyingRole
 
 class Placement(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='placement')
@@ -9,7 +9,7 @@ class Placement(models.Model):
 
     def __str__(self):
         return f"{self.student.student_id} - Placement"
-
+    
     def save(self, *args, **kwargs):
         if self.pk:
             try:
@@ -21,12 +21,22 @@ class Placement(models.Model):
         super().save(*args, **kwargs)
 
 class CompanyInterview(models.Model):
+    LOCATION_CHOICES = [
+        ('chennai', 'Chennai'),
+        ('bangalore', 'Bangalore'),
+        ('hyderabad', 'Hyderabad'),
+        ('others', 'Others'),
+    ]
+
     placement = models.ForeignKey(Placement, on_delete=models.CASCADE, related_name='interviews')
-    company = models.ForeignKey(PlacementDrive, on_delete=models.CASCADE, related_name='interviews',null=True)
-    applying_for = models.CharField(max_length=255,null=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='interviews',null=True)
+    applying_for = models.ForeignKey(ApplyingRole, on_delete=models.CASCADE, null=True)
+    location = models.CharField(max_length=255, choices=LOCATION_CHOICES, null=True)
+    other_location = models.CharField(max_length=255, blank=True, null=True)
     interview_date = models.DateField()
     interview_time = models.TimeField()
     attended = models.BooleanField(default=False)
+    feedback = models.TextField(blank=True, null=True)
 
     def __str__(self):
         company_name = self.company.company_name if self.company else "N/A"

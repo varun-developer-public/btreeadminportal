@@ -1,173 +1,174 @@
 {% extends "base.html" %}
 {% block title %}Update Placement{% endblock %}
-{% load custom_filter %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<style>
+    .select2-container {
+        width: 100% !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="update-placement-container">
-    <div class="student-profile">
-        <div class="profile-header">
-            <img src="{{ placement.student.profile_picture.url|default:'/static/images/logo.png' }}" alt="Profile Picture" class="profile-pic">
-            <div class="profile-info">
-                <h2>{{ placement.student.first_name }} {{ placement.student.last_name|format_name }}</h2>
-                <p>{{ placement.student.student_id }}</p>
-            </div>
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Update Placement for {{ placement.student.first_name }} {{ placement.student.last_name }}</h1>
+    </div>
+
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-id-card me-2" style="color: white;"></i>Placement Details</h5>
         </div>
-        <div class="profile-details">
-            <p><strong>Email:</strong> {{ placement.student.email|default:'-' }}</p>
-            <p><strong>Phone:</strong> {{ placement.student.phone|default:'-' }}</p>
-            <p><strong>Course:</strong> {{ placement.student.course.name|default:'-' }}</p>
-            <p><strong>Course Status:</strong> {{ placement.student.get_course_status_display|default:'-' }}</p>
+        <div class="form-section-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" name="update_placement" class="btn btn-primary">Update Placement</button>
+            </form>
         </div>
     </div>
 
-    <div class="placement-details">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="hidden" name="update_placement" value="1">
-            {{ form.as_p }}
-            <button type="submit" class="btn">Save Changes</button>
-        </form>
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-plus me-2" style="color: white;"></i>Add Interview</h5>
+        </div>
+        <div class="form-section-body">
+            <form method="post" id="add-interview-form">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ interview_form.company.label_tag }}
+                        {{ interview_form.company }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ interview_form.applying_for.label_tag }}
+                        {{ interview_form.applying_for }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ interview_form.location.label_tag }}
+                        {{ interview_form.location }}
+                    </div>
+                    <div class="col-md-6 mb-3" id="other_location_group" style="display: none;">
+                        {{ interview_form.other_location.label_tag }}
+                        {{ interview_form.other_location }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ interview_form.interview_date.label_tag }}
+                        {{ interview_form.interview_date }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        {{ interview_form.interview_time.label_tag }}
+                        {{ interview_form.interview_time }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            {{ interview_form.attended }}
+                            <label class="form-check-label" for="{{ interview_form.attended.id_for_label }}">
+                                {{ interview_form.attended.label }}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        {{ interview_form.feedback.label_tag }}
+                        {{ interview_form.feedback }}
+                    </div>
+                </div>
+                <button type="submit" name="add_interview" class="btn btn-success">Add Interview</button>
+            </form>
+        </div>
     </div>
 
-    <div class="interview-section">
-        <h3>Company Interviews</h3>
-        <button id="add-interview-btn" class="btn">Add Interview</button>
-        <table class="interview-table">
-            <thead>
-                <tr>
-                    <th>Company Code</th>
-                    <th>Company Name</th>
-                    <th>Applying For</th>
-                    <th>Location</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Attended</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for interview in interviews %}
-                <tr>
-                    <td>{{ interview.company.company_code|default:"N/A" }}</td>
-                    <td>{{ interview.company.company_name|default:"N/A" }}</td>
-                    <td>{{ interview.applying_for }}</td>
-                    <td>{{ interview.company.location|default:"N/A" }}</td>
-                    <td>{{ interview.interview_date|date:"d-m-Y" }}</td>
-                    <td>{{ interview.interview_time|time:"H:i" }}</td>
-                    <td>{{ interview.attended|yesno:"Yes,No" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7">No interviews scheduled.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-list me-2" style="color: white;"></i>Scheduled Interviews</h5>
+        </div>
+        <div class="form-section-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Company</th>
+                        <th>Role</th>
+                        <th>Location</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Attended</th>
+                        <th>Feedback</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for interview in interviews %}
+                    <tr>
+                        <td>{{ interview.company.company_name }}</td>
+                        <td>{{ interview.applying_for.role_name }}</td>
+                        <td>{% if interview.location == 'others' %}{{ interview.other_location }}{% else %}{{ interview.get_location_display }}{% endif %}</td>
+                        <td>{{ interview.interview_date }}</td>
+                        <td>{{ interview.interview_time }}</td>
+                        <td>{{ interview.attended|yesno:"Yes,No" }}</td>
+                        <td>{{ interview.feedback|default_if_none:"" }}</td>
+                        <td>
+                            <a href="{% url 'placementdb:update_interview' interview.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
+{% endblock %}
 
-<div id="interview-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-btn">&times;</span>
-        <h3>Add Interview</h3>
-        <form method="post" id="interview-form">
-            {% csrf_token %}
-            <input type="hidden" name="add_interview" value="1">
-            {{ interview_form.as_p }}
-            <button type="submit" class="btn">Add</button>
-        </form>
-    </div>
-</div>
-
-<style>
-.update-placement-container {
-    display: grid;
-    grid-template-columns: 1fr 2fr;
-    gap: 20px;
-    padding: 20px;
-}
-.student-profile, .placement-details, .interview-section {
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-}
-.profile-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-}
-.profile-pic {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-right: 20px;
-}
-.profile-info h2 {
-    margin: 0;
-}
-.interview-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-}
-.interview-table th, .interview-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: left;
-}
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-}
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 500px;
-    border-radius: 8px;
-}
-.close-btn {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-.close-btn:hover, .close-btn:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
-</style>
-
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    var modal = document.getElementById('interview-modal');
-    var btn = document.getElementById('add-interview-btn');
-    var span = document.getElementsByClassName('close-btn')[0];
-    const companySelect = document.getElementById('id_company');
-    const companyDetails = JSON.parse('{{ company_details_json|safe }}');
+$(document).ready(function() {
+    $('#id_company').select2();
 
-    btn.onclick = function() {
-        modal.style.display = 'block';
-    }
-
-    span.onclick = function() {
-        modal.style.display = 'none';
-    }
-
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = 'none';
+    $('#id_company').on('change', function() {
+        const companyId = $(this).val();
+        const roleSelect = $('#id_applying_for');
+        
+        if (companyId) {
+            $.ajax({
+                url: "{% url 'placementdb:get_roles_for_company' %}",
+                data: {
+                    'company_id': companyId
+                },
+                success: function(data) {
+                    roleSelect.empty().append('<option value="">---------</option>');
+                    $.each(data, function(key, value) {
+                        roleSelect.append($('<option>', {
+                            value: value.id,
+                            text: value.role_name
+                        }));
+                    });
+                    roleSelect.prop('disabled', false);
+                }
+            });
+        } else {
+            roleSelect.empty().append('<option value="">---------</option>').prop('disabled', true);
         }
-    }
+    });
+
+    $('#id_location').on('change', function() {
+        if ($(this).val() === 'others') {
+            $('#other_location_group').show();
+        } else {
+            $('#other_location_group').hide();
+        }
+    }).trigger('change');
 });
 </script>
 {% endblock %}

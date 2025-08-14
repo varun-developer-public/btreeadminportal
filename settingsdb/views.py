@@ -15,7 +15,7 @@ from consultantdb.models import Consultant
 from batchdb.models import Batch
 from paymentdb.models import Payment
 from placementdb.models import Placement, CompanyInterview
-from placementdrive.models import PlacementDrive
+from placementdrive.models import Company
 from accounts.models import CustomUser
 import json
 
@@ -106,7 +106,7 @@ def export_data(request):
             'Payments': Payment,
             'Placements': Placement,
             'CompanyInterviews': CompanyInterview,
-            'PlacementDrives': PlacementDrive,
+            'PlacementDrives': Company,
             'Users': CustomUser,
             'SourceOfJoining': SourceOfJoining,
             'PaymentAccounts': PaymentAccount,
@@ -152,7 +152,7 @@ def import_data(request):
                 elif sheet_name == 'Payments': model = Payment
                 elif sheet_name == 'Placements': model = Placement
                 elif sheet_name == 'CompanyInterviews': model = CompanyInterview
-                elif sheet_name == 'PlacementDrives': model = PlacementDrive
+                elif sheet_name == 'PlacementDrives': model = Company
                 elif sheet_name == 'Users': model = CustomUser
                 elif sheet_name == 'SourceOfJoining': model = SourceOfJoining
                 elif sheet_name == 'PaymentAccounts': model = PaymentAccount

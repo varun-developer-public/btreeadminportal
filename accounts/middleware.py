@@ -43,7 +43,8 @@ URL_ROLE_MAPPINGS = {
         'consultant_profile',
         'student_list',
         'payment_list', 'payment_update',
-        'create_student', 'update_student', 'get_courses','consultant_dashboard'
+        'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list',
+        'category_list',
     ]
 }
 

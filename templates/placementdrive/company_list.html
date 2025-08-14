@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Companies</h2>
+    <a href="{% url 'placementdrive:company_add' %}" class="btn btn-primary mb-3">Add Company</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Company Name</th>
+                <th>Portal</th>
+                <th>SPOC</th>
+                <th>Mobile</th>
+                <th>Email</th>
+                <th>Location</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for company in companies %}
+            <tr>
+                <td>{{ company.company_name }}</td>
+                <td>{{ company.portal }}</td>
+                <td>{{ company.spoc }}</td>
+                <td>{{ company.mobile }}</td>
+                <td>{{ company.email }}</td>
+                <td>{{ company.location }}</td>
+                <td>
+                    <a href="{% url 'placementdrive:company_edit' company.pk %}" class="btn btn-sm btn-warning">Edit</a>
+                    <a href="{% url 'placementdrive:company_delete' company.pk %}" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

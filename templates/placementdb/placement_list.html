@@ -83,7 +83,7 @@
                        </div>
                        <div class="filter-actions">
                             <button type="submit" class="btn-primary">Apply Filters</button>
-                            <a href="{% url 'placement_list' %}" class="btn-secondary">Reset</a>
+                            <a href="{% url 'placementdb:placement_list' %}" class="btn-secondary">Reset</a>
                         </div>
                     </form>
                 </div>
@@ -162,7 +162,7 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'update_placement' placement.pk %}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit</a>
+                        <a href="{% url 'placementdb:update_placement' placement.pk %}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit</a>
                     </td>
                 </tr>
                 {% empty %}

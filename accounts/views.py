@@ -25,7 +25,7 @@ from studentsdb.models import Student
 from paymentdb.models import Payment
 from settingsdb.models import TransactionLog
 from placementdb.models import Placement
-from placementdrive.models import PlacementDrive
+from placementdrive.models import Company
 from placementdb.models import CompanyInterview
 from datetime import datetime
 
@@ -291,7 +291,7 @@ def placement_dashboard(request):
     # Base Querysets
     students_in_pool = Student.objects.filter(pl_required=True)
     placements = Placement.objects.filter(student__in=students_in_pool)
-    drives = PlacementDrive.objects.all()
+    drives = Company.objects.all()
 
     # Overall Stats
     total_placement_pool = students_in_pool.count()
