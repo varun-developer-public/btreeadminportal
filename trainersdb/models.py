@@ -61,7 +61,7 @@ class Trainer(models.Model):
     email = models.EmailField(blank=True, null=True)
     location = models.CharField(max_length=100, choices=TAMIL_NADU_LOCATIONS, blank=True, null=True)
     other_location = models.CharField(max_length=100, blank=True, null=True)
-    years_of_experience = models.PositiveIntegerField(default=0)
+    years_of_experience = models.FloatField(default=0.0)
     stack = models.ManyToManyField(Course, blank=True)
     employment_type = models.CharField(max_length=2, choices=EMPLOYMENT_TYPE_CHOICES)
     date_of_joining = models.DateField(auto_now_add=True, null=True)

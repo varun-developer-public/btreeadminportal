@@ -3,6 +3,10 @@ from datetime import datetime
 
 register = template.Library()
 
+@register.filter
+def get_item(dictionary, key):
+    return dictionary.get(key)
+
 @register.simple_tag
 def get_payment_attr(payment, emi_number, field_name):
     """Gets a payment attribute dynamically."""

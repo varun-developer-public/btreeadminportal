@@ -154,3 +154,9 @@
 .select2-container--bootstrap-5 .select2-selection{
     border: none !important;
 }
+
+span.stat-breakdown {
+    font-size: 14px;
+    margin-left: 11px;
+    color: green;
+}

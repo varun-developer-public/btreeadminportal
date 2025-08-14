@@ -1,3 +1,4 @@
+{% load custom_filter %}
 <div id="{{ table_id }}" class="info-card mt-4 student-resume-table" style="display: none;">
     <div class="info-header">
         <h4 class="info-title"><i class="fas fa-users"></i> {{ title }}</h4>
@@ -18,7 +19,7 @@
                 <tr>
                     <td>{{ student.student_id }}</td>
                     <td>{{ student.first_name }} {{ student.last_name|default:'' }}</td>
-                    <td>{{ student.course.name|default:"-" }}</td>
+                    <td>{{ courses_dict|get_item:student.course_id|default:"-" }}</td>
                     <td>{{ student.phone|default:"-" }}</td>
                     <td>{{ student.course_percentage|default:"0" }}%</td>
                 </tr>

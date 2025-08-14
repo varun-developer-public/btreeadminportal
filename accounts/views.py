@@ -298,7 +298,13 @@ def placement_dashboard(request):
     total_placed = students_in_pool.filter(course_status='P').count()
     
     # Actively seeking students for the main stat card
-    actively_seeking_stat = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS']).count()
+    actively_seeking_stat = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS'])
+    
+    # Separate counts for actively seeking
+    actively_seeking_completed = actively_seeking_stat.filter(student__course_status='C').count()
+    actively_seeking_in_progress = actively_seeking_stat.filter(student__course_status='IP').count()
+    
+    actively_seeking_count = actively_seeking_stat.count()
     
     placement_rate = ((total_placed / total_placement_pool) * 100) if total_placement_pool > 0 else 0
     active_drives_count = drives.count()
@@ -353,14 +359,21 @@ def placement_dashboard(request):
 
 
     # Table Data
-    recently_placed = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
+    recently_placed_students = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
+    
+    # Manually fetch courses for recently placed students
+    from coursedb.models import Course
+    course_ids = [student.course_id for student in recently_placed_students if student.course_id]
+    courses_dict = {c.id: c.course_name for c in Course.objects.filter(id__in=course_ids)}
     upcoming_interviews = CompanyInterview.objects.filter(interview_date__gte=timezone.now().date()).select_related('placement__student', 'company').order_by('interview_date')[:5]
     students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student')[:10]
 
     context = {
         # Stat Cards
         'total_placement_pool': total_placement_pool,
-        'actively_seeking': actively_seeking_stat,
+        'actively_seeking': actively_seeking_count,
+        'actively_seeking_completed': actively_seeking_completed,
+        'actively_seeking_in_progress': actively_seeking_in_progress,
         'total_placed': total_placed,
         'placement_rate': round(placement_rate, 1),
         'active_drives_count': active_drives_count,
@@ -382,7 +395,8 @@ def placement_dashboard(request):
         'yts_list_paginated': yts_paginated,
 
         # Other Tables
-        'recently_placed': recently_placed,
+        'recently_placed': recently_placed_students,
+        'courses_dict': courses_dict,
         'upcoming_interviews': upcoming_interviews,
         'students_yet_to_be_placed': students_yet_to_be_placed,
     }
