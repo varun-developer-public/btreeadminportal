@@ -17,12 +17,13 @@
 <div class="student-form-container">
     <div class="form-header">
         <h1>Student Report for {{ student.first_name }} {{ student.last_name }}</h1>
-        <p class="form-subtitle">Below is the interview schedule for the student.</p>
+        <p class="form-subtitle">Below is the Entire Report of the student.</p>
     </div>
 
+    {% if student.pl_required %}
     <div class="form-section-card">
         <div class="form-section-header">
-            <h5 style="color: white;"><i class="fas fa-calendar-alt me-2" style="color: white;"></i>Scheduled Interviews</h5>
+            <h5 style="color: white;"><i class="fas fa-calendar-alt me-2" style="color: white;"></i>Placement Information - Scheduled Interviews</h5>
         </div>
         <div class="form-section-body">
             <div class="accordion" id="interviewAccordion">
@@ -38,7 +39,16 @@
                             {% for interview in interviews %}
                             <h5>Round {{ interview.round_number }} - {{ interview.interview_round }}</h5>
                             <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}</p>
-                            <p><strong>Status:</strong> {% for status in interview.student_status.all %}{% if status.student.id == student.id %}{{ status.selected|yesno:"Selected,Not Selected" }}{% endif %}{% endfor %}</p>
+                            <p><strong>Status:</strong>
+                                {% for status in interview.student_status.all %}
+                                    {% if status.student.id == student.id %}
+                                        {{ status.selected|yesno:"Selected,Not Selected" }}
+                                        {% if not status.selected and status.reason %}
+                                            <br><strong>Reason:</strong> {{ status.reason }}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </p>
                             {% endfor %}
                         </div>
                     </div>
@@ -49,5 +59,15 @@
             </div>
         </div>
     </div>
+    {% else %}
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-info-circle me-2" style="color: white;"></i>Placement Information</h5>
+        </div>
+        <div class="form-section-body">
+            <p>This student does not require placement assistance.</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

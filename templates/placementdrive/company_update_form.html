@@ -111,8 +111,13 @@
                             </tbody>
                         </table>
                     </div>
+                    {% if company.progress != 'interview_completed' %}
                     <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm">Update Student Status</a>
                     <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
+                    {% else %}
+                    <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
+                    <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>
+                    {% endif %}
                 {% endfor %}
             {% empty %}
                 <button type="button" class="btn btn-primary" id="add-interview-btn">

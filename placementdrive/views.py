@@ -6,10 +6,17 @@ from studentsdb.models import Student
 from coursedb.models import Course
 from placementdb.models import CompanyInterview
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 
 def company_list(request):
-    companies = Company.objects.all().order_by('-created_at')
+    # Prefetch selected students for companies with completed interviews
+    selected_students_prefetch = Prefetch(
+        'scheduled_interviews__student_status',
+        queryset=InterviewStudent.objects.filter(selected=True).select_related('student'),
+        to_attr='selected_students_list'
+    )
+
+    companies = Company.objects.prefetch_related(selected_students_prefetch).order_by('-created_at')
     form = CompanyFilterForm(request.GET)
 
     if form.is_valid():
@@ -39,6 +46,19 @@ def company_list(request):
     query_params = request.GET.copy()
     if 'page' in query_params:
         del query_params['page']
+
+    for company in companies:
+        if company.progress == 'interview_completed':
+            # Flatten the list of selected students from all interviews
+            selected_students = []
+            for interview in company.scheduled_interviews.all():
+                if hasattr(interview, 'selected_students_list'):
+                    for student_status in interview.selected_students_list:
+                        if student_status.student not in selected_students:
+                            selected_students.append(student_status.student)
+            company.selected_students = selected_students
+        else:
+            company.selected_students = []
 
     return render(request, 'placementdrive/company_list.html', {
         'companies': companies,
@@ -147,7 +167,7 @@ def load_students(request):
     course_ids_str = request.GET.get('course_ids', '')
     if course_ids_str:
         course_ids = [int(cid) for cid in course_ids_str.split(',') if cid.isdigit()]
-        students = Student.objects.filter(course_id__in=course_ids).distinct()
+        students = Student.objects.filter(course_id__in=course_ids, pl_required=True).distinct()
         student_data = [{"id": s.id, "student_name": f"{s.first_name} {s.last_name}"} for s in students]
         return JsonResponse(student_data, safe=False)
     return JsonResponse([], safe=False)

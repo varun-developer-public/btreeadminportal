@@ -4,6 +4,30 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
+<style>
+    .accordion-row {
+        cursor: pointer;
+    }
+    .accordion-content {
+        display: none;
+        background-color: #f9f9f9;
+    }
+    .accordion-content td {
+        padding: 15px;
+    }
+    .student-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .student-table th, .student-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    .student-table th {
+        background-color: #f2f2f2;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -50,12 +74,12 @@
             </thead>
             <tbody>
             {% for company in companies %}
-                <tr>
+                <tr class="{% if company.progress == 'interview_completed' and company.selected_students %}accordion-row{% endif %}">
                     <td>{{ company.company_name }}</td>
-                    <td><a href="{{ company.portal }}" target="_blank">{{ company.portal }}</a></td>
+                    <td>{{ company.portal }}</td>
                     <td>{{ company.spoc }}</td>
                     <td>{{ company.mobile }}</td>
-                    <td><a href="mailto:{{ company.email }}">{{ company.email }}</a></td>
+                    <td>{{ company.email }}</td>
                     <td>{{ company.location }}</td>
                     <td>{{ company.get_progress_display }}</td>
                     <td>
@@ -65,6 +89,31 @@
                         </div>
                     </td>
                 </tr>
+                {% if company.progress == 'interview_completed' and company.selected_students %}
+                <tr class="accordion-content">
+                    <td colspan="8">
+                        <h5>Selected Students</h5>
+                        <table class="student-table">
+                            <thead>
+                                <tr>
+                                    <th>Student Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student in company.selected_students %}
+                                <tr>
+                                    <td>{{ student.first_name }} {{ student.last_name }}</td>
+                                    <td>{{ student.email }}</td>
+                                    <td>{{ student.phone }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+                {% endif %}
             {% empty %}
                 <tr><td colspan="8" class="text-center py-4 text-muted">
                         <i class="fas fa-building me-2"></i>No companies found.
@@ -98,4 +147,24 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accordionRows = document.querySelectorAll('.accordion-row');
+    accordionRows.forEach(row => {
+        row.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+            if (content && content.classList.contains('accordion-content')) {
+                if (content.style.display === 'table-row') {
+                    content.style.display = 'none';
+                } else {
+                    content.style.display = 'table-row';
+                }
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
