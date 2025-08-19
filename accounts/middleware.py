@@ -12,13 +12,16 @@ URL_ROLE_MAPPINGS = {
         'consultant_list', 'create_consultant', 'update_consultant',
         'settings_dashboard', 'source_list', 'payment_account_list', 'remove_source', 'remove_payment_account',
         'user_list', 'create_user', 'update_user',
-        'get_courses',
+        'get_courses', 'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
+        'ajax_load_students'
     ],
     'placement': [
         'placement_dashboard',
         'placement_list', 'update_placement', 'pending_resumes_list',
         'student_list', 'update_student',
-        'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses'
+        'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses',
+        'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
+        'ajax_load_students'
     ],
     'trainer': [
         'batch_list',
