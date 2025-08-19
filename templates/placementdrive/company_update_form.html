@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
 {% endblock %}
 
 {% block title %}Update Company{% endblock %}
@@ -26,12 +27,14 @@
                     {% for field in form %}
                     <div class="col-md-6">
                         <div class="form-group">
+                            {% if not field.is_hidden %}
                             <div class="label-form">
                                 {{ field.label_tag }}
                                 {% if field.field.required %}
                                     <span class="required-indicator">*</span>
                                 {% endif %}
                             </div>
+                            {% endif %}
                             {{ field|attr:"class:form-control" }}
                             <div class="error-message">
                                 {% if field.errors %}
@@ -61,7 +64,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="scheduleInterviewModalLabel">Schedule Interview</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -72,7 +75,7 @@
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="submit" form="interview-form" class="btn btn-primary">Schedule</button>
                 </div>
             </div>
@@ -87,37 +90,39 @@
         <div class="form-section-body">
             {% regroup interviews by applying_role as interviews_by_role %}
             {% for role in interviews_by_role %}
-                <h4>{{ role.grouper }}</h4>
+                <h4>Role: {{ role.grouper }}</h4>
+                <hr>
                 {% for interview in role.list %}
-                    <h5>Round {{ interview.round_number }} - {{ interview.interview_round }}</h5>
-                    <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}</p>
+                    <h5>Round {{ interview.round_number }} - {{ interview.interview_round|title }}</h5>
+                    <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}</p>
                     <div class="table-wrapper">
                         <table class="table table-striped">
                             <thead>
                                 <tr>
                                     <th>Student</th>
-                                    <th>Selected</th>
-                                    <th>Reason for Not Selected</th>
+                                    <th>Status</th>
+                                    <th>Reason for Rejection</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for student_status in interview.student_status.all %}
                                     <tr>
                                         <td>{{ student_status.student }}</td>
-                                        <td>{{ student_status.selected|yesno:"Yes,No" }}</td>
-                                        <td>{{ student_status.reason|default_if_none:"" }}</td>
+                                        <td>{{ student_status.get_status_display }}</td>
+                                        <td>{{ student_status.reason|default_if_none:"-" }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                     {% if company.progress != 'interview_completed' %}
-                    <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm">Update Student Status</a>
+                    <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm mx-3">Update Student Status</a>
                     <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
                     {% else %}
                     <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
                     <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>
                     {% endif %}
+                    <hr>
                 {% endfor %}
             {% empty %}
                 <button type="button" class="btn btn-primary" id="add-interview-btn">

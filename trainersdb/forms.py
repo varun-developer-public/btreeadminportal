@@ -1,7 +1,6 @@
 from django import forms
 from .models import Trainer
 import json
-from django_select2.forms import Select2Widget
 from core.utils import get_country_code_choices
 
 class TrainerForm(forms.ModelForm):

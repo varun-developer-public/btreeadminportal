@@ -16,8 +16,9 @@
         <p class="form-subtitle">Update the status for each student</p>
     </div>
 
-    <form method="post" class="student-form">
+    <form method="post" class="student-form" enctype="multipart/form-data">
         {% csrf_token %}
+        {{ formset.management_form }}
         <div class="form-section-card">
             <div class="form-section-header">
                 <h5 style="color: white;"><i class="fas fa-user-check me-2" style="color: white;"></i>Student Status</h5>
@@ -26,21 +27,28 @@
                 <div class="table-wrapper">
                     <table class="table table-striped">
                         <thead>
-                            <tr>
-                                <th>Student</th>
-                                <th>Selected</th>
-                                <th>Reason for Not Selected</th>
+                            <tr class="row mx-2">
+                                <th class="col-4">Student</th>
+                                <th class="col-4">Status</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for student_status in interview.student_status.all %}
-                                <tr>
-                                    <td>{{ student_status.student }}</td>
-                                    <td>
-                                        <input type="checkbox" name="selected_{{ student_status.pk }}" {% if student_status.selected %}checked{% endif %}>
+                            {% for form in formset %}
+                                <tr class="student-row row mx-2">
+                                    <td class="col-4">{{ form.instance.student }}</td>
+                                    <td class="col-4">
+                                        {{ form.status }}
+                                        {{ form.id }}
                                     </td>
-                                    <td>
-                                        <textarea name="reason_{{ student_status.pk }}" class="form-control">{{ student_status.reason|default_if_none:"" }}</textarea>
+                                    <td class="reason-cell col-4" style="display: none;">
+                                        <div style="display: flex; justify-content: center; gap: 20px; align-items: center;">
+                                            <span>Reason for Rejection:</span>
+                                            <span>{{ form.reason }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="offer-letter-cell col-4" style="display: none;">
+                                        <span>Upload offer Letter: </span>
+                                        <span>{{ form.offer_letter }}</span>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -55,6 +63,31 @@
                 <i class="fas fa-save"></i> Update Status
             </button>
             <a href="{% url 'company_update' interview.company.pk %}" class="btn btn-secondary">
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const studentRows = document.querySelectorAll('.student-row');
+
+    studentRows.forEach(row => {
+        const statusSelect = row.querySelector('select[name$="-status"]');
+        const reasonCell = row.querySelector('.reason-cell');
+        const offerLetterCell = row.querySelector('.offer-letter-cell');
+
+        function toggleCells() {
+            const selectedStatus = statusSelect.value;
+            reasonCell.style.display = selectedStatus === 'rejected' ? '' : 'none';
+            offerLetterCell.style.display = selectedStatus === 'placed' ? '' : 'none';
+        }
+
+        // Initial toggle on page load
+        toggleCells();
+
+        // Toggle on status change
+        statusSelect.addEventListener('change', toggleCells);
+    });
+});
+</script>
+{% endblock %}
                 <i class="fas fa-times"></i> Cancel
             </a>
         </div>

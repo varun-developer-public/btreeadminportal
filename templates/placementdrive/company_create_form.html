@@ -26,12 +26,14 @@
                     {% for field in form %}
                     <div class="col-md-6">
                         <div class="form-group">
+                            {% if not field.is_hidden %}
                             <div class="label-form">
                                 {{ field.label_tag }}
                                 {% if field.field.required %}
                                     <span class="required-indicator">*</span>
                                 {% endif %}
                             </div>
+                            {% endif %}
                             {{ field|attr:"class:form-control" }}
                             <div class="error-message">
                                 {% if field.errors %}

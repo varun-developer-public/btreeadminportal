@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
 from .models import Company, Interview, InterviewStudent
 from .forms import CompanyForm, InterviewScheduleForm, InterviewStudentForm, CompanyFilterForm
 from studentsdb.models import Student
@@ -8,12 +9,13 @@ from placementdb.models import CompanyInterview
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, Prefetch
 
+@login_required
 def company_list(request):
     # Prefetch selected students for companies with completed interviews
     selected_students_prefetch = Prefetch(
         'scheduled_interviews__student_status',
-        queryset=InterviewStudent.objects.filter(selected=True).select_related('student'),
-        to_attr='selected_students_list'
+        queryset=InterviewStudent.objects.filter(status='placed').select_related('student'),
+        to_attr='placed_students_list'
     )
 
     companies = Company.objects.prefetch_related(selected_students_prefetch).order_by('-created_at')
@@ -52,11 +54,12 @@ def company_list(request):
             # Flatten the list of selected students from all interviews
             selected_students = []
             for interview in company.scheduled_interviews.all():
-                if hasattr(interview, 'selected_students_list'):
-                    for student_status in interview.selected_students_list:
-                        if student_status.student not in selected_students:
-                            selected_students.append(student_status.student)
-            company.selected_students = selected_students
+                if hasattr(interview, 'placed_students_list'):
+                    for student_status in interview.placed_students_list:
+                        # Check if the student is already in the list
+                        if not any(s.student.id == student_status.student.id for s in selected_students):
+                            selected_students.append(student_status)
+            company.placed_students = selected_students
         else:
             company.selected_students = []
 
@@ -66,6 +69,7 @@ def company_list(request):
         'query_params': query_params.urlencode(),
     })
 
+@login_required
 def company_create(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
@@ -77,6 +81,7 @@ def company_create(request):
     return render(request, 'placementdrive/company_create_form.html', {'form': form})
 
 
+@login_required
 def schedule_interview(request, company_pk):
     company = get_object_or_404(Company, pk=company_pk)
     if request.method == 'POST':
@@ -97,6 +102,7 @@ def schedule_interview(request, company_pk):
             return redirect('company_update', pk=company.pk)
     return redirect('company_update', pk=company.pk)
 
+@login_required
 def add_interview_round(request, parent_interview_pk):
     parent_interview = get_object_or_404(Interview, pk=parent_interview_pk)
     company = parent_interview.company
@@ -123,20 +129,24 @@ def add_interview_round(request, parent_interview_pk):
     
     return render(request, 'placementdrive/add_interview_round.html', {'form': form, 'parent_interview': parent_interview})
 
+from django.forms import modelformset_factory
+
+@login_required
 def update_interview_students(request, interview_pk):
     interview = get_object_or_404(Interview, pk=interview_pk)
-    if request.method == 'POST':
-        for student_status in interview.student_status.all():
-            selected_key = f'selected_{student_status.pk}'
-            reason_key = f'reason_{student_status.pk}'
-            
-            student_status.selected = request.POST.get(selected_key) == 'on'
-            student_status.reason = request.POST.get(reason_key, '')
-            student_status.save()
-        return redirect('company_update', pk=interview.company.pk)
-    
-    return render(request, 'placementdrive/update_interview_students.html', {'interview': interview})
+    InterviewStudentFormSet = modelformset_factory(InterviewStudent, form=InterviewStudentForm, extra=0)
 
+    if request.method == 'POST':
+        formset = InterviewStudentFormSet(request.POST, request.FILES, queryset=InterviewStudent.objects.filter(interview=interview))
+        if formset.is_valid():
+            formset.save()
+            return redirect('company_update', pk=interview.company.pk)
+    else:
+        formset = InterviewStudentFormSet(queryset=InterviewStudent.objects.filter(interview=interview))
+    
+    return render(request, 'placementdrive/update_interview_students.html', {'formset': formset, 'interview': interview})
+
+@login_required
 def company_update(request, pk):
     company = get_object_or_404(Company, pk=pk)
     if request.method == 'POST':
@@ -156,6 +166,7 @@ def company_update(request, pk):
         'interviews': company.scheduled_interviews.all()
     })
 
+@login_required
 def company_delete(request, pk):
     company = get_object_or_404(Company, pk=pk)
     if request.method == 'POST':
@@ -168,6 +179,6 @@ def load_students(request):
     if course_ids_str:
         course_ids = [int(cid) for cid in course_ids_str.split(',') if cid.isdigit()]
         students = Student.objects.filter(course_id__in=course_ids, pl_required=True).distinct()
-        student_data = [{"id": s.id, "student_name": f"{s.first_name} {s.last_name}"} for s in students]
+        student_data = [{"id": s.id, "student_name": f"{s.student_id} - {s.first_name} {s.last_name}"} for s in students]
         return JsonResponse(student_data, safe=False)
     return JsonResponse([], safe=False)

@@ -68,10 +68,17 @@ class Interview(models.Model):
 from studentsdb.models import Student
 
 class InterviewStudent(models.Model):
+    STATUS_CHOICES = [
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('rejected', 'Rejected'),
+        ('placed', 'Placed'),
+    ]
     interview = models.ForeignKey(Interview, on_delete=models.CASCADE, related_name='student_status')
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='interview_statuses')
-    selected = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress')
     reason = models.TextField(blank=True, null=True)
+    offer_letter = models.FileField(upload_to='offer_letters/', blank=True, null=True)
 
     def __str__(self):
         return f"{self.student} - {self.interview}"

@@ -151,7 +151,7 @@
     margin-bottom: 10px;
 }
 
-.select2-container--bootstrap-5 .select2-selection{
+.select2-container--bootstrap-5 .select2-selection {
     border: none !important;
 }
 
@@ -159,4 +159,50 @@ span.stat-breakdown {
     font-size: 14px;
     margin-left: 11px;
     color: green;
+}
+
+a.view-link {
+    color: #0b0a63;
+}
+
+.accordion-button:not(.collapsed):hover {
+    background-color: #d4e3f3;
+    color: #0b0a63;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+}
+
+.accordion-button {
+    background-color: #f8f9fa;
+    color: #343a40;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.accordion-button:hover {
+    background-color: #b0d8ff;
+    color: #0b0a63;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #c6dcf3;
+    color: #000;
+}
+/* Custom styles for the interview schedule modal */
+#scheduleInterviewModal .form-control {
+    width: 95%;
+}
+
+#scheduleInterviewModal .select2-container {
+    width: 100% !important;
+}
+
+#scheduleInterviewModal .select2-search__field {
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--multiple{
+    border: none !important;
 }

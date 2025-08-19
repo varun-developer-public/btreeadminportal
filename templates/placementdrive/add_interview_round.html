@@ -27,12 +27,14 @@
                     {% for field in form %}
                     <div class="col-md-6">
                         <div class="form-group">
+                            {% if not field.is_hidden %}
                             <div class="label-form">
                                 {{ field.label_tag }}
                                 {% if field.field.required %}
                                     <span class="required-indicator">*</span>
                                 {% endif %}
                             </div>
+                            {% endif %}
                             {{ field|attr:"class:form-control" }}
                             <div class="error-message">
                                 {% if field.errors %}
@@ -67,6 +69,15 @@
   <script>
     $(document).ready(function() {
       $('#id_students').select2();
+
+      // Show/hide other location field
+      $('#id_location').change(function() {
+        if ($(this).val() === 'others') {
+          $('#id_other_location').closest('.form-group').show();
+        } else {
+          $('#id_other_location').closest('.form-group').hide();
+        }
+      }).trigger('change');
     });
   </script>
 {% endblock %}

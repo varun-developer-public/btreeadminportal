@@ -31,7 +31,7 @@ class InterviewScheduleForm(forms.ModelForm):
         fields = ['applying_role', 'courses', 'students', 'interview_round', 'location', 'other_location', 'interview_date', 'interview_time']
         widgets = {
             'interview_date': forms.DateInput(attrs={'type': 'date'}),
-            'interview_time': forms.TimeInput(attrs={'type': 'time'}),
+            'interview_time': forms.TimeInput(attrs={'type': 'time', 'class':'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -50,7 +50,7 @@ class InterviewScheduleForm(forms.ModelForm):
 
             # Populate students from the selected ones in the previous round
             selected_students_qs = Student.objects.filter(
-                id__in=parent_interview.student_status.filter(selected=True).values_list('student_id', flat=True)
+                id__in=parent_interview.student_status.filter(status='completed').values_list('student_id', flat=True)
             )
             self.fields['students'].queryset = selected_students_qs
         
@@ -64,7 +64,21 @@ class InterviewScheduleForm(forms.ModelForm):
 class InterviewStudentForm(forms.ModelForm):
     class Meta:
         model = InterviewStudent
-        fields = ['selected', 'reason']
+        fields = ['status', 'reason', 'offer_letter']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get("status")
+        reason = cleaned_data.get("reason")
+        offer_letter = cleaned_data.get("offer_letter")
+
+        if status == 'rejected' and not reason:
+            self.add_error('reason', 'This field is required when the status is Rejected.')
+
+        if status == 'placed' and not offer_letter:
+            self.add_error('offer_letter', 'An offer letter is required when the status is Placed.')
+
+        return cleaned_data
 class CompanyFilterForm(forms.Form):
     q = forms.CharField(
         required=False,

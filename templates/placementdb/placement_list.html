@@ -121,7 +121,9 @@
                 <tr>
                     <td>
                         <span class="status-indicator {% if placement.is_active %}status-active{% else %}status-inactive{% endif %}" style="margin-right: 6%;"></span>
-                        {{ placement.student.student_id }}
+                        <a href="{% url 'student_report' placement.student.student_id %}" class="view-link">
+                            {{ placement.student.student_id }}
+                        </a>
                     </td>
                     <td>
                         {% for batch in placement.student.batches.all %}

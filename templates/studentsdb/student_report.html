@@ -42,9 +42,12 @@
                             <p><strong>Status:</strong>
                                 {% for status in interview.student_status.all %}
                                     {% if status.student.id == student.id %}
-                                        {{ status.selected|yesno:"Selected,Not Selected" }}
-                                        {% if not status.selected and status.reason %}
+                                        {{ status.get_status_display }}
+                                        {% if status.status == 'rejected' and status.reason %}
                                             <br><strong>Reason:</strong> {{ status.reason }}
+                                        {% endif %}
+                                        {% if status.status == 'placed' and status.offer_letter %}
+                                            <br><a href="{{ status.offer_letter.url }}" class="view-link" target="_blank">View Offer Letter</a>
                                         {% endif %}
                                     {% endif %}
                                 {% endfor %}
