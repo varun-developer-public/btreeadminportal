@@ -64,18 +64,34 @@ def admin_dashboard(request):
         for item in monthly_enrollments
     ]
 
-    # Monthly pending amounts
-    monthly_pending = (
-        Payment.objects
-        .annotate(month=TruncMonth('emi_1_date'))
-        .values('month')
-        .annotate(total=Sum('total_pending_amount'))
-        .order_by('month')
-    )
+    # Monthly pending amounts for the last 6 months
+    monthly_pending_data = {}
+    
+    # Initialize months to ensure all 6 months are present in the chart
+    current_date = now.date()
+    for _ in range(6):
+        month_key = current_date.strftime('%Y-%m')
+        monthly_pending_data[month_key] = 0
+        # Go to the first day of the current month, then subtract one day to get the last day of the previous month
+        first_day_of_month = current_date.replace(day=1)
+        current_date = first_day_of_month - timedelta(days=1)
+
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0)
+
+    for payment in pending_payments:
+        for i in range(1, 5):
+            due_date = getattr(payment, f'emi_{i}_date')
+            amount = getattr(payment, f'emi_{i}_amount')
+            paid_amount = getattr(payment, f'emi_{i}_paid_amount')
+
+            if due_date and amount and not paid_amount and six_months_ago.date() <= due_date <= now.date():
+                month_key = due_date.strftime('%Y-%m')
+                if month_key in monthly_pending_data:
+                    monthly_pending_data[month_key] += float(amount)
 
     monthly_pending_data = [
-        {'month': item['month'].strftime('%Y-%m'), 'amount': float(item['total'])}
-        for item in monthly_pending if item['month']
+        {'month': key, 'amount': value}
+        for key, value in sorted(monthly_pending_data.items())
     ]
 
     # Weekly Statistics
@@ -183,18 +199,34 @@ def staff_dashboard(request):
         for item in monthly_enrollments
     ]
 
-    # Monthly pending amounts
-    monthly_pending = (
-        Payment.objects
-        .annotate(month=TruncMonth('emi_1_date'))
-        .values('month')
-        .annotate(total=Sum('total_pending_amount'))
-        .order_by('month')
-    )
+    # Monthly pending amounts for the last 6 months
+    monthly_pending_data = {}
+    
+    # Initialize months to ensure all 6 months are present in the chart
+    current_date = now.date()
+    for _ in range(6):
+        month_key = current_date.strftime('%Y-%m')
+        monthly_pending_data[month_key] = 0
+        # Go to the first day of the current month, then subtract one day to get the last day of the previous month
+        first_day_of_month = current_date.replace(day=1)
+        current_date = first_day_of_month - timedelta(days=1)
+
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0)
+
+    for payment in pending_payments:
+        for i in range(1, 5):
+            due_date = getattr(payment, f'emi_{i}_date')
+            amount = getattr(payment, f'emi_{i}_amount')
+            paid_amount = getattr(payment, f'emi_{i}_paid_amount')
+
+            if due_date and amount and not paid_amount and six_months_ago.date() <= due_date <= now.date():
+                month_key = due_date.strftime('%Y-%m')
+                if month_key in monthly_pending_data:
+                    monthly_pending_data[month_key] += float(amount)
 
     monthly_pending_data = [
-        {'month': item['month'].strftime('%Y-%m'), 'amount': float(item['total'])}
-        for item in monthly_pending if item['month']
+        {'month': key, 'amount': value}
+        for key, value in sorted(monthly_pending_data.items())
     ]
 
     # Weekly Statistics
