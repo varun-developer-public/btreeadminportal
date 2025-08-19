@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filter %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
+{% endblock %}
+
+{% block title %}Update Student Status{% endblock %}
+
+{% block content %}
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Update Student Status for {{ interview.applying_role }} at {{ interview.company.company_name }} - Round {{ interview.round_number }}</h1>
+        <p class="form-subtitle">Update the status for each student</p>
+    </div>
+
+    <form method="post" class="student-form">
+        {% csrf_token %}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-user-check me-2" style="color: white;"></i>Student Status</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="table-wrapper">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Selected</th>
+                                <th>Reason for Not Selected</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student_status in interview.student_status.all %}
+                                <tr>
+                                    <td>{{ student_status.student }}</td>
+                                    <td>
+                                        <input type="checkbox" name="selected_{{ student_status.pk }}" {% if student_status.selected %}checked{% endif %}>
+                                    </td>
+                                    <td>
+                                        <textarea name="reason_{{ student_status.pk }}" class="form-control">{{ student_status.reason|default_if_none:"" }}</textarea>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update Status
+            </button>
+            <a href="{% url 'company_detail' interview.company.pk %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

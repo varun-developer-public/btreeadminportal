@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filter %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block title %}Add Interview Round{% endblock %}
+
+{% block content %}
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Add Interview Round for {{ parent_interview.applying_role }} at {{ parent_interview.company.company_name }}</h1>
+        <p class="form-subtitle">Enter the details for the next round</p>
+    </div>
+
+    <form method="post" class="student-form">
+        {% csrf_token %}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-calendar-plus me-2" style="color: white;"></i>Interview Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    {% for field in form %}
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ field.label_tag }}
+                                {% if field.field.required %}
+                                    <span class="required-indicator">*</span>
+                                {% endif %}
+                            </div>
+                            {{ field|attr:"class:form-control" }}
+                            <div class="error-message">
+                                {% if field.errors %}
+                                    {{ field.errors }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% for course in form.courses.initial %}
+                        <input type="hidden" name="courses" value="{{ course.pk }}">
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Round
+            </button>
+            <a href="{% url 'company_detail' parent_interview.company.pk %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#id_students').select2();
+    });
+  </script>
+{% endblock %}

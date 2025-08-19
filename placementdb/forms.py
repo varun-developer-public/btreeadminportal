@@ -2,7 +2,7 @@ from django import forms
 from studentsdb.models import Student
 from coursedb.models import Course, CourseCategory
 from .models import Placement, CompanyInterview
-from placementdrive.models import Company, ApplyingRole
+from placementdrive.models import Company
 
 class PlacementUpdateForm(forms.ModelForm):
     class Meta:
@@ -21,7 +21,7 @@ class CompanyInterviewForm(forms.ModelForm):
         fields = ['company', 'applying_for', 'location', 'other_location', 'interview_date', 'interview_time', 'attended', 'feedback']
         widgets = {
             'company': forms.Select(attrs={'class': 'form-control'}),
-            'applying_for': forms.Select(attrs={'class': 'form-control'}),
+            'applying_for': forms.TextInput(attrs={'class': 'form-control'}),
             'location': forms.Select(attrs={'class': 'form-control'}),
             'other_location': forms.TextInput(attrs={'class': 'form-control'}),
             'interview_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -33,16 +33,6 @@ class CompanyInterviewForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['company'].queryset = Company.objects.all()
-        self.fields['applying_for'].queryset = ApplyingRole.objects.none()
-
-        if 'company' in self.data:
-            try:
-                company_id = int(self.data.get('company'))
-                self.fields['applying_for'].queryset = ApplyingRole.objects.filter(company_id=company_id).order_by('role_name')
-            except (ValueError, TypeError):
-                pass
-        elif self.instance.pk and self.instance.company:
-            self.fields['applying_for'].queryset = self.instance.company.roles.order_by('role_name')
 
 class PlacementFilterForm(forms.Form):
     q = forms.CharField(

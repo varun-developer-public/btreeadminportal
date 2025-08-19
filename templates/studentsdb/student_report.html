@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+<style>
+    .accordion-button:not(.collapsed) {
+        color: #fff;
+        background-color: #007bff;
+    }
+</style>
+{% endblock %}
+
+{% block title %}Student Report{% endblock %}
+
+{% block content %}
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Student Report for {{ student.first_name }} {{ student.last_name }}</h1>
+        <p class="form-subtitle">Below is the interview schedule for the student.</p>
+    </div>
+
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-calendar-alt me-2" style="color: white;"></i>Scheduled Interviews</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="accordion" id="interviewAccordion">
+                {% for company, interviews in interviews_by_company.items %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                            {{ company }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#interviewAccordion">
+                        <div class="accordion-body">
+                            {% for interview in interviews %}
+                            <h5>Round {{ interview.round_number }} - {{ interview.interview_round }}</h5>
+                            <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}</p>
+                            <p><strong>Status:</strong> {% for status in interview.student_status.all %}{% if status.student.id == student.id %}{{ status.selected|yesno:"Selected,Not Selected" }}{% endif %}{% endfor %}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p>No interviews scheduled for this student.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

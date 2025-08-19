@@ -125,6 +125,7 @@
             <td>
                 <div class="d-flex gap-2 justify-content-center">
                     <a href="{% url 'update_student' student.student_id %}" class="btn-update"><i class="fas fa-edit"></i></a>
+                    <a href="{% url 'student_report' student.student_id %}" class="btn-secondary"><i class="fas fa-file-alt"></i></a>
                     {% if request.user.role == 'admin' %}
                     <a href="{% url 'delete_student' student.student_id %}" class="btn-danger"><i class="fas fa-trash"></i></a>
                     {% endif %}

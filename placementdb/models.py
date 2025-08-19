@@ -1,6 +1,6 @@
 from django.db import models
 from studentsdb.models import Student
-from placementdrive.models import Company, ApplyingRole
+from placementdrive.models import Company
 
 class Placement(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='placement')
@@ -21,6 +21,13 @@ class Placement(models.Model):
         super().save(*args, **kwargs)
 
 class CompanyInterview(models.Model):
+    ROUND_CHOICES = [
+        ('virtual', 'Virtual'),
+        ('aptitude', 'Aptitude'),
+        ('technical', 'Technical'),
+        ('hr', 'HR'),
+        ('task', 'Task'),
+    ]
     LOCATION_CHOICES = [
         ('chennai', 'Chennai'),
         ('bangalore', 'Bangalore'),
@@ -30,12 +37,15 @@ class CompanyInterview(models.Model):
 
     placement = models.ForeignKey(Placement, on_delete=models.CASCADE, related_name='interviews')
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='interviews',null=True)
-    applying_for = models.ForeignKey(ApplyingRole, on_delete=models.CASCADE, null=True)
+    applying_for = models.CharField(max_length=255, null=True)
+    interview_round = models.CharField(max_length=50, choices=ROUND_CHOICES, default='virtual')
+    students = models.ManyToManyField(Student, related_name='interviews')
     location = models.CharField(max_length=255, choices=LOCATION_CHOICES, null=True)
     other_location = models.CharField(max_length=255, blank=True, null=True)
     interview_date = models.DateField()
     interview_time = models.TimeField()
     attended = models.BooleanField(default=False)
+    selected = models.BooleanField(default=False)
     feedback = models.TextField(blank=True, null=True)
 
     def __str__(self):

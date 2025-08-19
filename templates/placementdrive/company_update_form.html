@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% load static %}
+{% load custom_filter %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+{% endblock %}
+
+{% block title %}Update Company{% endblock %}
+
+{% block content %}
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Update Company</h1>
+        <p class="form-subtitle">Update the company details</p>
+    </div>
+
+    <form method="post" class="student-form">
+        {% csrf_token %}
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-building me-2" style="color: white;"></i>Company Details</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="row">
+                    {% for field in form %}
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <div class="label-form">
+                                {{ field.label_tag }}
+                                {% if field.field.required %}
+                                    <span class="required-indicator">*</span>
+                                {% endif %}
+                            </div>
+                            {{ field|attr:"class:form-control" }}
+                            <div class="error-message">
+                                {% if field.errors %}
+                                    {{ field.errors }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update
+            </button>
+            <a href="{% url 'company_list' %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+
+    <!-- Interview Schedule Modal -->
+    <div class="modal fade" id="scheduleInterviewModal" tabindex="-1" role="dialog" aria-labelledby="scheduleInterviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="scheduleInterviewModalLabel">Schedule Interview</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form method="post" action="{% url 'schedule_interview' company.pk %}" id="interview-form">
+                        {% csrf_token %}
+                        {{ interview_form.as_p }}
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="submit" form="interview-form" class="btn btn-primary">Schedule</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if company.progress != 'resume_shared' %}
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-calendar-alt me-2" style="color: white;"></i>Scheduled Interviews</h5>
+        </div>
+        <div class="form-section-body">
+            {% regroup interviews by applying_role as interviews_by_role %}
+            {% for role in interviews_by_role %}
+                <h4>{{ role.grouper }}</h4>
+                {% for interview in role.list %}
+                    <h5>Round {{ interview.round_number }} - {{ interview.interview_round }}</h5>
+                    <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}</p>
+                    <div class="table-wrapper">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Selected</th>
+                                    <th>Reason for Not Selected</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for student_status in interview.student_status.all %}
+                                    <tr>
+                                        <td>{{ student_status.student }}</td>
+                                        <td>{{ student_status.selected|yesno:"Yes,No" }}</td>
+                                        <td>{{ student_status.reason|default_if_none:"" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm">Update Student Status</a>
+                    <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
+                {% endfor %}
+            {% empty %}
+                <button type="button" class="btn btn-primary" id="add-interview-btn">
+                    <i class="fas fa-plus"></i> Add Interview
+                </button>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Initialize Select2
+      $('#id_courses, #id_students').select2({
+          dropdownParent: $('#scheduleInterviewModal')
+      });
+
+      // Show/hide other location field
+      $('#id_location').change(function() {
+        if ($(this).val() === 'others') {
+          $('#id_other_location').closest('p').show();
+        } else {
+          $('#id_other_location').closest('p').hide();
+        }
+      }).trigger('change');
+
+      // Open modal when "Add Interview" button is clicked
+      $('#add-interview-btn').click(function() {
+        $('#scheduleInterviewModal').modal('show');
+      });
+
+      // Load students based on selected courses
+      $('#id_courses').change(function() {
+        var course_ids = $(this).val();
+        if (course_ids && course_ids.length > 0) {
+            $.ajax({
+                url: '{% url "ajax_load_students" %}',
+                data: {
+                    'course_ids': course_ids.join(',')
+                },
+                success: function(data) {
+                    var studentSelect = $('#id_students');
+                    studentSelect.empty();
+                    $.each(data, function(key, value) {
+                        studentSelect.append($('<option>', {
+                            value: value.id,
+                            text: value.student_name
+                        }));
+                    });
+                    studentSelect.trigger('change');
+                }
+            });
+        } else {
+            $('#id_students').empty().trigger('change');
+        }
+      });
+    });
+  </script>
+{% endblock %}

@@ -84,33 +84,7 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 $(document).ready(function() {
-    $('#id_company, #id_applying_for, #id_location').select2();
-
-    $('#id_company').on('change', function() {
-        const companyId = $(this).val();
-        const roleSelect = $('#id_applying_for');
-        
-        if (companyId) {
-            $.ajax({
-                url: "{% url 'placementdb:get_roles_for_company' %}",
-                data: {
-                    'company_id': companyId
-                },
-                success: function(data) {
-                    roleSelect.empty().append('<option value="">---------</option>');
-                    $.each(data, function(key, value) {
-                        roleSelect.append($('<option>', {
-                            value: value.id,
-                            text: value.role_name
-                        }));
-                    });
-                    roleSelect.prop('disabled', false);
-                }
-            });
-        } else {
-            roleSelect.empty().append('<option value="">---------</option>').prop('disabled', true);
-        }
-    });
+    $('#id_company, #id_location').select2();
 
     $('#id_location').on('change', function() {
         if ($(this).val() === 'others') {

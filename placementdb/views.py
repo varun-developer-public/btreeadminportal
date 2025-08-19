@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import PlacementUpdateForm, PlacementFilterForm, CompanyInterviewForm
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from placementdrive.models import Company, ApplyingRole
+from placementdrive.models import Company
 import json
 from django.http import JsonResponse
 
@@ -178,49 +178,22 @@ def pending_resumes_list(request):
 @login_required
 def update_placement(request, pk):
     placement = get_object_or_404(Placement, pk=pk)
-    interview_form = CompanyInterviewForm()
 
     if request.method == 'POST':
-        if 'update_placement' in request.POST:
-            form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Placement updated successfully.")
-                return redirect('placementdb:placement_list')
-        elif 'add_interview' in request.POST:
-            interview_form = CompanyInterviewForm(request.POST)
-            if interview_form.is_valid():
-                interview = interview_form.save(commit=False)
-                interview.placement = placement
-                interview.save()
-                messages.success(request, "Interview added successfully.")
-                return redirect('placementdb:update_placement', pk=pk)
+        form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Placement updated successfully.")
+            return redirect('placementdb:placement_list')
 
     form = PlacementUpdateForm(instance=placement)
     interviews = placement.interviews.all()
-    
-    companies = Company.objects.all()
-    company_details = {
-        c.id: {
-            'name': c.company_name,
-            'location': c.location,
-            'roles': list(c.roles.values('id', 'role_name'))
-        } for c in companies
-    }
 
     return render(request, 'placementdb/update_placement.html', {
         'form': form,
-        'interview_form': interview_form,
         'placement': placement,
         'interviews': interviews,
-        'company_details_json': json.dumps(company_details)
     })
-
-@login_required
-def get_roles_for_company(request):
-    company_id = request.GET.get('company_id')
-    roles = ApplyingRole.objects.filter(company_id=company_id).values('id', 'role_name')
-    return JsonResponse(list(roles), safe=False)
 
 @login_required
 def update_interview(request, pk):

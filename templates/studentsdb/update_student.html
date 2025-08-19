@@ -338,6 +338,49 @@
                 </div>
             </div>
         </div>
+        <div class="form-section-card">
+            <div class="form-section-header">
+                <h5 style="color: white;"><i class="fas fa-calendar-alt me-2" style="color: white;"></i>Placement Updates</h5>
+            </div>
+            <div class="form-section-body">
+                <div class="table-wrapper">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Role</th>
+                                <th>Round</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for interview_status in student.interview_statuses.all %}
+                                <tr>
+                                    <td>{{ interview_status.interview.company.company_name }}</td>
+                                    <td>{{ interview_status.interview.applying_role }}</td>
+                                    <td>{{ interview_status.interview.round_number }} - {{ interview_status.interview.interview_round }}</td>
+                                    <td>{{ interview_status.interview.interview_date }}</td>
+                                    <td>{{ interview_status.interview.interview_time }}</td>
+                                    <td>{{ interview_status.interview.location }}{% if interview_status.interview.location == 'others' %} ({{ interview_status.interview.other_location }}){% endif %}</td>
+                                    <td>{{ interview_status.selected|yesno:"Selected,Not Selected" }}</td>
+                                    <td>{{ interview_status.reason|default_if_none:"" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4 text-muted">
+                                        <i class="fas fa-calendar-times me-2"></i>No placement updates found.
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Update Student</button>

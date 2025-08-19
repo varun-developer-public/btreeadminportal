@@ -137,7 +137,7 @@ def student_list(request):
 
 @login_required
 def update_student(request, student_id):
-    student = get_object_or_404(Student, student_id=student_id)
+    student = get_object_or_404(Student.objects.prefetch_related('interview_statuses__interview__company'), student_id=student_id)
 
     if request.method == 'POST':
         form = StudentUpdateForm(request.POST, instance=student, user=request.user)
@@ -464,3 +464,20 @@ def delete_all_students(request):
             messages.error(request, f"An error occurred while deleting students: {e}", extra_tags='student_message')
     
     return redirect('student_list')
+@login_required
+def student_report(request, student_id):
+    student = get_object_or_404(Student, student_id=student_id)
+    interview_statuses = student.interview_statuses.select_related('interview__company').order_by('interview__company__company_name', 'interview__round_number')
+
+    interviews_by_company = {}
+    for status in interview_statuses:
+        company_name = status.interview.company.company_name
+        if company_name not in interviews_by_company:
+            interviews_by_company[company_name] = []
+        interviews_by_company[company_name].append(status.interview)
+
+    context = {
+        'student': student,
+        'interviews_by_company': interviews_by_company,
+    }
+    return render(request, 'studentsdb/student_report.html', context)

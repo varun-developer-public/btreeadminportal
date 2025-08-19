@@ -1,11 +1,13 @@
 from django.urls import path
 from . import views
 
-app_name = 'placementdrive'
-
 urlpatterns = [
     path('', views.company_list, name='company_list'),
-    path('add/', views.company_create, name='company_add'),
-    path('<int:pk>/edit/', views.company_update, name='company_edit'),
+    path('create/', views.company_create, name='company_create'),
+    path('<int:pk>/update/', views.company_update, name='company_update'),
     path('<int:pk>/delete/', views.company_delete, name='company_delete'),
+    path('<int:company_pk>/schedule/', views.schedule_interview, name='schedule_interview'),
+    path('interview/<int:parent_interview_pk>/add_round/', views.add_interview_round, name='add_interview_round'),
+    path('interview/<int:interview_pk>/update_students/', views.update_interview_students, name='update_interview_students'),
+    path('ajax/load-students/', views.load_students, name='ajax_load_students'),
 ]

@@ -8,6 +8,7 @@ from .views import (
     import_students,
     download_error_report,
     delete_all_students,
+    student_report,
 )
 
 urlpatterns = [
@@ -18,5 +19,6 @@ urlpatterns = [
     path('import/', import_students, name='import_students'),
     path('template/', download_student_template, name='download_student_template'),
     path('error-report/', download_error_report, name='download_error_report'),
+    path('<str:student_id>/report/', student_report, name='student_report'),
     path('delete-all/', delete_all_students, name='delete_all_students'),
 ]
