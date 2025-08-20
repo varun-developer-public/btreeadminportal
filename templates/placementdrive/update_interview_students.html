@@ -42,7 +42,7 @@
                                     </td>
                                     <td class="reason-cell col-4" style="display: none;">
                                         <div style="display: flex; justify-content: center; gap: 20px; align-items: center;">
-                                            <span>Reason for Rejection:</span>
+                                            <span id="reason-label">Reason for {{ form.status.value|default:"Status" }}</span>
                                             <span>{{ form.reason }}</span>
                                         </div>
                                     </td>
@@ -72,10 +72,21 @@ document.addEventListener('DOMContentLoaded', function () {
         const statusSelect = row.querySelector('select[name$="-status"]');
         const reasonCell = row.querySelector('.reason-cell');
         const offerLetterCell = row.querySelector('.offer-letter-cell');
+        const reasonLabel = document.getElementById('reason-label');
+
+        function updateReasonLabel() {
+        const selectedOption = statusSelect.options[statusSelect.selectedIndex].text;
+        reasonLabel.textContent = "Reason for " + selectedOption +': ';
+        }
+
+        // Update on page load
+        updateReasonLabel();
+
+        statusSelect.addEventListener('change', updateReasonLabel);
 
         function toggleCells() {
             const selectedStatus = statusSelect.value;
-            reasonCell.style.display = selectedStatus === 'rejected' ? '' : 'none';
+            reasonCell.style.display = (selectedStatus === 'rejected' || selectedStatus === 'not_attended') ? '' : 'none';
             offerLetterCell.style.display = selectedStatus === 'placed' ? '' : 'none';
         }
 

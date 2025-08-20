@@ -26,7 +26,7 @@
                 <div class="row">
                     {% for field in form %}
                     <div class="col-md-6">
-                        <div class="form-group">
+                        <div class="form-group" id="field_{{ field.name }}">
                             {% if not field.is_hidden %}
                             <div class="label-form">
                                 {{ field.label_tag }}
@@ -186,4 +186,38 @@
       });
     });
   </script>
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const portalSelect = document.getElementById("id_portal");
+    const locationSelect = document.getElementById("id_location");
+    const otherPortalWrapper = document.getElementById("field_other_portal");
+    const otherLocationWrapper = document.getElementById("field_other_location");
+
+
+    function toggleOtherPortal() {
+        if (portalSelect && portalSelect.value === "others") {
+            otherPortalWrapper.style.display = "block";
+        } else {
+            otherPortalWrapper.style.display = "none";
+        }
+    }
+
+    function toggleOtherLocation() {
+        if (locationSelect && locationSelect.value === "others") {
+            otherLocationWrapper.style.display = "block";
+        } else {
+            otherLocationWrapper.style.display = "none";
+        }
+    }
+
+    if (portalSelect) {
+        toggleOtherPortal();
+        portalSelect.addEventListener("change", toggleOtherPortal);
+    }
+    if (locationSelect) {
+        toggleOtherLocation();
+        locationSelect.addEventListener("change", toggleOtherLocation);
+    }
+});
+</script>
 {% endblock %}

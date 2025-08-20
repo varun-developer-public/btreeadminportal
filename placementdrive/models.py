@@ -4,19 +4,44 @@ from accounts.models import CustomUser
 from coursedb.models import Course
 
 class Company(models.Model):
+    LOCATION_CHOICES = [
+        ('chennai', 'Chennai'),
+        ('bangalore', 'Bangalore'),
+        ('hyderabad', 'Hyderabad'),
+        ('others', 'Others'),
+    ]
+    PORTAL_CHOICES = [
+        ('naukri', 'Naukri'),
+        ('linkedin', 'LinkedIn'),
+        ('glassdoor', 'Glassdoor'),
+        ('indeed', 'Indeed'),
+        ('placement_india', 'Placement India'),
+        ('freshersworld', 'Freshersworld'),
+        ('shine', 'Shine'),
+        ('many_jobs', 'Many Jobs'),
+        ('internshala', 'Internshala'),
+        ('quickr_jobs', 'Quickr Jobs'),
+        ('google_jobs', 'Google Jobs'),
+        ('monster', 'Monster'),
+        ('company_website', 'Company Website'),
+        ('others', 'Others')
+    ]
     PROGRESS_CHOICES = [
         ('resume_shared', 'Resume Shared'),
         ('interview_scheduling', 'Interview Scheduling'),
+        ('interview_not_conducted','Interview Not Conducted'),
         ('interview_completed', 'Interview Completed'),
     ]
     company_code = models.CharField(max_length=20, unique=True, editable=False)
     date = models.DateField(default=timezone.now)
-    portal = models.CharField(max_length=100)
+    portal = models.CharField(max_length=100, choices=PORTAL_CHOICES)
+    other_portal = models.CharField(max_length=255, blank=True, null=True)
     company_name = models.CharField(max_length=255)
     spoc = models.CharField(max_length=255)
     mobile = models.CharField(max_length=15)
     email = models.EmailField()
-    location = models.CharField(max_length=255)
+    location = models.CharField(max_length=255, choices=LOCATION_CHOICES)
+    other_location = models.CharField(max_length=255, blank=True, null=True)
     progress = models.CharField(max_length=50, choices=PROGRESS_CHOICES, default='resume_shared')
     created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,11 +62,15 @@ class Company(models.Model):
         super().save(*args, **kwargs)
 class Interview(models.Model):
     ROUND_CHOICES = [
-        ('virtual', 'Virtual'),
         ('aptitude', 'Aptitude'),
+        ('gd',"Group Discussion"),
         ('technical', 'Technical'),
         ('hr', 'HR'),
-        ('task', 'Task'),
+        ('task', 'Task Work'),
+    ]
+    VENUE_CHOICES = [
+        ('online', 'Online'),
+        ('offline', 'Offline'),
     ]
     LOCATION_CHOICES = [
         ('chennai', 'Chennai'),
@@ -49,6 +78,11 @@ class Interview(models.Model):
         ('hyderabad', 'Hyderabad'),
         ('others', 'Others'),
     ]
+    venue = models.CharField(
+        max_length=20,
+        choices=VENUE_CHOICES,
+        default='offline'
+    )
 
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='scheduled_interviews')
     applying_role = models.CharField(max_length=255)
@@ -70,7 +104,8 @@ from studentsdb.models import Student
 class InterviewStudent(models.Model):
     STATUS_CHOICES = [
         ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
+        ('not_attended','Not Attended'),
+        ('selected', 'Selected'),
         ('rejected', 'Rejected'),
         ('placed', 'Placed'),
     ]

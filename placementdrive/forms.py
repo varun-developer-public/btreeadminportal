@@ -6,10 +6,15 @@ from studentsdb.models import Student
 class CompanyForm(forms.ModelForm):
     class Meta:
         model = Company
-        fields = ['date', 'portal', 'company_name', 'spoc', 'mobile', 'email', 'location', 'progress']
+        fields = [ 'portal', 'other_portal', 'company_name', 'spoc', 'mobile', 'email', 'location', 'date','other_location', 'progress']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
+        self.fields['date'].widget.attrs['readonly'] = True
         if not self.instance.pk:
             self.fields['progress'].widget = forms.HiddenInput()
             self.fields['progress'].initial = 'resume_shared'
@@ -50,7 +55,7 @@ class InterviewScheduleForm(forms.ModelForm):
 
             # Populate students from the selected ones in the previous round
             selected_students_qs = Student.objects.filter(
-                id__in=parent_interview.student_status.filter(status='completed').values_list('student_id', flat=True)
+                id__in=parent_interview.student_status.filter(status='selected').values_list('student_id', flat=True)
             )
             self.fields['students'].queryset = selected_students_qs
         
@@ -74,6 +79,9 @@ class InterviewStudentForm(forms.ModelForm):
 
         if status == 'rejected' and not reason:
             self.add_error('reason', 'This field is required when the status is Rejected.')
+            
+        if status == 'not_attended' and not reason:
+            self.add_error('reason', 'This field is required when the status is Not Attended.')
 
         if status == 'placed' and not offer_letter:
             self.add_error('offer_letter', 'An offer letter is required when the status is Placed.')
