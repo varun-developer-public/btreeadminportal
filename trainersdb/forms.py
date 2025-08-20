@@ -19,7 +19,7 @@ class TrainerForm(forms.ModelForm):
         fields = [
             'name', 'country_code', 'phone_number', 'email', 'location',
             'other_location', 'years_of_experience', 'stack', 'employment_type', 'timing_slots', 'profile',
-            'demo_link', 'commercials'
+            'demo_link', 'commercials', 'is_active'
         ]
         widgets = {
             'stack': forms.SelectMultiple(attrs={'class': 'form-control'}),

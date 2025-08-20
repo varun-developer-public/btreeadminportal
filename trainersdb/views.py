@@ -15,6 +15,7 @@ def trainer_list(request):
     employment_query = request.GET.get('employment')
     mode_query = request.GET.get('mode')
     availability_query = request.GET.get('availability')
+    is_active_query = request.GET.get('is_active')
 
     trainer_list = Trainer.objects.all().order_by('-id')
 
@@ -43,6 +44,12 @@ def trainer_list(request):
 
     if availability_query:
         trainer_list = trainer_list.filter(availability__icontains=availability_query)
+
+    if is_active_query:
+        if is_active_query == 'yes':
+            trainer_list = trainer_list.filter(is_active=True)
+        elif is_active_query == 'no':
+            trainer_list = trainer_list.filter(is_active=False)
 
     paginator = Paginator(trainer_list, 10)
     page = request.GET.get('page')
@@ -81,6 +88,7 @@ def trainer_list(request):
         'employment_query': employment_query,
         'mode_query': mode_query,
         'availability_query': availability_query,
+        'is_active_query': is_active_query,
         'all_courses': all_courses,
         'location_choices': location_choices,
         'employment_choices': employment_choices,

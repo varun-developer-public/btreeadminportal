@@ -85,6 +85,14 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="filter-group">
+                <label for="id_is_active">Status</label>
+                <select name="is_active" id="id_is_active" class="form-control">
+                    <option value="">All</option>
+                    <option value="yes" {% if is_active_query == 'yes' %}selected{% endif %}>Active</option>
+                    <option value="no" {% if is_active_query == 'no' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
         </div>
         <div class="filter-actions">
             <button type="submit" class="btn-primary">Apply Filters</button>
@@ -112,7 +120,10 @@
             <tbody>
                 {% for trainer in trainers %}
                     <tr class="trainer-row" data-bs-toggle="collapse" data-bs-target="#collapse{{ trainer.pk }}">
-                        <td><span class="badge bg-secondary">{{ trainer.trainer_id }}</span></td>
+                        <td>
+                            <span class="status-indicator {% if trainer.is_active %}status-active{% else %}status-inactive{% endif %}" style="margin-right: 6%;"></span>
+                            <span class="badge bg-secondary me-3">{{ trainer.trainer_id }}</span>
+                        </td>
                         <td>{{ trainer.name|default:"-" }}</td>
                         <td>
                             {% if trainer.phone_number %}
@@ -242,7 +253,20 @@
     </div>
     {% endif %}
 </div>
-
+<style>
+    .status-indicator {
+        height: 10px;
+        width: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .status-active {
+        background-color: green;
+    }
+    .status-inactive {
+        background-color: red;
+    }
+</style>
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

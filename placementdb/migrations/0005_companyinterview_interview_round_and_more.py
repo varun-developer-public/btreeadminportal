@@ -7,7 +7,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('placementdb', '0004_companyinterview'),
-        ('studentsdb', '0025_alter_student_pgdegree_alter_student_ugdegree'),
     ]
 
     operations = [

@@ -18,7 +18,7 @@ def is_placement(user):
 
 def is_batch_coordinator(user):
     return user.is_authenticated and user.role == 'batch_coordination'
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F
 from batchdb.models import Batch
 from django.db.models.functions import TruncMonth
 from studentsdb.models import Student
@@ -26,7 +26,6 @@ from paymentdb.models import Payment
 from settingsdb.models import TransactionLog
 from placementdb.models import Placement
 from placementdrive.models import Company
-from placementdb.models import CompanyInterview
 from datetime import datetime
 
 from django.utils import timezone
@@ -335,12 +334,13 @@ def placement_dashboard(request):
     # Separate counts for actively seeking
     actively_seeking_completed = actively_seeking_stat.filter(student__course_status='C').count()
     actively_seeking_in_progress = actively_seeking_stat.filter(student__course_status='IP').count()
+    actively_seeking_yts = actively_seeking_stat.filter(student__course_status='YTS').count()
     
     actively_seeking_count = actively_seeking_stat.count()
     
     placement_rate = ((total_placed / total_placement_pool) * 100) if total_placement_pool > 0 else 0
     active_drives_count = drives.count()
-    interviews_scheduled = CompanyInterview.objects.count()
+    interviews_scheduled = Company.objects.filter(progress='interview_scheduling').count()
 
     # --- Refined Resume Statistics ---
     # 1. Start with students who need placement and are in an active course status.
@@ -413,7 +413,18 @@ def placement_dashboard(request):
                 all_course_ids.add(student.course_id)
     
     courses_dict = {c.id: c.course_name for c in Course.objects.filter(id__in=list(all_course_ids))}
-    upcoming_interviews = CompanyInterview.objects.filter(interview_date__gte=timezone.now().date()).select_related('placement__student', 'company').order_by('interview_date')[:5]
+    # Fetch upcoming interviews using the correct 'Interview' model from 'placementdrive'
+    from placementdrive.models import Interview
+
+    from django.db.models import Max
+    # Get the latest interview round for each company without using DISTINCT ON
+    upcoming_interviews = Interview.objects.filter(
+        interview_date__gte=timezone.now().date()
+    ).annotate(
+        latest_round=Max('company__scheduled_interviews__round_number')
+    ).filter(
+        round_number=F('latest_round')
+    ).select_related('company').prefetch_related('student_status__student').order_by('interview_date')[:5]
     students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student')[:10]
 
     context = {
@@ -422,6 +433,7 @@ def placement_dashboard(request):
         'actively_seeking': actively_seeking_count,
         'actively_seeking_completed': actively_seeking_completed,
         'actively_seeking_in_progress': actively_seeking_in_progress,
+        'actively_seeking_yts':actively_seeking_yts,
         'total_placed': total_placed,
         'placement_rate': round(placement_rate, 1),
         'active_drives_count': active_drives_count,

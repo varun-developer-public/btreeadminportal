@@ -71,6 +71,7 @@ class Trainer(models.Model):
     profile = models.FileField(upload_to='trainer_profiles/', blank=True, null=True)
     demo_link = models.URLField(blank=True, null=True)
     commercials = models.JSONField(default=list, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
 
     def save(self, *args, **kwargs):

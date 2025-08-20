@@ -164,19 +164,6 @@ def import_data(request):
         return redirect('settings_dashboard')
     return render(request, 'settingsdb/import_data.html')
 
-@staff_member_required
-def delete_all_courses(request):
-    if not request.user.is_superuser:
-        return redirect('settings_dashboard')
-    Course.objects.all().delete()
-    return redirect('settings_dashboard')
-
-@staff_member_required
-def delete_all_course_categories(request):
-    if not request.user.is_superuser:
-        return redirect('settings_dashboard')
-    CourseCategory.objects.all().delete()
-    return redirect('settings_dashboard')
 
 @staff_member_required
 def import_student_courses(request):

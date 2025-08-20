@@ -10,7 +10,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('coursedb', '0005_coursemodule_has_topics_topic'),
         ('placementdrive', '0003_company_progress'),
-        ('studentsdb', '0025_alter_student_pgdegree_alter_student_ugdegree'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
