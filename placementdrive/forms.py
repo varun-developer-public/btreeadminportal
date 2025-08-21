@@ -15,7 +15,8 @@ class CompanyForm(forms.ModelForm):
         self.request = kwargs.pop('request', None)
         # super().__init__(*args, **kwargs)
 
-        self.fields['date'].widget.attrs['readonly'] = True
+        # self.fields['date'].widget.attrs['readonly'] = True
+        self.fields['date'].widget = forms.DateInput(attrs={'type': 'date'})
         if not self.instance.pk:
             self.fields['progress'].widget = forms.HiddenInput()
             self.fields['progress'].initial = 'resume_shared'

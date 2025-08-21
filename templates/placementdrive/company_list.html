@@ -71,6 +71,7 @@
                     <th>Email</th>
                     <th>Location</th>
                     <th>Progress</th>
+                    <th>Date</th>
                     <th>Created By</th>
                     <th>Actions</th>
                 </tr>
@@ -92,6 +93,7 @@
                     <td>{{ company.email }}</td>
                     <td>{{ company.location|capfirst }}</td>
                     <td>{{ company.get_progress_display }}</td>
+                    <td>{{ company.date }}</td>
                     <td>{{ company.created_by.name }}</td>
                     <td>
                         <div class="d-flex gap-2 justify-content-center">
