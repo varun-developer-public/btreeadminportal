@@ -95,7 +95,10 @@
                 <hr>
                 {% for interview in role.list %}
                     <h5>Round {{ interview.round_number }} - {{ interview.interview_round|title }}</h5>
-                    <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
+                    <div style="display: flex; justify-content: space-between;">
+                        <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
+                        <p><strong>Scheduled By:</strong> <strong style="color: #074383;">{{ interview.created_by.name }}</strong> at {{ interview.created_at }}</p>
+                    </div>
                     <div class="table-wrapper">
                         <table class="table table-striped">
                             <thead>
@@ -108,7 +111,7 @@
                             <tbody>
                                 {% for student_status in interview.student_status.all %}
                                     <tr>
-                                        <td>{{ student_status.student }}</td>
+                                        <td>{{ student_status.student.student_id }} - {{ student_status.student.first_name }} {{ student_status.student.last_name|default:'' }}</td>
                                         <td>{{ student_status.get_status_display }}</td>
                                         <td>{{ student_status.reason|default_if_none:"-" }}</td>
                                     </tr>
@@ -117,15 +120,21 @@
                         </table>
                     </div>
                     {% if not forloop.last %}
-                        <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
+                        <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update</a>
                     {% else %}
                         {% if company.progress != 'interview_completed' %}
-                            <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm mx-3">Update Student Status</a>
-                            <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
-                            <a href="{% url 'postpone_interview_round' interview.pk %}" class="btn btn-warning btn-sm">Postpone Round</a>
-                            {% if request.user.is_superuser %}
-                            <a href="{% url 'delete_interview_round' interview.pk %}" class="btn btn-danger btn-sm">Delete Round</a>
-                            {% endif %}
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm mx-3">Update Round</a>
+                                <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
+                            </div>
+                            <div>
+                                <a href="{% url 'postpone_interview_round' interview.pk %}" class="btn btn-primary btn-sm ms-2">Postpone Round</a>
+                                {% if request.user.is_superuser %}
+                                <a href="{% url 'delete_interview_round' interview.pk %}" class="btn btn-danger btn-sm ms-2">Delete Round</a>
+                                {% endif %}
+                            </div>
+                        </div>
                         {% else %}
                             <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
                             <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>

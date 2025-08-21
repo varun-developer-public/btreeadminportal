@@ -74,6 +74,9 @@ def company_create(request):
     if request.method == 'POST':
         form = CompanyForm(request.POST)
         if form.is_valid():
+            company = form.save(commit=False)
+            company.created_by = request.user
+            company.save()
             form.save()
             return redirect('company_list')
     else:

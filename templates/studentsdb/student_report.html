@@ -38,7 +38,10 @@
                         <div class="accordion-body">
                             {% for interview in interviews %}
                             <h5>Round {{ interview.round_number }} - {{ interview.interview_round }}</h5>
-                            <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}  | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
+                            <div style="display: flex; justify-content: space-between;">
+                                <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
+                                <p><strong>Scheduled By:</strong> <strong style="color: #074383;">{{ interview.created_by.name }}</strong> at {{ interview.created_at }}</p>
+                            </div>
                             <p><strong>Status:</strong>
                                 {% for status in interview.student_status.all %}
                                     {% if status.student.id == student.id %}
