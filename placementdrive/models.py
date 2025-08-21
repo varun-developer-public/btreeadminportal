@@ -1,4 +1,6 @@
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.forms import ValidationError
 from django.utils import timezone
 from accounts.models import CustomUser
 from coursedb.models import Course
@@ -38,13 +40,37 @@ class Company(models.Model):
     other_portal = models.CharField(max_length=255, blank=True, null=True)
     company_name = models.CharField(max_length=255)
     spoc = models.CharField(max_length=255)
-    mobile = models.CharField(max_length=15)
-    email = models.EmailField()
+    mobile = models.CharField(max_length=15, unique=True)
+    email = models.EmailField(unique=True)            
     location = models.CharField(max_length=255, choices=LOCATION_CHOICES)
     other_location = models.CharField(max_length=255, blank=True, null=True)
     progress = models.CharField(max_length=50, choices=PROGRESS_CHOICES, default='resume_shared')
     created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    interview_cycles = models.PositiveIntegerField(default=1)
+    
+    
+    def clean(self):
+        super().clean()
+        
+        # Validate unique mobile number
+        if Company.objects.filter(mobile=self.mobile).exclude(pk=self.pk).exists():
+            raise ValidationError({'mobile': 'This phone number is already registered'})
+
+        # Validate unique email domain
+        if '@' in self.email:
+            domain = self.email.split('@')[1].lower()
+            if Company.objects.filter(email__iendswith=f'@{domain}').exclude(pk=self.pk).exists():
+                raise ValidationError({'email': 'Company with this domain already exists'})
+            
+        # Extract domain from email
+        if '@' in self.email:
+            domain = self.email.split('@')[1].lower()
+            # Check if domain already exists excluding current instance
+            query = Company.objects.filter(email__iendswith=f'@{domain}').exclude(pk=self.pk)
+            if query.exists():
+                raise ValidationError({'email': f'Company with domain {domain} already exists'})
+            
 
     def __str__(self):
         return f"{self.company_name} ({self.company_code})"
@@ -96,7 +122,8 @@ class Interview(models.Model):
     interview_time = models.TimeField()
     created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    cycle_number = models.PositiveIntegerField(default=1)
+    
     def __str__(self):
         return f"Interview for {self.applying_role} at {self.company.company_name} on {self.interview_date}"
 from studentsdb.models import Student

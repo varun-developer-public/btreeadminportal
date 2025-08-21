@@ -2,9 +2,25 @@ from django import forms
 from .models import Company, Interview, InterviewStudent
 from coursedb.models import Course
 from studentsdb.models import Student
+from accounts.models import CustomUser as User
 
 class CompanyForm(forms.ModelForm):
     reason_for_not_conducting = forms.CharField(widget=forms.Textarea, required=False)
+    
+    def clean_mobile(self):
+        mobile = self.cleaned_data['mobile']
+        if Company.objects.filter(mobile=mobile).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("This phone number is already registered.")
+        return mobile
+
+    def clean(self):
+        cleaned_data = super().clean()
+        email = cleaned_data.get('email')
+        
+        if email and '@' in email:
+            domain = email.split('@')[1].lower()
+            if Company.objects.filter(email__iendswith=f'@{domain}').exclude(pk=self.instance.pk).exists():
+                self.add_error('email', 'This domain is already registered')
     class Meta:
         model = Company
         fields = [ 'portal', 'other_portal', 'company_name', 'spoc', 'mobile', 'email', 'location', 'date','other_location', 'progress','reason_for_not_conducting']
@@ -101,3 +117,28 @@ class CompanyFilterForm(forms.Form):
         required=False,
         label="Progress"
     )
+    domain = forms.CharField(
+        required=False,
+        label='Domain',
+        widget=forms.TextInput(attrs={'placeholder': 'Search by domain'})
+    )
+    location = forms.ChoiceField(
+        required=False,
+        label='Location',
+        choices=[]
+    )
+    created_by = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        label='Created By'
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        location_choices = [('', 'All Locations')] + [(loc, loc) for loc in Company.objects.values_list('location', flat=True).distinct().order_by('location')]
+        self.fields['location'].choices = location_choices
+
+        user_ids = Company.objects.values_list('created_by', flat=True).distinct()
+        self.fields['created_by'].queryset = User.objects.filter(id__in=user_ids)
+        self.fields['created_by'].label_from_instance = lambda obj: obj.get_full_name() or obj.username
+        self.fields['created_by'].empty_label = 'All Creators'

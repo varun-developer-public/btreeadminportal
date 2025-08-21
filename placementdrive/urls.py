@@ -11,4 +11,5 @@ urlpatterns = [
     path('ajax/load-students/', views.load_students, name='ajax_load_students'),
     path('interview/<int:interview_pk>/postpone/', views.postpone_interview_round, name='postpone_interview_round'),
     path('interview/<int:interview_pk>/delete/', views.delete_interview_round, name='delete_interview_round'),
+    path('company/<int:pk>/restart/', views.restart_interview_cycle, name='restart_interview_cycle'),
 ]

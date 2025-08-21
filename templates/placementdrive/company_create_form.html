@@ -17,6 +17,13 @@
 
     <form method="post" class="student-form">
         {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+        {% endif %}
         <div class="form-section-card">
             <div class="form-section-header">
                 <h5 style="color: white;"><i class="fas fa-building me-2" style="color: white;"></i>Company Details</h5>
@@ -34,12 +41,16 @@
                                 {% endif %}
                             </div>
                             {% endif %}
-                            {{ field|attr:"class:form-control" }}
-                            <div class="error-message">
-                                {% if field.errors %}
-                                    {{ field.errors }}
-                                {% endif %}
-                            </div>
+                            {% if field.errors %}
+                                {{ field|attr:"class:form-control is-invalid" }}
+                                <div class="invalid-feedback">
+                                    {% for error in field.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ field|attr:"class:form-control" }}
+                            {% endif %}
                         </div>
                     </div>
                     {% endfor %}

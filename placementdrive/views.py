@@ -8,6 +8,7 @@ from coursedb.models import Course
 from placementdb.models import CompanyInterview
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, Prefetch
+from django.contrib import messages
 
 @login_required
 def company_list(request):
@@ -19,11 +20,14 @@ def company_list(request):
     )
 
     companies = Company.objects.prefetch_related(selected_students_prefetch).order_by('-created_at')
-    form = CompanyFilterForm(request.GET)
+    form = CompanyFilterForm(request.GET or None)
 
     if form.is_valid():
         q = form.cleaned_data.get('q')
         progress = form.cleaned_data.get('progress')
+        domain = form.cleaned_data.get('domain')
+        location = form.cleaned_data.get('location')
+        created_by = form.cleaned_data.get('created_by')
 
         if q:
             companies = companies.filter(
@@ -34,6 +38,12 @@ def company_list(request):
             )
         if progress:
             companies = companies.filter(progress=progress)
+        if domain:
+            companies = companies.filter(email__icontains=domain)
+        if location:
+            companies = companies.filter(location=location)
+        if created_by:
+            companies = companies.filter(created_by=created_by)
 
     paginator = Paginator(companies, 10)
     page = request.GET.get('page')
@@ -96,6 +106,7 @@ def add_interview_round(request, parent_interview_pk):
             interview.company = company
             interview.parent_interview = parent_interview
             interview.round_number = parent_interview.round_number + 1
+            interview.cycle_number = parent_interview.cycle_number
             interview.created_by = request.user
             interview.save()
             
@@ -141,15 +152,43 @@ def company_update(request, pk):
                 interview = interview_form.save(commit=False)
                 interview.company = company
                 interview.created_by = request.user
+                
+                current_cycle = company.interview_cycles
+                
+                existing_rounds = Interview.objects.filter(company=company, cycle_number=current_cycle).count()
+                interview.round_number = existing_rounds + 1
+                interview.cycle_number = current_cycle
+                
+                # # Assign cycle number
+                # if company.interview_cycles == 0:
+                #     company.interview_cycles = 1
+                #     company.save()
+                # interview.cycle_number = company.interview_cycles
+
+                # # Assign round number dynamically for this cycle
+                # last_round = Interview.objects.filter(
+                #     company=company, cycle_number=company.interview_cycles
+                # ).order_by('-round_number').first()
+                # if last_round:
+                #     interview.round_number = last_round.round_number + 1
+                # else:
+                #     interview.round_number = 1
+
+
+                # Save company progress
+                company.progress = 'interview_scheduling'
+                company.save()
+
+                # Save interview and M2M
                 interview.save()
                 interview_form.save_m2m()
-                
+
+                # Add students
                 students = interview_form.cleaned_data['students']
                 for student in students:
                     InterviewStudent.objects.create(interview=interview, student=student)
 
-                company.progress = 'interview_scheduling'
-                company.save()
+                messages.success(request, "Interview scheduled successfully!")
                 return redirect('company_update', pk=company.pk)
         else:
             if form.is_valid():
@@ -224,3 +263,19 @@ def delete_interview_round(request, interview_pk):
         return redirect('company_update', pk=company_pk)
     
     return render(request, 'placementdrive/interview_round_confirm_delete.html', {'interview': interview})
+
+
+@login_required
+def restart_interview_cycle(request, pk):
+    company = get_object_or_404(Company, pk=pk)
+
+    if company.progress == "interview_completed":
+        company.interview_cycles += 1
+        company.progress = 'interview_scheduling'
+        company.save()
+
+        messages.success(request, "Interview cycle restarted. You can schedule new interviews.")
+    else:
+        messages.warning(request, "Interview cycle can only be restarted after completion.")
+
+    return redirect("company_update", pk=company.pk)
