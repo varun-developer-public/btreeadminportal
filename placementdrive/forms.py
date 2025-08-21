@@ -4,15 +4,16 @@ from coursedb.models import Course
 from studentsdb.models import Student
 
 class CompanyForm(forms.ModelForm):
+    reason_for_not_conducting = forms.CharField(widget=forms.Textarea, required=False)
     class Meta:
         model = Company
-        fields = [ 'portal', 'other_portal', 'company_name', 'spoc', 'mobile', 'email', 'location', 'date','other_location', 'progress']
+        fields = [ 'portal', 'other_portal', 'company_name', 'spoc', 'mobile', 'email', 'location', 'date','other_location', 'progress','reason_for_not_conducting']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
         self.request = kwargs.pop('request', None)
-        super().__init__(*args, **kwargs)
+        # super().__init__(*args, **kwargs)
 
         self.fields['date'].widget.attrs['readonly'] = True
         if not self.instance.pk:
@@ -33,7 +34,7 @@ class InterviewScheduleForm(forms.ModelForm):
 
     class Meta:
         model = Interview
-        fields = ['applying_role', 'courses', 'students', 'interview_round', 'location', 'other_location', 'interview_date', 'interview_time']
+        fields = ['applying_role', 'courses', 'students', 'interview_round','venue', 'location', 'other_location', 'interview_date', 'interview_time']
         widgets = {
             'interview_date': forms.DateInput(attrs={'type': 'date'}),
             'interview_time': forms.TimeInput(attrs={'type': 'time', 'class':'form-control'}),
@@ -65,6 +66,7 @@ class InterviewScheduleForm(forms.ModelForm):
                 self.fields['students'].queryset = Student.objects.filter(course_id__in=course_ids)
         elif self.instance.pk:
             self.fields['students'].queryset = self.instance.students.all()
+
 
 class InterviewStudentForm(forms.ModelForm):
     class Meta:

@@ -81,26 +81,6 @@ def company_create(request):
     return render(request, 'placementdrive/company_create_form.html', {'form': form})
 
 
-@login_required
-def schedule_interview(request, company_pk):
-    company = get_object_or_404(Company, pk=company_pk)
-    if request.method == 'POST':
-        form = InterviewScheduleForm(request.POST, company=company)
-        if form.is_valid():
-            interview = form.save(commit=False)
-            interview.company = company
-            interview.created_by = request.user
-            interview.save()
-            
-            students = form.cleaned_data['students']
-            for student in students:
-                InterviewStudent.objects.create(interview=interview, student=student)
-
-            company.progress = 'interview_scheduling'
-            company.save()
-            
-            return redirect('company_update', pk=company.pk)
-    return redirect('company_update', pk=company.pk)
 
 @login_required
 def add_interview_round(request, parent_interview_pk):
@@ -149,16 +129,50 @@ def update_interview_students(request, interview_pk):
 @login_required
 def company_update(request, pk):
     company = get_object_or_404(Company, pk=pk)
+    interview_form = InterviewScheduleForm(request.POST or None, company=company)
+    form = CompanyForm(request.POST or None, instance=company)
+
     if request.method == 'POST':
-        form = CompanyForm(request.POST, instance=company)
-        if form.is_valid():
-            form.save()
-            return redirect('company_update', pk=company.pk)
-    else:
-        form = CompanyForm(instance=company)
-    
-    interview_form = InterviewScheduleForm(company=company)
-    
+        if 'schedule_interview' in request.POST:
+            if interview_form.is_valid():
+                interview = interview_form.save(commit=False)
+                interview.company = company
+                interview.created_by = request.user
+                interview.save()
+                interview_form.save_m2m()
+                
+                students = interview_form.cleaned_data['students']
+                for student in students:
+                    InterviewStudent.objects.create(interview=interview, student=student)
+
+                company.progress = 'interview_scheduling'
+                company.save()
+                return redirect('company_update', pk=company.pk)
+        else:
+            if form.is_valid():
+                company = form.save(commit=False)
+                if company.progress == 'interview_not_conducted':
+                    reason = form.cleaned_data.get('reason_for_not_conducting')
+                    if not reason:
+                        form.add_error('reason_for_not_conducting', 'This field is required when progress is Interview Not Conducted.')
+                    else:
+                        latest_interview = company.scheduled_interviews.order_by('-interview_date', '-interview_time').first()
+                        if latest_interview:
+                            students_to_update = latest_interview.student_status.all()
+                            for student_status in students_to_update:
+                                student_status.status = 'not_attended'
+                                student_status.reason = reason
+                                student_status.save()
+                        company.save()
+                        return redirect('company_update', pk=company.pk)
+                elif 'reason_for_not_conducting' in form.changed_data and company.progress != 'interview_not_conducted':
+                     form.cleaned_data.pop('reason_for_not_conducting', None)
+                     company.save()
+                     return redirect('company_update', pk=company.pk)
+                else:
+                    company.save()
+                    return redirect('company_update', pk=company.pk)
+
     return render(request, 'placementdrive/company_update_form.html', {
         'company': company,
         'form': form,
@@ -179,6 +193,31 @@ def load_students(request):
     if course_ids_str:
         course_ids = [int(cid) for cid in course_ids_str.split(',') if cid.isdigit()]
         students = Student.objects.filter(course_id__in=course_ids, pl_required=True).distinct()
-        student_data = [{"id": s.id, "student_name": f"{s.student_id} - {s.first_name} {s.last_name}"} for s in students]
+        student_data = [{"id": s.id, "student_name": f"{s.student_id} - {s.first_name} {s.last_name or ''}"} for s in students]
         return JsonResponse(student_data, safe=False)
     return JsonResponse([], safe=False)
+
+@login_required
+def postpone_interview_round(request, interview_pk):
+    interview = get_object_or_404(Interview, pk=interview_pk)
+    if request.method == 'POST':
+        date = request.POST.get('interview_date')
+        time = request.POST.get('interview_time')
+        interview.interview_date = date
+        interview.interview_time = time
+        interview.save()
+        return redirect('company_update', pk=interview.company.pk)
+    return render(request, 'placementdrive/postpone_interview.html', {'interview': interview})
+
+@login_required
+def delete_interview_round(request, interview_pk):
+    interview = get_object_or_404(Interview, pk=interview_pk)
+    if not request.user.is_superuser:
+        return redirect('company_update', pk=interview.company.pk)
+
+    if request.method == 'POST':
+        company_pk = interview.company.pk
+        interview.delete()
+        return redirect('company_update', pk=company_pk)
+    
+    return render(request, 'placementdrive/interview_round_confirm_delete.html', {'interview': interview})

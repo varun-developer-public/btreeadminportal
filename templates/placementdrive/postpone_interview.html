@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Postpone Interview Round</h2>
+    <p>Company: {{ interview.company.company_name }}</p>
+    <p>Role: {{ interview.applying_role }}</p>
+    <p>Current Date: {{ interview.interview_date }}</p>
+    <p>Current Time: {{ interview.interview_time }}</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="interview_date">New Date</label>
+            <input type="date" name="interview_date" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="interview_time">New Time</label>
+            <input type="time" name="interview_time" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+</div>
+{% endblock %}

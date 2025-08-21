@@ -69,9 +69,10 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                    <form method="post" action="{% url 'schedule_interview' company.pk %}" id="interview-form">
+                    <form method="post" action="{% url 'company_update' company.pk %}" id="interview-form">
                         {% csrf_token %}
                         {{ interview_form.as_p }}
+                        <input type="hidden" name="schedule_interview" value="1">
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -94,14 +95,14 @@
                 <hr>
                 {% for interview in role.list %}
                     <h5>Round {{ interview.round_number }} - {{ interview.interview_round|title }}</h5>
-                    <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}</p>
+                    <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
                     <div class="table-wrapper">
                         <table class="table table-striped">
                             <thead>
                                 <tr>
                                     <th>Student</th>
                                     <th>Status</th>
-                                    <th>Reason for Rejection</th>
+                                    <th>Reason for Rejection / Not Attended</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -115,12 +116,20 @@
                             </tbody>
                         </table>
                     </div>
-                    {% if company.progress != 'interview_completed' %}
-                    <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm mx-3">Update Student Status</a>
-                    <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
+                    {% if not forloop.last %}
+                        <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
                     {% else %}
-                    <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
-                    <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>
+                        {% if company.progress != 'interview_completed' %}
+                            <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm mx-3">Update Student Status</a>
+                            <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
+                            <a href="{% url 'postpone_interview_round' interview.pk %}" class="btn btn-warning btn-sm">Postpone Round</a>
+                            {% if request.user.is_superuser %}
+                            <a href="{% url 'delete_interview_round' interview.pk %}" class="btn btn-danger btn-sm">Delete Round</a>
+                            {% endif %}
+                        {% else %}
+                            <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
+                            <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>
+                        {% endif %}
                     {% endif %}
                     <hr>
                 {% endfor %}
@@ -218,6 +227,58 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleOtherLocation();
         locationSelect.addEventListener("change", toggleOtherLocation);
     }
+
+    const interviewLocationSelect = document.querySelector("#scheduleInterviewModal #id_interview-location");
+    const interviewOtherLocationWrapper = document.querySelector("#scheduleInterviewModal #id_interview-other_location").parentElement;
+
+    function toggleInterviewOtherLocation() {
+        if (interviewLocationSelect && interviewLocationSelect.value === "others") {
+            interviewOtherLocationWrapper.style.display = "block";
+        } else {
+            interviewOtherLocationWrapper.style.display = "none";
+        }
+    }
+
+    if (interviewLocationSelect) {
+        toggleInterviewOtherLocation();
+        interviewLocationSelect.addEventListener("change", toggleInterviewOtherLocation);
+    }
+
+    const progressSelect = document.getElementById("id_progress");
+    const reasonWrapper = document.getElementById("field_reason_for_not_conducting");
+
+    function toggleReasonForNotConducting() {
+        if (progressSelect && progressSelect.value === "interview_not_conducted") {
+            reasonWrapper.style.display = "block";
+        } else {
+            reasonWrapper.style.display = "none";
+        }
+    }
+
+    if (progressSelect) {
+        toggleReasonForNotConducting();
+        progressSelect.addEventListener("change", toggleReasonForNotConducting);
+    }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressSelect = document.getElementById('id_progress');
+    const reasonField = document.getElementById('field_reason_for_not_conducting');
+
+    function toggleReasonField() {
+        if (progressSelect.value === 'interview_not_conducted') {
+            reasonField.style.display = 'block';
+        } else {
+            reasonField.style.display = 'none';
+        }
+    }
+
+    // Initial check
+    toggleReasonField();
+
+    // Listen for changes
+    progressSelect.addEventListener('change', toggleReasonField);
 });
 </script>
 {% endblock %}

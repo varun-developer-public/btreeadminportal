@@ -92,6 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleOtherLocation();
         locationSelect.addEventListener("change", toggleOtherLocation);
     }
+
+    const reasonWrapper = document.getElementById("field_reason_for_not_conducting");
+    if (reasonWrapper) {
+        reasonWrapper.style.display = "none";
+    }
 });
 </script>
 {% endblock %}

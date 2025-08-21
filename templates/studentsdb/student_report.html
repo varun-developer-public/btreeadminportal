@@ -38,12 +38,12 @@
                         <div class="accordion-body">
                             {% for interview in interviews %}
                             <h5>Round {{ interview.round_number }} - {{ interview.interview_round }}</h5>
-                            <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}</p>
+                            <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %}  | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
                             <p><strong>Status:</strong>
                                 {% for status in interview.student_status.all %}
                                     {% if status.student.id == student.id %}
                                         {{ status.get_status_display }}
-                                        {% if status.status == 'rejected' and status.reason %}
+                                        {% if status.status == 'rejected' or status.status == 'not_attended' and status.reason %}
                                             <br><strong>Reason:</strong> {{ status.reason }}
                                         {% endif %}
                                         {% if status.status == 'placed' and status.offer_letter %}
