@@ -129,13 +129,13 @@
                                     <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
                                     {% endif %}
                                 </div>
+                                {% if company.progress == 'interview_completed' and forloop.parentloop.last and forloop.last %}
                                 <div>
-                                    {% if company.progress == 'interview_completed' %}
                                     <a href="{% url 'restart_interview_cycle' company.pk %}" class="btn btn-warning">
                                         🔄 Add Another Interview Cycle
                                     </a>
-                                    {% endif %}
                                 </div>
+                                {% endif %}
                             </div>
                             {% else %}
                             <div class="d-flex justify-content-between mt-2">
@@ -143,13 +143,13 @@
                                     <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Round</a>
                                     <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>
                                 </div>
+                                {% if forloop.last and interview.cycle_number < company.interview_cycles %}
                                 <div>
-                                    {% if company.progress == 'interview_scheduling' and interview.cycle_number != company.interview_cycles %}
                                     <button type="button" class="btn btn-warning" id="add-interview-btn">
                                         <i class="fas fa-plus"></i> Add Another Interview
                                     </button>
-                                    {% endif %}
                                 </div>
+                                {% endif %}
                             </div>
                             {% endif %}
                             <hr>
