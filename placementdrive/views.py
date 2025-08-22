@@ -129,16 +129,50 @@ from django.forms import modelformset_factory
 def update_interview_students(request, interview_pk):
     interview = get_object_or_404(Interview, pk=interview_pk)
     InterviewStudentFormSet = modelformset_factory(InterviewStudent, form=InterviewStudentForm, extra=0)
+    
+    # Get the queryset and order it
+    queryset = InterviewStudent.objects.filter(interview=interview).order_by('student__student_id')
+
+    # Search and Filter
+    search_query = request.GET.get('q')
+    status_filter = request.GET.get('status')
+
+    if search_query:
+        queryset = queryset.filter(
+            Q(student__student_id__icontains=search_query) |
+            Q(student__first_name__icontains=search_query) |
+            Q(student__last_name__icontains=search_query)
+        )
+
+    if status_filter:
+        queryset = queryset.filter(status=status_filter)
+    
+    # Pagination
+    paginator = Paginator(queryset, 10)  # 10 students per page
+    page = request.GET.get('page')
+    try:
+        students_page = paginator.page(page)
+    except PageNotAnInteger:
+        students_page = paginator.page(1)
+    except EmptyPage:
+        students_page = paginator.page(paginator.num_pages)
 
     if request.method == 'POST':
-        formset = InterviewStudentFormSet(request.POST, request.FILES, queryset=InterviewStudent.objects.filter(interview=interview))
+        formset = InterviewStudentFormSet(request.POST, request.FILES, queryset=queryset)
         if formset.is_valid():
             formset.save()
             return redirect('company_update', pk=interview.company.pk)
     else:
-        formset = InterviewStudentFormSet(queryset=InterviewStudent.objects.filter(interview=interview))
+        # We need to pass the paginated queryset to the formset
+        formset = InterviewStudentFormSet(queryset=students_page.object_list)
     
-    return render(request, 'placementdrive/update_interview_students.html', {'formset': formset, 'interview': interview})
+    return render(request, 'placementdrive/update_interview_students.html', {
+        'formset': formset,
+        'interview': interview,
+        'students_page': students_page,
+        'search_query': search_query or "",
+        'status_filter': status_filter or ""
+    })
 
 @login_required
 def company_update(request, pk):
@@ -215,11 +249,24 @@ def company_update(request, pk):
                     company.save()
                     return redirect('company_update', pk=company.pk)
 
+    interviews = company.scheduled_interviews.all()
+    for interview in interviews:
+        student_list = interview.student_status.all()
+        paginator = Paginator(student_list, 10)  # 10 students per page
+        page = request.GET.get(f'page_{interview.pk}')
+        try:
+            students_page = paginator.page(page)
+        except PageNotAnInteger:
+            students_page = paginator.page(1)
+        except EmptyPage:
+            students_page = paginator.page(paginator.num_pages)
+        interview.students_page = students_page
+
     return render(request, 'placementdrive/company_update_form.html', {
         'company': company,
         'form': form,
         'interview_form': interview_form,
-        'interviews': company.scheduled_interviews.all()
+        'interviews': interviews
     })
 
 @login_required

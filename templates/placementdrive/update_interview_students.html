@@ -16,6 +16,43 @@
         <p class="form-subtitle">Update the status for each student</p>
     </div>
 
+    <form method="get" class="filter-form mb-4">
+        <div class="row mx-5"> <!-- g-2 adds gap between cols -->
+            
+            <!-- Search -->
+            <div class="col-md-4">
+            <input type="text" name="q" class="form-control" 
+                    placeholder="Search by Student ID or Name" 
+                    value="{{ search_query }}">
+            </div>
+
+            <!-- Status Dropdown -->
+            <div class="col-md-4">
+            <select name="status" class="form-control">
+                <option value="">All Statuses</option>
+                <option value="selected" {% if status_filter == 'selected' %}selected{% endif %}>Selected</option>
+                <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+                <option value="not_attended" {% if status_filter == 'not_attended' %}selected{% endif %}>Not Attended</option>
+                <option value="placed" {% if status_filter == 'placed' %}selected{% endif %}>Placed</option>
+            </select>
+            </div>
+
+            <div class="col-md-2">
+                <div class="d-flex justify-content-around align-items-center">
+                    <div >
+                        <button type="submit" class="btn btn-primary w-10">Filter</button>
+                    </div>
+
+                    <div >
+                        <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary w-10">Clear</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+
+
     <form method="post" class="student-form" enctype="multipart/form-data">
         {% csrf_token %}
         {{ formset.management_form }}
@@ -54,6 +91,23 @@
                             {% endfor %}
                         </tbody>
                     </table>
+                </div>
+                <div class="pagination">
+                    <span class="step-links">
+                        {% if students_page.has_previous %}
+                            <a href="?page=1">&laquo; first</a>
+                            <a href="?page={{ students_page.previous_page_number }}">previous</a>
+                        {% endif %}
+
+                        <span class="current">
+                            Page {{ students_page.number }} of {{ students_page.paginator.num_pages }}.
+                        </span>
+
+                        {% if students_page.has_next %}
+                            <a href="?page={{ students_page.next_page_number }}">next</a>
+                            <a href="?page={{ students_page.paginator.num_pages }}">last &raquo;</a>
+                        {% endif %}
+                    </span>
                 </div>
             </div>
         </div>

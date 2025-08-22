@@ -101,7 +101,7 @@
                         <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
                         <p><strong>Scheduled By:</strong> <strong style="color: #074383;">{{ interview.created_by.name }}</strong> at {{ interview.created_at }}</p>
                     </div>
-                    <div class="table-wrapper">
+                    <div class="table-wrapper scroll-container">
                         <table class="table table-striped">
                             <thead>
                                 <tr>
@@ -111,7 +111,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for student_status in interview.student_status.all %}
+                                {% for student_status in interview.students_page %}
                                     <tr>
                                         <td>{{ student_status.student.student_id }} - {{ student_status.student.first_name }} {{ student_status.student.last_name|default:'' }}</td>
                                         <td>{{ student_status.get_status_display }}</td>
@@ -120,6 +120,21 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        <div class="pagination">
+                            <span class="step-links">
+                                {% if interview.students_page.has_previous %}
+                                    <a href="?page_{{ interview.pk }}={{ interview.students_page.previous_page_number }}">previous</a>
+                                {% endif %}
+                        
+                                <span class="current">
+                                    Page {{ interview.students_page.number }} of {{ interview.students_page.paginator.num_pages }}.
+                                </span>
+                        
+                                {% if interview.students_page.has_next %}
+                                    <a href="?page_{{ interview.pk }}={{ interview.students_page.next_page_number }}">next</a>
+                                {% endif %}
+                            </span>
+                        </div>
                     </div>
                             {% if forloop.last and interview.cycle_number == company.interview_cycles %}
                             <div class="d-flex justify-content-between mt-2">

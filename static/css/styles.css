@@ -206,3 +206,17 @@ a.view-link {
 .select2-container--default .select2-selection--multiple{
     border: none !important;
 }
+
+.scroll-container {
+  width: 100%;
+  height: auto;    
+  min-height: 200px;
+  overflow-y: scroll;    
+  overflow-x: auto;         
+  -ms-overflow-style: none; 
+  scrollbar-width: none;    
+}
+
+.scroll-container::-webkit-scrollbar:vertical {
+  display: none;
+}
