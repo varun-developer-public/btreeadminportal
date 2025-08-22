@@ -122,23 +122,25 @@
                         </table>
                     </div>
                             {% if forloop.last and interview.cycle_number == company.interview_cycles %}
-                                <div class="d-flex justify-content-between mt-2">
-                                    <div>
-                                        <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm mx-3">Update Round</a>
-                                        <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
-                                    </div>
-                                    {% if company.progress == 'completed' %}
-                                    <div>
-                                        <button type="button" class="btn btn-warning" id="add-another-interview-btn">
-                                            <i class="fas fa-plus"></i> Add Another Interview
-                                        </button>
-                                    </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <div>
+                                    <a href="{% url 'update_interview_students' interview.pk %}" class="btn btn-secondary btn-sm mx-3 {% if company.progress == 'interview_completed' %}disabled{% endif %}">Update Round</a>
+                                    {% if company.progress != 'interview_completed' %}
+                                    <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
                                     {% endif %}
                                 </div>
+                                <div>
+                                    {% if company.progress == 'interview_completed' %}
+                                    <a href="{% url 'restart_interview_cycle' company.pk %}" class="btn btn-warning">
+                                        🔄 Add Another Interview Cycle
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
                             {% else %}
                             <div class="d-flex justify-content-between mt-2">
                                 <div>
-                                    <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Student Status</a>
+                                    <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Round</a>
                                     <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>
                                 </div>
                                 <div>
@@ -161,13 +163,6 @@
             </div>
         {% endfor %}
 
-        {% if company.progress == 'interview_completed' %}
-            <div class="mt-4">
-                <a href="{% url 'restart_interview_cycle' company.pk %}" class="btn btn-warning">
-                    🔄 Add Another Interview Cycle
-                </a>
-            </div>
-        {% endif %}
     </div>
 </div>
     {% endif %}
