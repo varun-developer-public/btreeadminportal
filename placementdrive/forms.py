@@ -139,6 +139,6 @@ class CompanyFilterForm(forms.Form):
         self.fields['location'].choices = location_choices
 
         user_ids = Company.objects.values_list('created_by', flat=True).distinct()
-        self.fields['created_by'].queryset = User.objects.filter(id__in=user_ids)
-        self.fields['created_by'].label_from_instance = lambda obj: obj.get_full_name() or obj.username
+        self.fields['created_by'].queryset = User.objects.filter(id__in=user_ids).distinct()
+        self.fields['created_by'].label_from_instance = lambda obj: obj.name
         self.fields['created_by'].empty_label = 'All Creators'
