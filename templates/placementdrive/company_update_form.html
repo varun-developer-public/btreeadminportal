@@ -129,7 +129,15 @@
                                     <a href="{% url 'add_interview_round' interview.pk %}" class="btn btn-primary btn-sm">Add Next Round</a>
                                     {% endif %}
                                 </div>
-                                {% if company.progress == 'interview_completed' and forloop.parentloop.last and forloop.last %}
+                                {% if company.progress != 'interview_completed' %}
+                                <div>
+                                    <a href="{% url 'postpone_interview_round' interview.pk %}" class="btn btn-primary btn-sm ms-2">Postpone Round</a>
+                                    {% if request.user.is_superuser %}
+                                    <a href="{% url 'delete_interview_round' interview.pk %}" class="btn btn-danger btn-sm ms-2">Delete Round</a>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if company.progress == 'interview_completed' and forloop.parentloop.parentloop.last and forloop.parentloop.last and forloop.last %}
                                 <div>
                                     <a href="{% url 'restart_interview_cycle' company.pk %}" class="btn btn-warning">
                                         🔄 Add Another Interview Cycle
@@ -143,7 +151,7 @@
                                     <a href="#" class="btn btn-secondary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Update Round</a>
                                     <a href="#" class="btn btn-primary btn-sm disabled" style="pointer-events: none; background-color: #d3d3d3; border-color: #d3d3d3;">Add Next Round</a>
                                 </div>
-                                {% if forloop.last and interview.cycle_number < company.interview_cycles %}
+                                {% if forloop.last and forloop.parentloop.last and forloop.parentloop.parentloop.last and interview.cycle_number != company.interview_cycles %}
                                 <div>
                                     <button type="button" class="btn btn-warning" id="add-interview-btn">
                                         <i class="fas fa-plus"></i> Add Another Interview
