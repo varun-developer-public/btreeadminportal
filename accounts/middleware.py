@@ -40,14 +40,15 @@ URL_ROLE_MAPPINGS = {
         'course_update',
         'category_create',
         'category_update',
-        'get_next_course_code'
+        'get_next_course_code','get_courses_by_category'
     ],
     'consultant': [
         'consultant_profile',
         'student_list',
         'payment_list', 'payment_update',
         'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list',
-        'category_list',
+        'category_list','get_courses_by_category','get_trainers_for_course','get_trainer_slots','get_students_for_course',
+        'get_next_course_code','get_course_duration'
     ]
 }
 
