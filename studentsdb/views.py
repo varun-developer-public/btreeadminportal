@@ -104,7 +104,8 @@ def student_list(request):
         if course:
             student_list = student_list.filter(course_id=course.id)
         elif course_category:
-            student_list = student_list.filter(course__category=course_category)
+            course_ids = Course.objects.filter(category=course_category).values_list('id', flat=True)
+            student_list = student_list.filter(course_id__in=course_ids)
         if course_status:
             student_list = student_list.filter(course_status=course_status)
         if start_date:
@@ -467,17 +468,38 @@ def delete_all_students(request):
 @login_required
 def student_report(request, student_id):
     student = get_object_or_404(Student, student_id=student_id)
-    interview_statuses = student.interview_statuses.select_related('interview__company').order_by('interview__company__company_name', 'interview__round_number')
+    interview_statuses = student.interview_statuses.select_related('interview__company').order_by('interview__company__company_name', 'interview__cycle_number', 'interview__round_number')
 
     interviews_by_company = {}
     for status in interview_statuses:
-        company_name = status.interview.company.company_name
-        if company_name not in interviews_by_company:
-            interviews_by_company[company_name] = []
-        interviews_by_company[company_name].append(status.interview)
+        company = status.interview.company
+        cycle_number = status.interview.cycle_number
+        
+        if company.company_name not in interviews_by_company:
+            interviews_by_company[company.company_name] = {
+                'company_obj': company,
+                'cycles': {}
+            }
+        
+        if cycle_number not in interviews_by_company[company.company_name]['cycles']:
+            interviews_by_company[company.company_name]['cycles'][cycle_number] = []
+            
+        if status.interview not in interviews_by_company[company.company_name]['cycles'][cycle_number]:
+            interviews_by_company[company.company_name]['cycles'][cycle_number].append(status.interview)
+
+    company_interview_data = []
+    for company_name, data in interviews_by_company.items():
+        total_rounds = sum(len(interviews) for interviews in data['cycles'].values())
+        company_interview_data.append({
+            'company_name': company_name,
+            'company_location': data['company_obj'].get_location_display(),
+            'total_cycles': len(data['cycles']),
+            'total_rounds': total_rounds,
+            'cycles': data['cycles']
+        })
 
     context = {
         'student': student,
-        'interviews_by_company': interviews_by_company,
+        'company_interview_data': company_interview_data,
     }
     return render(request, 'studentsdb/student_report.html', context)

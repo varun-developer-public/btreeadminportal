@@ -28,6 +28,17 @@
     .student-table th {
         background-color: #f2f2f2;
     }
+   .progress-cell {
+       padding: 0.5rem;
+       border-radius: 0.25rem;
+       color: #fff;
+       text-align: center;
+       font-weight: 500;
+   }
+   .progress-resume_shared { background-color: #a8d8ea; color: #1a5276; }
+   .progress-interview_scheduling { background-color: #f9e79f; color: #7d6608; }
+   .progress-interview_not_conducted { background-color: #f5b7b1; color: #78281f; }
+   .progress-interview_completed { background-color: #a9dfbf; color: #196f3d; }
 </style>
 {% endblock %}
 
@@ -104,7 +115,11 @@
                     <td>{{ company.mobile }}</td>
                     <td>{{ company.email }}</td>
                     <td>{{ company.location|capfirst }}</td>
-                    <td>{{ company.get_progress_display }}</td>
+                    <td>
+                        <span class="progress-cell progress-{{ company.progress }}">
+                            {{ company.get_progress_display }}
+                        </span>
+                    </td>
                     <td>{{ company.date }}</td>
                     <td>{{ company.created_by.name }}</td>
                     <td>

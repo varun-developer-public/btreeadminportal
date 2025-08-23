@@ -50,6 +50,10 @@
                                 {{ form.batch_id.label_tag }}
                                 {{ form.batch_id }}
                             </div>
+                            <div class="filter-group">
+                                 {{ form.interview_count.label_tag }}
+                                 {{ form.interview_count }}
+                            </div>
                         </div>
                         <div class="filter-row">
                             <div class="filter-group">
@@ -95,6 +99,7 @@
             <thead>
                 <tr>
                     <th>Student ID</th>
+                    <th>Inv.C</th>
                     <th>Batch ID</th>
                     <th>Course Name</th>
                     <th>Student Name</th>
@@ -125,6 +130,7 @@
                             {{ placement.student.student_id }}
                         </a>
                     </td>
+                    <td>{{ placement.interview_count }}</td>
                     <td>
                         {% for batch in placement.student.batches.all %}
                             <span class="badge bg-info">{{ batch.batch_id }}</span>
@@ -168,7 +174,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="15">No placement records found.</td></tr>
+                <tr><td colspan="16">No placement records found.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -207,6 +213,7 @@
             <input type="hidden" name="course_percentage" value="{{ request.GET.course_percentage }}">
             <input type="hidden" name="resume_status" value="{{ request.GET.resume_status }}">
             <input type="hidden" name="is_active" value="{{ request.GET.is_active }}">
+            <input type="hidden" name="interview_count" value="{{ request.GET.interview_count }}">
             <button type="submit">Go</button>
         </form>
     </div>

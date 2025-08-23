@@ -27,34 +27,53 @@
         </div>
         <div class="form-section-body">
             <div class="accordion" id="interviewAccordion">
-                {% for company, interviews in interviews_by_company.items %}
+                {% for company_data in company_interview_data %}
                 <div class="accordion-item">
-                    <h2 class="accordion-header" id="heading{{ forloop.counter }}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
-                            {{ company }}
+                    <h2 class="accordion-header" id="headingCompany{{ forloop.counter }}">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompany{{ forloop.counter }}" aria-expanded="false" aria-controls="collapseCompany{{ forloop.counter }}">
+                            <div class="container-fluid">
+                                <div class="row w-100 ">
+                                    <div class="col-5 text-left">
+                                        {{ company_data.company_name }} - {{ company_data.company_location }} 
+                                    </div>
+                                    <div class="col-4">
+                                        
+                                    </div>
+                                    <div class="col-3 text-right">
+                                       {{ company_data.total_cycles }} Interview{{ company_data.total_cycles|pluralize }} - {{ company_data.total_rounds }} Round{{ company_data.total_rounds|pluralize }}
+                                    </div>
+                                </div>
+                            </div>
                         </button>
                     </h2>
-                    <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#interviewAccordion">
+                    <div id="collapseCompany{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="headingCompany{{ forloop.counter }}" data-bs-parent="#interviewAccordion">
                         <div class="accordion-body">
-                            {% for interview in interviews %}
-                            <h5>Round {{ interview.round_number }} - {{ interview.interview_round }}</h5>
-                            <div style="display: flex; justify-content: space-between;">
-                                <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
-                                <p><strong>Scheduled By:</strong> <strong style="color: #074383;">{{ interview.created_by.name }}</strong> at {{ interview.created_at }}</p>
-                            </div>
-                            <p><strong>Status:</strong>
-                                {% for status in interview.student_status.all %}
-                                    {% if status.student.id == student.id %}
-                                        {{ status.get_status_display }}
-                                        {% if status.status == 'rejected' or status.status == 'not_attended' and status.reason %}
-                                            <br><strong>Reason:</strong> {{ status.reason }}
-                                        {% endif %}
-                                        {% if status.status == 'placed' and status.offer_letter %}
-                                            <br><a href="{{ status.offer_letter.url }}" class="view-link" target="_blank">View Offer Letter</a>
-                                        {% endif %}
-                                    {% endif %}
+                            {% for cycle_number, interviews in company_data.cycles.items %}
+                            <div class="mb-3">
+                                <h5>Interview {{ cycle_number }}</h5>
+                                {% for interview in interviews %}
+                                <div class="ps-3">
+                                    <h6>Round {{ interview.round_number }} - {{ interview.interview_round|capfirst }}</h6>
+                                    <div style="display: flex; justify-content: space-between;">
+                                        <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
+                                        <p><strong>Scheduled By:</strong> <strong style="color: #074383;">{{ interview.created_by.name }}</strong> at {{ interview.created_at }}</p>
+                                    </div>
+                                    <p><strong>Status:</strong>
+                                        {% for status in interview.student_status.all %}
+                                            {% if status.student.id == student.id %}
+                                                {{ status.get_status_display }}
+                                                {% if status.status == 'rejected' or status.status == 'not_attended' and status.reason %}
+                                                    <br><strong>Reason:</strong> {{ status.reason }}
+                                                {% endif %}
+                                                {% if status.status == 'placed' and status.offer_letter %}
+                                                    <br><a href="{{ status.offer_letter.url }}" class="view-link" target="_blank">View Offer Letter</a>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                </div>
                                 {% endfor %}
-                            </p>
+                            </div>
                             {% endfor %}
                         </div>
                     </div>

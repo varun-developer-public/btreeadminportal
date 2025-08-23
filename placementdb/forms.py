@@ -76,6 +76,7 @@ class PlacementFilterForm(forms.Form):
         required=False,
         label="Status"
     )
+    interview_count = forms.IntegerField(required=False, label='Interview Count')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

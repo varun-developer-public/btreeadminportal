@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import PlacementUpdateForm, PlacementFilterForm, CompanyInterviewForm
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from placementdrive.models import Company
 import json
@@ -12,7 +12,7 @@ from django.http import JsonResponse
 
 @login_required
 def placement_list(request):
-    placements = Placement.objects.select_related('student').prefetch_related('student__batches', 'student__batches__trainer').all().order_by('-student__student_id')
+    placements = Placement.objects.select_related('student').prefetch_related('student__batches', 'student__batches__trainer').all().order_by('-student__student_id').annotate(interview_count=Count('student__interview_statuses__interview__company', distinct=True))
     form = PlacementFilterForm(request.GET)
 
     if form.is_valid():
@@ -31,6 +31,7 @@ def placement_list(request):
         course_percentage = form.cleaned_data.get('course_percentage')
         resume_status = form.cleaned_data.get('resume_status')
         is_active = form.cleaned_data.get('is_active')
+        interview_count = form.cleaned_data.get('interview_count')
 
         if q:
             placements = placements.filter(
@@ -74,6 +75,8 @@ def placement_list(request):
                 placements = placements.filter(is_active=True)
             elif is_active == 'no':
                 placements = placements.filter(is_active=False)
+        if interview_count is not None:
+            placements = placements.filter(interview_count=interview_count)
 
     paginator = Paginator(placements, 10)
     page = request.GET.get('page')
