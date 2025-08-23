@@ -1,23 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+
+from consultantdb.models import Achievement, Goal
 from .models import CustomUser
 from .forms import UserForm, UserUpdateForm, PasswordChangeForm
 
 def is_admin(user):
-    return user.is_authenticated and user.role == 'admin'
+    return user.is_authenticated and (user.role == 'admin' or user.is_superuser)
 
 def is_staff(user):
-    return user.is_authenticated and user.role == 'staff'
+    return user.is_authenticated and (user.role == 'staff' or user.is_superuser)
 
 def is_consultant(user):
-    return user.is_authenticated and user.role == 'consultant'
+    return user.is_authenticated and (user.role == 'consultant' or user.is_superuser)
 
 def is_placement(user):
-    return user.is_authenticated and user.role == 'placement'
+    return user.is_authenticated and (user.role == 'placement' or user.is_superuser)
 
 def is_batch_coordinator(user):
-    return user.is_authenticated and user.role == 'batch_coordination'
+    return user.is_authenticated and (user.role == 'batch_coordination' or user.is_superuser)
 from django.db.models import Sum, Q, F
 from batchdb.models import Batch
 from django.db.models.functions import TruncMonth
@@ -35,6 +37,7 @@ from django.db.models import Count
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 @login_required
+@user_passes_test(is_admin)
 def admin_dashboard(request):
     # Basic Statistics
     total_students = Student.objects.count()
@@ -304,10 +307,23 @@ def staff_dashboard(request):
 @login_required
 @user_passes_test(is_consultant)
 def consultant_dashboard(request):
-    consultant = request.user.consultant_profile.consultant
-    total_students = Student.objects.filter(consultant=consultant).count()
-    goals = consultant.goals.all()
-    achievements = consultant.achievements.all()
+    if hasattr(request.user, 'consultant_profile'):
+        # Consultant user → only their data
+        consultant = request.user.consultant_profile.consultant
+        total_students = Student.objects.filter(consultant=consultant).count()
+        goals = consultant.goals.all()
+        achievements = consultant.achievements.all()
+
+    elif request.user.is_superuser:
+        # Super admin → all data
+        total_students = Student.objects.all().count()
+        goals = Goal.objects.all()
+        achievements = Achievement.objects.all()
+
+    else:
+        total_students = 0
+        goals = []
+        achievements = []
 
     context = {
         'total_students': total_students,

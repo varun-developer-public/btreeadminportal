@@ -5,6 +5,21 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+<style>
+    .dashboard-grid .table {
+    width: 100%;                /* Table always fits parent */
+    table-layout: fixed;        /* Prevents auto expansion */
+    word-wrap: break-word;      /* Break long words */
+    white-space: normal;        /* Allow wrapping */
+}
+.dashboard-grid td {
+    max-width: 0;               /* Ensures wrapping works */
+    overflow-wrap: anywhere;    /* Break inside long content */
+}
+.view-link:hover{
+    text-decoration: underline;
+}
+</style>
 {% endblock %}
 
 {% block title %}Placement Dashboard{% endblock %}
@@ -163,7 +178,10 @@
                             </td>
                             <td>
                                 {% for student_status in interview.student_status.all %}
-                                   {{ student_status.student.student_id }} - {{ student_status.student.first_name }} {{ student_status.student.last_name|default:'' }}{% if not forloop.last %}, {% endif %}
+                                    <a href="/placements/?q={{ student_status.student.student_id }}" class="view-link">
+                                        {{ student_status.student.student_id }}
+                                    </a>
+                                    {% if not forloop.last %}, {% endif %}
                                 {% empty %}
                                     <span class="text-muted">No students assigned yet.</span>
                                 {% endfor %}
