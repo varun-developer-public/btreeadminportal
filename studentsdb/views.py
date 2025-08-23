@@ -489,14 +489,24 @@ def student_report(request, student_id):
 
     company_interview_data = []
     for company_name, data in interviews_by_company.items():
+        earliest_date = None
+        for cycle_interviews in data['cycles'].values():
+            for interview in cycle_interviews:
+                if earliest_date is None or interview.interview_date < earliest_date:
+                    earliest_date = interview.interview_date
+
         total_rounds = sum(len(interviews) for interviews in data['cycles'].values())
         company_interview_data.append({
             'company_name': company_name,
             'company_location': data['company_obj'].get_location_display(),
             'total_cycles': len(data['cycles']),
             'total_rounds': total_rounds,
-            'cycles': data['cycles']
+            'cycles': data['cycles'],
+            'earliest_interview_date': earliest_date
         })
+
+    # Sort the data by the earliest interview date, most recent first
+    company_interview_data.sort(key=lambda x: x['earliest_interview_date'], reverse=True)
 
     context = {
         'student': student,

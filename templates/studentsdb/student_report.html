@@ -11,12 +11,12 @@
 </style>
 {% endblock %}
 
-{% block title %}Student Report{% endblock %}
+{% block title %}{{ student.student_id }}-Student Report{% endblock %}
 
 {% block content %}
 <div class="student-form-container">
     <div class="form-header">
-        <h1>Student Report for {{ student.first_name }} {{ student.last_name }}</h1>
+        <h1>Student Report for {{ student.first_name }} {{ student.last_name }} - {{ student.student_id }}</h1>
         <p class="form-subtitle">Below is the Entire Report of the student.</p>
     </div>
 
