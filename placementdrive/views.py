@@ -281,7 +281,8 @@ def load_students(request):
     course_ids_str = request.GET.get('course_ids', '')
     if course_ids_str:
         course_ids = [int(cid) for cid in course_ids_str.split(',') if cid.isdigit()]
-        students = Student.objects.filter(course_id__in=course_ids, pl_required=True, placement__is_active=True).distinct()
+        # students = Student.objects.filter(course_id__in=course_ids, pl_required=True, placement__is_active=True).distinct()
+        students = Student.objects.filter(course_id__in=course_ids, pl_required=True).distinct()
         student_data = [{"id": s.id, "student_name": f"{s.student_id} - {s.first_name} {s.last_name or ''}"} for s in students]
         return JsonResponse(student_data, safe=False)
     return JsonResponse([], safe=False)
