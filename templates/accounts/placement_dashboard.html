@@ -227,7 +227,7 @@
                 <tbody>
                     {% for student in recently_placed %}
                     <tr>
-                        <td>{{ student.first_name }} {{ student.last_name|default:"" }}</td>
+                        <td>{{ student.first_name }} {{ student.last_name|default:"" }}🏆</td>
                         <td>{{ courses_dict|get_item:student.course_id|default:"-" }}</td>
                         <td>{{ student.end_date|date:"d M Y" }}</td>
                     </tr>
