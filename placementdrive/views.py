@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from .models import Company, Interview, InterviewStudent
-from .forms import CompanyForm, InterviewScheduleForm, InterviewStudentForm, CompanyFilterForm
+from .forms import CompanyForm, InterviewScheduleForm, InterviewStudentForm, CompanyFilterForm, ResumeSharedStatusForm
 from studentsdb.models import Student
 from coursedb.models import Course
 from placementdb.models import CompanyInterview
@@ -19,7 +19,7 @@ def company_list(request):
         to_attr='placed_students_list'
     )
 
-    companies = Company.objects.prefetch_related(selected_students_prefetch).order_by('-created_at')
+    companies = Company.objects.prefetch_related(selected_students_prefetch, 'resume_shared_statuses').order_by('-created_at')
     form = CompanyFilterForm(request.GET or None)
 
     if form.is_valid():
@@ -60,6 +60,7 @@ def company_list(request):
         del query_params['page']
 
     for company in companies:
+        print( company.progress, company.resume_shared_statuses.exists())
         if company.progress == 'interview_completed':
             # Flatten the list of selected students from all interviews
             selected_students = []
@@ -73,6 +74,11 @@ def company_list(request):
         else:
             company.selected_students = []
 
+        if company.progress == 'resume_shared' or company.resume_shared_statuses.exists():
+            company.has_resume_shared_statuses = True
+        else:
+            company.has_resume_shared_statuses = False
+            
     return render(request, 'placementdrive/company_list.html', {
         'companies': companies,
         'form': form,
@@ -179,6 +185,7 @@ def company_update(request, pk):
     company = get_object_or_404(Company, pk=pk)
     interview_form = InterviewScheduleForm(request.POST or None, company=company)
     form = CompanyForm(request.POST or None, instance=company)
+    resume_shared_status_form = ResumeSharedStatusForm(request.POST or None)
 
     if request.method == 'POST':
         if 'schedule_interview' in request.POST:
@@ -224,6 +231,12 @@ def company_update(request, pk):
 
                 messages.success(request, "Interview scheduled successfully!")
                 return redirect('company_update', pk=company.pk)
+        elif 'save_resume_status' in request.POST:
+            if resume_shared_status_form.is_valid():
+                status = resume_shared_status_form.save(commit=False)
+                status.company = company
+                status.save()
+                return redirect('company_update', pk=company.pk)
         else:
             if form.is_valid():
                 company = form.save(commit=False)
@@ -266,7 +279,8 @@ def company_update(request, pk):
         'company': company,
         'form': form,
         'interview_form': interview_form,
-        'interviews': interviews
+        'interviews': interviews,
+        'resume_shared_status_form': resume_shared_status_form
     })
 
 @login_required

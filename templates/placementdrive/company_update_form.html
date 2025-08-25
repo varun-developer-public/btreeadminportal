@@ -58,6 +58,62 @@
         </div>
     </form>
 
+   {% if company.progress == 'resume_shared' %}
+   <div class="form-section-card">
+       <div class="form-section-header">
+           <h5 style="color: white;"><i class="fas fa-file-alt me-2" style="color: white;"></i>Resume Shared Status</h5>
+       </div>
+       <div class="form-section-body">
+           <form method="post" action="{% url 'company_update' company.pk %}" class="mb-3">
+               {% csrf_token %}
+              <div class="row">
+                  <div class="col-md-4">
+                      {{ resume_shared_status_form.status|attr:"class:form-control" }}
+                  </div>
+                  <div class="col-md-4">
+                      {{ resume_shared_status_form.role|attr:"class:form-control"|attr:"placeholder:Role" }}
+                  </div>
+                  <div class="col-md-4">
+                      {{ resume_shared_status_form.resumes_shared|attr:"class:form-control"|attr:"placeholder:No of Resumes" }}
+                  </div>
+              </div>
+              <div class="col-md-12 mt-2 text-end">
+                  <button type="submit" name="save_resume_status" class="btn btn-primary w-100">
+                      <i class="fas fa-save"></i> Save Status
+                  </button>
+              </div>
+</form>
+
+           {% if company.resume_shared_statuses.all %}
+<hr>
+<h6 class="mb-3">Status History</h6>
+<div class="table-wrapper scroll-container" style="max-height: 200px;">
+<table class="table table-striped">
+<thead>
+<tr>
+<th>Status</th>
+<th>Role</th>
+<th>Resumes Shared</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody>
+                              {% for status in company.resume_shared_statuses.all %}
+<tr>
+<td>{{ status.get_status_display }}</td>
+<td>{{ status.role }}</td>
+<td>{{ status.resumes_shared }}</td>
+<td>{{ status.created_at }}</td>
+</tr>
+                              {% endfor %}
+</tbody>
+</table>
+           </div>
+           {% endif %}
+       </div>
+   </div>
+   {% endif %}
+
     <!-- Interview Schedule Modal -->
     <div class="modal fade" id="scheduleInterviewModal" tabindex="-1" role="dialog" aria-labelledby="scheduleInterviewModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">

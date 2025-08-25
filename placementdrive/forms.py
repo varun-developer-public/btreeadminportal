@@ -1,5 +1,5 @@
 from django import forms
-from .models import Company, Interview, InterviewStudent
+from .models import Company, Interview, InterviewStudent, ResumeSharedStatus
 from coursedb.models import Course
 from studentsdb.models import Student
 from accounts.models import CustomUser as User
@@ -36,6 +36,11 @@ class CompanyForm(forms.ModelForm):
         if not self.instance.pk:
             self.fields['progress'].widget = forms.HiddenInput()
             self.fields['progress'].initial = 'resume_shared'
+
+class ResumeSharedStatusForm(forms.ModelForm):
+    class Meta:
+        model = ResumeSharedStatus
+        fields = ['status', 'role', 'resumes_shared']
 
 class InterviewScheduleForm(forms.ModelForm):
     courses = forms.ModelMultipleChoiceField(
