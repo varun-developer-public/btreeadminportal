@@ -64,25 +64,70 @@
            <h5 style="color: white;"><i class="fas fa-file-alt me-2" style="color: white;"></i>Resume Shared Status</h5>
        </div>
        <div class="form-section-body">
-           <form method="post" action="{% url 'company_update' company.pk %}" class="mb-3">
-               {% csrf_token %}
-              <div class="row">
-                  <div class="col-md-4">
-                      {{ resume_shared_status_form.status|attr:"class:form-control" }}
-                  </div>
-                  <div class="col-md-4">
-                      {{ resume_shared_status_form.role|attr:"class:form-control,placeholder:Role" }}
-                  </div>
-                  <div class="col-md-4">
-                      {{ resume_shared_status_form.resumes_shared|attr:"class:form-control,placeholder:No of Resumes" }}
-                  </div>
-              </div>
-              <div class="col-md-12 mt-2 text-end">
-                  <button type="submit" name="save_resume_status" class="btn btn-primary w-100">
-                      <i class="fas fa-save"></i> Save Status
-                  </button>
-              </div>
-</form>
+        <form method="post" action="{% url 'company_update' company.pk %}" class="mb-3">
+            {% csrf_token %}
+            <div class="form-section-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group" id="field_status">
+                            <div class="label-form">
+                                {{ resume_shared_status_form.status.label_tag }}
+                                {% if resume_shared_status_form.status.field.required %}
+                                    <span class="required-indicator">*</span>
+                                {% endif %}
+                            </div>
+                            {{ resume_shared_status_form.status|attr:"class:form-control" }}
+                            <div class="error-message">
+                                {% if resume_shared_status_form.status.errors %}
+                                    {{ resume_shared_status_form.status.errors }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group" id="field_role">
+                            <div class="label-form">
+                                {{ resume_shared_status_form.role.label_tag }}
+                                {% if resume_shared_status_form.role.field.required %}
+                                    <span class="required-indicator">*</span>
+                                {% endif %}
+                            </div>
+                            {{ resume_shared_status_form.role|attr:"class:form-control,placeholder:Role" }}
+                            <div class="error-message">
+                                {% if resume_shared_status_form.role.errors %}
+                                    {{ resume_shared_status_form.role.errors }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="form-group" id="field_resumes_shared">
+                            <div class="label-form">
+                                {{ resume_shared_status_form.resumes_shared.label_tag }}
+                                {% if resume_shared_status_form.resumes_shared.field.required %}
+                                    <span class="required-indicator">*</span>
+                                {% endif %}
+                            </div>
+                            {{ resume_shared_status_form.resumes_shared|attr:"class:form-control,placeholder:No of Resumes" }}
+                            <div class="error-message">
+                                {% if resume_shared_status_form.resumes_shared.errors %}
+                                    {{ resume_shared_status_form.resumes_shared.errors }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-12 mt-2 text-end">
+                    <button type="submit" name="save_resume_status" class="btn btn-primary w-100">
+                        <i class="fas fa-save"></i> Save Status
+                    </button>
+                </div>
+            </div>
+        </form>
+
 
            {% if company.resume_shared_statuses.all %}
 <hr>

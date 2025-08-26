@@ -179,6 +179,23 @@ def update_interview_students(request, interview_pk):
         'search_query': search_query or "",
         'status_filter': status_filter or ""
     })
+@login_required
+def remove_interview_student(request, student_interview_pk):
+    student_interview = get_object_or_404(InterviewStudent, pk=student_interview_pk)
+    interview_pk = student_interview.interview.pk
+    
+    if not request.user.is_superuser:
+        messages.error(request, "You don't have permission to perform this action.")
+        return redirect('update_interview_students', interview_pk=interview_pk)
+
+    if request.method == 'POST':
+        student_interview.delete()
+        messages.success(request, "Student removed successfully.")
+        return redirect('update_interview_students', interview_pk=interview_pk)
+    
+    return render(request, 'placementdrive/remove_interview_student_confirm.html', {
+        'student_interview': student_interview
+    })
 
 @login_required
 def company_update(request, pk):

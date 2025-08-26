@@ -8,6 +8,7 @@ urlpatterns = [
     path('<int:pk>/delete/', views.company_delete, name='company_delete'),
     path('interview/<int:parent_interview_pk>/add_round/', views.add_interview_round, name='add_interview_round'),
     path('interview/<int:interview_pk>/update_students/', views.update_interview_students, name='update_interview_students'),
+    path('interview-student/<int:student_interview_pk>/remove/', views.remove_interview_student, name='remove_interview_student'),
     path('ajax/load-students/', views.load_students, name='ajax_load_students'),
     path('interview/<int:interview_pk>/postpone/', views.postpone_interview_round, name='postpone_interview_round'),
     path('interview/<int:interview_pk>/delete/', views.delete_interview_round, name='delete_interview_round'),

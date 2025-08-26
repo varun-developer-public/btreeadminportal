@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Confirm Removal</h2>
+    <p>Are you sure you want to remove <strong>{{ student_interview.student.first_name }} {{ student_interview.student.last_name }}</strong> from this interview?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Remove</button>
+        <a href="{% url 'update_interview_students' interview_pk=student_interview.interview.pk %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

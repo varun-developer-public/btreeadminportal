@@ -67,16 +67,28 @@
                             <tr class="row mx-2">
                                 <th class="col-4">Student</th>
                                 <th class="col-4">Status</th>
+                                {% if request.user.is_superuser %}
+                                <th class="col-2">Action</th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody>
                             {% for form in formset %}
                                 <tr class="student-row row mx-2">
-                                    <td class="col-4">{{ form.instance.student }}</td>
+                                    <td class="col-4">
+                                        {{ form.instance.student }}
+                                    </td>
                                     <td class="col-4">
                                         {{ form.status }}
                                         {{ form.id }}
                                     </td>
+                                    {% if request.user.is_superuser %}
+                                    <td class="col-2">
+                                        <a href="{% url 'remove_interview_student' student_interview_pk=form.instance.pk %}" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash-alt"></i> Remove
+                                        </a>
+                                    </td>
+                                    {% endif %}
                                     <td class="reason-cell col-4" style="display: none;">
                                         <div style="display: flex; justify-content: center; gap: 20px; align-items: center;">
                                             <span id="reason-label">Reason:</span>
