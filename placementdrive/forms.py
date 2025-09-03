@@ -122,6 +122,12 @@ class CompanyFilterForm(forms.Form):
         required=False,
         label="Progress"
     )
+    company_stack = forms.ModelMultipleChoiceField(
+        queryset=Course.objects.all(),
+        label='Company Stack',
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'select2', 'data-placeholder': 'Select courses'})
+    )
     domain = forms.CharField(
         required=False,
         label='Domain',

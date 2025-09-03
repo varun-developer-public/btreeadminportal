@@ -28,13 +28,16 @@ def company_list(request):
         domain = form.cleaned_data.get('domain')
         location = form.cleaned_data.get('location')
         created_by = form.cleaned_data.get('created_by')
+        company_stack = form.cleaned_data.get('company_stack')
+
 
         if q:
             companies = companies.filter(
                 Q(company_name__icontains=q) |
                 Q(spoc__icontains=q) |
                 Q(email__icontains=q) |
-                Q(location__icontains=q)
+                Q(location__icontains=q) |
+                Q(company_code__icontains=q)
             )
         if progress:
             companies = companies.filter(progress=progress)
@@ -44,6 +47,10 @@ def company_list(request):
             companies = companies.filter(location=location)
         if created_by:
             companies = companies.filter(created_by=created_by)
+        if company_stack:
+            companies = companies.filter(
+                scheduled_interviews__courses__in=company_stack
+            ).distinct()
 
     paginator = Paginator(companies, 10)
     page = request.GET.get('page')
@@ -312,8 +319,7 @@ def load_students(request):
     course_ids_str = request.GET.get('course_ids', '')
     if course_ids_str:
         course_ids = [int(cid) for cid in course_ids_str.split(',') if cid.isdigit()]
-        # students = Student.objects.filter(course_id__in=course_ids, pl_required=True, placement__is_active=True).distinct()
-        students = Student.objects.filter(course_id__in=course_ids, pl_required=True).distinct()
+        students = Student.objects.filter(course_id__in=course_ids, pl_required=True, placement__is_active=True).distinct()
         student_data = [{"id": s.id, "student_name": f"{s.student_id} - {s.first_name} {s.last_name or ''}"} for s in students]
         return JsonResponse(student_data, safe=False)
     return JsonResponse([], safe=False)
