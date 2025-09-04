@@ -10,9 +10,18 @@ class PlacementUpdateForm(forms.ModelForm):
         fields = [
             'resume_link',
             'is_active',
+            'reason_for_inactive',
+            'mock_interview_completed',
+            'placement_session_completed',
+            'certificate_issued',
         ]
         widgets = {
             'resume_link': forms.FileInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'reason_for_inactive': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'mock_interview_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'placement_session_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'certificate_issued': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
 class CompanyInterviewForm(forms.ModelForm):

@@ -8,6 +8,7 @@ from .models import Student
 from coursedb.models import Course, CourseCategory
 from paymentdb.models import Payment
 from paymentdb.forms import PaymentForm
+from placementdb.forms import PlacementUpdateForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -139,10 +140,13 @@ def student_list(request):
 @login_required
 def update_student(request, student_id):
     student = get_object_or_404(Student.objects.prefetch_related('interview_statuses__interview__company'), student_id=student_id)
+    placement, created = Placement.objects.get_or_create(student=student)
 
     if request.method == 'POST':
         form = StudentUpdateForm(request.POST, instance=student, user=request.user)
-        if form.is_valid():
+        placement_form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
+
+        if form.is_valid() and placement_form.is_valid():
             updated_student = form.save(commit=False)
 
             # Get course_id from the form and assign it to the student
@@ -155,6 +159,7 @@ def update_student(request, student_id):
                 updated_student.end_date = updated_student.enrollment_date + relativedelta(months=4)
 
             updated_student.save()
+            placement_form.save()
 
             # === Placement Sync Logic ===
             if updated_student.pl_required:
@@ -173,11 +178,17 @@ def update_student(request, student_id):
                     # Check if the field has a label before trying to access it
                     label = form.fields[field].label if field in form.fields else field.capitalize()
                     messages.error(request, f"{label}: {error}", extra_tags='student_message')
+            for field, errors in placement_form.errors.items():
+                for error in errors:
+                    label = placement_form.fields[field].label if field in placement_form.fields else field.capitalize()
+                    messages.error(request, f"{label}: {error}", extra_tags='student_message')
     else:
         form = StudentUpdateForm(instance=student, user=request.user)
+        placement_form = PlacementUpdateForm(instance=placement)
 
     return render(request, 'studentsdb/update_student.html', {
         'form': form,
+        'placement_form': placement_form,
         'student': student
     })
 

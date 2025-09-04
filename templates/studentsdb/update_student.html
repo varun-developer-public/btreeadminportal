@@ -338,49 +338,60 @@
                 </div>
             </div>
         </div>
-        <!-- <div class="form-section-card">
+
+        {% if request.user.is_staff %}
+        <div class="form-section-card">
             <div class="form-section-header">
-                <h5 style="color: white;"><i class="fas fa-calendar-alt me-2" style="color: white;"></i>Placement Updates</h5>
+                <h5 style="color: white;"><i class="fas fa-id-card me-2" style="color: white;"></i>Placement Details</h5>
             </div>
             <div class="form-section-body">
-                <div class="table-wrapper">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Company</th>
-                                <th>Role</th>
-                                <th>Round</th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Location</th>
-                                <th>Status</th>
-                                <th>Reason</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for interview_status in student.interview_statuses.all %}
-                                <tr>
-                                    <td>{{ interview_status.interview.company.company_name }}</td>
-                                    <td>{{ interview_status.interview.applying_role }}</td>
-                                    <td>{{ interview_status.interview.round_number }} - {{ interview_status.interview.interview_round }}</td>
-                                    <td>{{ interview_status.interview.interview_date }}</td>
-                                    <td>{{ interview_status.interview.interview_time }}</td>
-                                    <td>{{ interview_status.interview.location }}{% if interview_status.interview.location == 'others' %} ({{ interview_status.interview.other_location }}){% endif %}</td>
-                                    <td>{{ interview_status.selected|yesno:"Selected,Not Selected" }}</td>
-                                    <td>{{ interview_status.reason|default_if_none:"" }}</td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="8" class="text-center py-4 text-muted">
-                                        <i class="fas fa-calendar-times me-2"></i>No placement updates found.
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ placement_form.resume_link.id_for_label }}">Resume Link</label>
+                            {{ placement_form.resume_link }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ placement_form.is_active.id_for_label }}">Is Active</label>
+                            {{ placement_form.is_active }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="{{ placement_form.reason_for_inactive.id_for_label }}">Reason for Inactive</label>
+                            {{ placement_form.reason_for_inactive }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ placement_form.mock_interview_completed.id_for_label }}">Mock Interview Completed</label>
+                            {{ placement_form.mock_interview_completed }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ placement_form.placement_session_completed.id_for_label }}">Placement Session Completed</label>
+                            {{ placement_form.placement_session_completed }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ placement_form.certificate_issued.id_for_label }}">Certificate Issued</label>
+                            {{ placement_form.certificate_issued }}
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div> -->
+        </div>
+        {% endif %}
 
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Update Student</button>

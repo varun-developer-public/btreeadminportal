@@ -25,7 +25,54 @@
         <div class="form-section-body">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                {{ form.as_p }}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.resume_link.id_for_label }}">Resume Link</label>
+                            {{ form.resume_link }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.is_active.id_for_label }}">Is Active</label>
+                            {{ form.is_active }}
+                        </div>
+                    </div>
+                </div>
+
+                {% if request.user.is_staff %}
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="{{ form.reason_for_inactive.id_for_label }}">Reason for Inactive</label>
+                            {{ form.reason_for_inactive }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.mock_interview_completed.id_for_label }}">Mock Interview Completed</label>
+                            {{ form.mock_interview_completed }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.placement_session_completed.id_for_label }}">Placement Session Completed</label>
+                            {{ form.placement_session_completed }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.certificate_issued.id_for_label }}">Certificate Issued</label>
+                            {{ form.certificate_issued }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
                 <button type="submit" name="update_placement" class="btn btn-primary">Update Placement</button>
             </form>
         </div>

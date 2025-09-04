@@ -19,7 +19,7 @@ def company_list(request):
         to_attr='placed_students_list'
     )
 
-    companies = Company.objects.prefetch_related(selected_students_prefetch, 'resume_shared_statuses').order_by('-created_at')
+    companies = Company.objects.prefetch_related(selected_students_prefetch, 'resume_shared_statuses','scheduled_interviews__courses').order_by('-created_at')
     form = CompanyFilterForm(request.GET or None)
 
     if form.is_valid():
@@ -81,10 +81,23 @@ def company_list(request):
         else:
             company.selected_students = []
 
-        if company.progress == 'resume_shared' or company.resume_shared_statuses.exists():
-            company.has_resume_shared_statuses = True
-        else:
-            company.has_resume_shared_statuses = False
+        # if company.progress == 'resume_shared' or company.resume_shared_statuses.exists():
+        #     company.has_resume_shared_statuses = True
+        # else:
+        #     company.has_resume_shared_statuses = False
+        
+        # Only True if actual resume_shared data exists
+        company.has_resume_shared_statuses = company.resume_shared_statuses.exists()
+
+        
+        unique_courses = []
+        seen = set()
+        for interview in company.scheduled_interviews.all():
+            for course in interview.courses.all():
+                if course.course_name not in seen:
+                    seen.add(course.course_name)
+                    unique_courses.append(course.course_name)
+        company.unique_courses = unique_courses
             
     return render(request, 'placementdrive/company_list.html', {
         'companies': companies,

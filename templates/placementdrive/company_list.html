@@ -39,6 +39,11 @@
    .progress-interview_scheduling { background-color: #f9e79f; color: #7d6608; }
    .progress-interview_not_conducted { background-color: #f5b7b1; color: #78281f; }
    .progress-interview_completed { background-color: #a9dfbf; color: #196f3d; }
+   .progress-resume-shared-special {
+    background-color: #ff4d4d;   
+    color: #fff;                 
+    font-weight: bold;
+}
 </style>
 {% endblock %}
 
@@ -121,22 +126,14 @@
                     <td>{{ company.email }}</td>
                     <td>{{ company.location|capfirst }}</td>
                     <td>
-                        {% with company.scheduled_interviews.all as interviews %}
-                            {% if interviews %}
-                                {% for interview in interviews %}
-                                    {% for course in interview.courses.all %}
-                                        {{ course.course_name }}{% if not forloop.parentloop.last or not forloop.last %}, {% endif %}
-                                    {% empty %}
-                                        -
-                                    {% endfor %}
-                                {% endfor %}
-                            {% else %}
-                                -
-                            {% endif %}
-                        {% endwith %}
+                        {% if company.unique_courses %}
+                            {{ company.unique_courses|join:", " }}
+                        {% else %}
+                            -
+                        {% endif %}
                     </td>
                     <td>
-                        <span class="progress-cell progress-{{ company.progress }}">
+                        <span class="progress-cell progress-{{ company.progress }} {% if company.has_resume_shared_statuses and company.progress == 'resume_shared' %}progress-resume-shared-special{% endif %}">
                             {{ company.get_progress_display }}
                         </span>
                     </td>

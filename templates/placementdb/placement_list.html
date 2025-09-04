@@ -117,6 +117,10 @@
                     <th>Course End Date</th>
                     <th>Course Status</th>
                     <th>Course Percentage</th>
+                    <th style="display: flex; flex-direction: column; align-items: center;">Status
+                        <br>
+                        <span style="font-size: 10px; font-weight: 100;">M-P-C</span>
+                    </th>
                     <th>Resume Link</th>
                     <th>Actions</th>
                 </tr>
@@ -162,6 +166,13 @@
                     <td>{{ placement.student.end_date|date:"d-m-Y"|default:"-" }}</td>
                     <td>{{ placement.student.get_course_status_display|default:"-" }}</td>
                     <td>{{ placement.student.course_percentage|default:"0" }}%</td>
+                    <td>
+                        <div class="status-indicators">
+                            <span class="indicator {% if placement.mock_interview_completed %}highlighted{% endif %}" title="Mock Interview"></span>
+                            <span class="indicator {% if placement.placement_session_completed %}highlighted{% endif %}" title="Placement Session"></span>
+                            <span class="indicator {% if placement.certificate_issued %}highlighted{% endif %}" title="Certificate"></span>
+                        </div>
+                    </td>
                     <td>
                         {% if placement.resume_link %}
                             <a href="{{ placement.resume_link.url }}" target="_blank" style="color: #6c757d;">View Resume</a>
@@ -220,6 +231,21 @@
     {% endif %}
 </div>
 <style>
+    .status-indicators {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+    }
+    .indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #ccc;
+        display: inline-block;
+    }
+    .indicator.highlighted {
+        background-color: #28a745;
+    }
     .accordion-button {
         transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
     }

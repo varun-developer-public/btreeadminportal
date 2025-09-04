@@ -6,6 +6,10 @@ class Placement(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='placement')
     resume_link = models.FileField(upload_to='resumes/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    reason_for_inactive = models.TextField(blank=True, null=True)
+    mock_interview_completed = models.BooleanField(default=False, blank=True, null=True)
+    placement_session_completed = models.BooleanField(default=False, blank=True, null=True)
+    certificate_issued = models.BooleanField(default=False, blank=True, null=True)
 
     def __str__(self):
         return f"{self.student.student_id} - Placement"
