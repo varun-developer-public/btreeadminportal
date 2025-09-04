@@ -358,6 +358,11 @@ def placement_dashboard(request):
     active_drives_count = drives.count()
     interviews_scheduled = Company.objects.filter(progress='interview_scheduling').count()
 
+    # New stats for mock interviews, placement sessions, and certificates
+    mock_interviews_completed_count = placements.filter(mock_interview_completed=True).count()
+    placement_sessions_completed_count = placements.filter(placement_session_completed=True).count()
+    certificates_issued_count = placements.filter(certificate_issued=True).count()
+
     # --- Refined Resume Statistics ---
     # 1. Start with students who need placement and are in an active course status.
     #    Exclude any who are explicitly marked as inactive in the placement table.
@@ -454,6 +459,9 @@ def placement_dashboard(request):
         'placement_rate': round(placement_rate, 1),
         'active_drives_count': active_drives_count,
         'interviews_scheduled': interviews_scheduled,
+        'mock_interviews_completed': mock_interviews_completed_count,
+        'placement_sessions_completed': placement_sessions_completed_count,
+        'certificates_issued': certificates_issued_count,
 
         # Resume Stats (Counts)
         'resumes_to_collect_count': resumes_to_collect_count,

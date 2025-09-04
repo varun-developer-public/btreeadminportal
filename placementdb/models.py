@@ -10,6 +10,8 @@ class Placement(models.Model):
     mock_interview_completed = models.BooleanField(default=False, blank=True, null=True)
     placement_session_completed = models.BooleanField(default=False, blank=True, null=True)
     certificate_issued = models.BooleanField(default=False, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     def __str__(self):
         return f"{self.student.student_id} - Placement"
