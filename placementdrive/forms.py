@@ -38,14 +38,19 @@ class CompanyForm(forms.ModelForm):
             self.fields['progress'].initial = 'resume_shared'
 
 class ResumeSharedStatusForm(forms.ModelForm):
+    courses = forms.ModelMultipleChoiceField(
+        queryset=Course.objects.all(),
+        widget=forms.SelectMultiple(attrs={'class': 'form-control select2'}),
+        required=True
+    )
+    
     class Meta:
         model = ResumeSharedStatus
-        fields = ['status', 'role', 'resumes_shared', 'course']
+        fields = ['status', 'role', 'resumes_shared', 'courses']
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['course'].queryset = Course.objects.all()
-        self.fields['course'].widget.attrs.update({'class': 'select2'})
+        self.fields['courses'].queryset = Course.objects.all()
 
 class InterviewScheduleForm(forms.ModelForm):
     courses = forms.ModelMultipleChoiceField(
@@ -128,15 +133,15 @@ class CompanyFilterForm(forms.Form):
         label="Progress"
     )
     resume_shared_status = forms.ChoiceField(
-        choices=[('', 'All Statuses')] + ResumeSharedStatus.STATUS_CHOICES,
+        choices=[('', 'All Statuses'), ('none', 'No Status')] + ResumeSharedStatus.STATUS_CHOICES,
         required=False,
         label="Resume Shared Status"
     )
-    company_stack = forms.ModelMultipleChoiceField(
-        queryset=Course.objects.all(),
-        label='Company Stack',
+    company_stack = forms.MultipleChoiceField(
+        choices=[],
+        label='Stack',
         required=False,
-        widget=forms.SelectMultiple(attrs={'class': 'select2', 'data-placeholder': 'Select courses'})
+        widget=forms.SelectMultiple(attrs={'class': 'select2', 'data-placeholder': 'Select stack'})
     )
     domain = forms.CharField(
         required=False,
@@ -158,6 +163,16 @@ class CompanyFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
         location_choices = [('', 'All Locations')] + [(loc, loc) for loc in Company.objects.values_list('location', flat=True).distinct().order_by('location')]
         self.fields['location'].choices = location_choices
+
+        # Get all course names
+        course_choices = [(course.id, course.course_name) for course in Course.objects.all()]
+        
+        # Get all unique roles from resume shared statuses
+        roles = ResumeSharedStatus.objects.exclude(role__isnull=True).exclude(role='').values_list('role', flat=True).distinct()
+        role_choices = [(role, f"Role: {role}") for role in roles]
+        
+        # Combine course and role choices
+        self.fields['company_stack'].choices = course_choices + role_choices
 
         user_ids = Company.objects.values_list('created_by', flat=True).distinct()
         self.fields['created_by'].queryset = User.objects.filter(id__in=user_ids).distinct()

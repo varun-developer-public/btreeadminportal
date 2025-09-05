@@ -339,6 +339,15 @@ def placement_dashboard(request):
     students_in_pool = Student.objects.filter(pl_required=True)
     placements = Placement.objects.filter(student__in=students_in_pool)
     drives = Company.objects.all()
+    
+    # Resume Shared Status Counts
+    from placementdrive.models import ResumeSharedStatus
+    total_resume_shared = ResumeSharedStatus.objects.count()
+    position_closed_count = ResumeSharedStatus.objects.filter(status='position_closed').count()
+    not_shortlisted_count = ResumeSharedStatus.objects.filter(status='not_shortlisted').count()
+    no_response_count = ResumeSharedStatus.objects.filter(status='no_response').count()
+    moved_to_interview_count = ResumeSharedStatus.objects.filter(status='interview_stage').count()
+    pending_count = total_resume_shared - (position_closed_count + not_shortlisted_count + no_response_count + moved_to_interview_count)
 
     # Overall Stats
     total_placement_pool = students_in_pool.count()
@@ -462,6 +471,14 @@ def placement_dashboard(request):
         'mock_interviews_completed': mock_interviews_completed_count,
         'placement_sessions_completed': placement_sessions_completed_count,
         'certificates_issued': certificates_issued_count,
+        
+        # Resume Shared Status Counts
+        'total_resume_shared': total_resume_shared,
+        'position_closed_count': position_closed_count,
+        'not_shortlisted_count': not_shortlisted_count,
+        'no_response_count': no_response_count,
+        'pending_count': pending_count,
+        'moved_to_interview_count': moved_to_interview_count,
 
         # Resume Stats (Counts)
         'resumes_to_collect_count': resumes_to_collect_count,

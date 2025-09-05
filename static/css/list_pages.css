@@ -121,6 +121,62 @@ th {
     color: #fff;
 }
 
+.inactive-row {
+    cursor: pointer;
+}
+
+.inactive-row:hover {
+    background-color: #f8f9fa;
+}
+
+.inactive-reason {
+    padding: 0 !important;
+    border-top: none !important;
+}
+
+/* Status indicators with different icons */
+.status-indicators {
+    display: flex;
+    justify-content: space-between;
+    width: 80px;
+    margin: 0 auto;
+}
+
+.indicator {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+    position: relative;
+    color: #ddd;
+}
+
+.indicator:before {
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Mock Interview Icon */
+.indicator:nth-child(1):before {
+    content: "\f130"; /* Microphone icon */
+}
+
+/* Placement Session Icon */
+.indicator:nth-child(2):before {
+    content: "\f51c"; /* Chalkboard icon */
+}
+
+/* Certificate Icon */
+.indicator:nth-child(3):before {
+    content: "\f0a3"; /* Certificate icon */
+}
+
+.indicator.highlighted {
+    color: #28a745;
+}
+
 .pending-amount {
     font-weight: 700;
 }

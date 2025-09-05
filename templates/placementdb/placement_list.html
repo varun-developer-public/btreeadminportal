@@ -127,7 +127,7 @@
             </thead>
             <tbody>
                 {% for placement in placements %}
-                <tr>
+                <tr class="{% if not placement.is_active %}inactive-row{% endif %}" data-bs-toggle="{% if not placement.is_active %}collapse{% endif %}" data-bs-target="#reason-{{ placement.id }}" aria-expanded="false" aria-controls="reason-{{ placement.id }}">
                     <td>
                         <span class="status-indicator {% if placement.is_active %}status-active{% else %}status-inactive{% endif %}" style="margin-right: 6%;"></span>
                         <a href="{% url 'student_report' placement.student.student_id %}" class="view-link">
@@ -184,6 +184,15 @@
                         <a href="{% url 'placementdb:update_placement' placement.pk %}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit</a>
                     </td>
                 </tr>
+                {% if not placement.is_active %}
+                <tr class="collapse" id="reason-{{ placement.id }}">
+                    <td colspan="23" class="inactive-reason">
+                        <div class="p-3 bg-light">
+                            <strong>Reason for Inactive:</strong> {{ placement.reason_for_inactive|default:"No reason provided" }}
+                        </div>
+                    </td>
+                </tr>
+                {% endif %}
                 {% empty %}
                 <tr><td colspan="16">No placement records found.</td></tr>
                 {% endfor %}

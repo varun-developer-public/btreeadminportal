@@ -43,9 +43,12 @@ def company_list(request):
         if progress:
             companies = companies.filter(progress=progress)
         if resume_shared_status:
-            companies = companies.filter(
-                resume_shared_statuses__status=resume_shared_status
-            ).distinct()
+            if resume_shared_status == 'none':
+                companies = companies.filter(resume_shared_statuses__isnull=True).distinct()
+            else:
+                companies = companies.filter(
+                    resume_shared_statuses__status=resume_shared_status
+                ).distinct()
         if domain:
             companies = companies.filter(email__icontains=domain)
         if location:
@@ -53,9 +56,26 @@ def company_list(request):
         if created_by:
             companies = companies.filter(created_by=created_by)
         if company_stack:
-            companies = companies.filter(
-                scheduled_interviews__courses__in=company_stack
-            ).distinct()
+            # Split company_stack into course IDs and role strings
+            course_ids = []
+            role_values = []
+            
+            for item in company_stack:
+                # Check if item is a digit (course ID) or string (role)
+                if str(item).isdigit():
+                    course_ids.append(int(item))
+                else:
+                    role_values.append(item)
+            
+            # Build the query
+            query = Q()
+            if course_ids:
+                query |= Q(scheduled_interviews__courses__id__in=course_ids)
+                query |= Q(resume_shared_statuses__courses__id__in=course_ids)
+            if role_values:
+                query |= Q(resume_shared_statuses__role__in=role_values)
+                
+            companies = companies.filter(query).distinct()
 
     paginator = Paginator(companies, 10)
     page = request.GET.get('page')
@@ -102,6 +122,14 @@ def company_list(request):
                 if course.course_name not in seen:
                     seen.add(course.course_name)
                     unique_courses.append(course.course_name)
+        
+        # Add courses from resume shared statuses
+        for status in company.resume_shared_statuses.all():
+            for course in status.courses.all():
+                if course.course_name not in seen:
+                    seen.add(course.course_name)
+                    unique_courses.append(course.course_name)
+                
         company.unique_courses = unique_courses
             
     return render(request, 'placementdrive/company_list.html', {
@@ -242,22 +270,6 @@ def company_update(request, pk):
                 interview.round_number = existing_rounds + 1
                 interview.cycle_number = current_cycle
                 
-                # # Assign cycle number
-                # if company.interview_cycles == 0:
-                #     company.interview_cycles = 1
-                #     company.save()
-                # interview.cycle_number = company.interview_cycles
-
-                # # Assign round number dynamically for this cycle
-                # last_round = Interview.objects.filter(
-                #     company=company, cycle_number=company.interview_cycles
-                # ).order_by('-round_number').first()
-                # if last_round:
-                #     interview.round_number = last_round.round_number + 1
-                # else:
-                #     interview.round_number = 1
-
-
                 # Save company progress
                 company.progress = 'interview_scheduling'
                 company.save()
@@ -277,7 +289,11 @@ def company_update(request, pk):
             if resume_shared_status_form.is_valid():
                 status = resume_shared_status_form.save(commit=False)
                 status.company = company
+                status.created_by = request.user
                 status.save()
+                # Save the many-to-many relationship for courses
+                messages.success(request, "Resume status saved successfully!")
+                resume_shared_status_form.save_m2m()
                 return redirect('company_update', pk=company.pk)
         else:
             if form.is_valid():
@@ -341,7 +357,10 @@ def edit_resume_shared_status(request, status_pk):
     if request.method == 'POST':
         form = ResumeSharedStatusForm(request.POST, instance=status)
         if form.is_valid():
-            form.save()
+            status = form.save(commit=False)
+            status.save()
+            # Save the many-to-many relationship for courses
+            form.save_m2m()
             messages.success(request, "Resume shared status updated successfully!")
             return redirect('company_list')
     else:

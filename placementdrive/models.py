@@ -89,17 +89,19 @@ class Company(models.Model):
 
 class ResumeSharedStatus(models.Model):
     STATUS_CHOICES = [
+        ('pending', 'Pending'),
         ('position_closed', 'Position Closed'),
         ('not_shortlisted', 'Not Shortlisted'),
         ('no_response', 'No Response'),
+        ('interview_stage', 'Interview Stage'),
     ]
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='resume_shared_statuses')
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     role = models.CharField(max_length=255, null=True, blank=True)
     resumes_shared = models.PositiveIntegerField(default=1)
-    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='resume_shared_statuses')
+    courses = models.ManyToManyField(Course, related_name='resume_shared_statuses')
     created_at = models.DateTimeField(auto_now_add=True)
-
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
     def __str__(self):
         return f"{self.company.company_name} - {self.get_status_display()}"
         

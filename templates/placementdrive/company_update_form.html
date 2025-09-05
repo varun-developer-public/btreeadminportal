@@ -3,8 +3,11 @@
 {% load custom_filter %}
 
 {% block extra_css %}
+
 <link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
 <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
 {% endblock %}
 
 {% block title %}Update Company{% endblock %}
@@ -68,7 +71,7 @@
             {% csrf_token %}
             <div class="form-section-body">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group" id="field_status">
                             <div class="label-form">
                                 {{ resume_shared_status_form.status.label_tag }}
@@ -85,7 +88,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group" id="field_role">
                             <div class="label-form">
                                 {{ resume_shared_status_form.role.label_tag }}
@@ -102,7 +105,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <div class="form-group" id="field_resumes_shared">
                             <div class="label-form">
                                 {{ resume_shared_status_form.resumes_shared.label_tag }}
@@ -118,6 +121,24 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group" id="field_courses">
+                            <div class="label-form">
+                                {{ resume_shared_status_form.courses.label_tag }}
+                                {% if resume_shared_status_form.courses.field.required %}
+                                    <span class="required-indicator">*</span>
+                                {% endif %}
+                            </div>
+                            {{ resume_shared_status_form.courses }}
+                            <div class="error-message">
+                                {% if resume_shared_status_form.courses.errors %}
+                                    {{ resume_shared_status_form.courses.errors }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <div class="col-md-12 mt-2 text-end">
@@ -130,31 +151,39 @@
 
 
            {% if company.resume_shared_statuses.all %}
-<hr>
-<h6 class="mb-3">Status History</h6>
-<div class="table-wrapper scroll-container" style="max-height: 200px;">
-<table class="table table-striped">
-<thead>
-<tr>
-<th>Status</th>
-<th>Role</th>
-<th>Resumes Shared</th>
-<th>Date</th>
-</tr>
-</thead>
-<tbody>
-                              {% for status in company.resume_shared_statuses.all %}
-<tr>
-<td>{{ status.get_status_display }}</td>
-<td>{{ status.role }}</td>
-<td>{{ status.resumes_shared }}</td>
-<td>{{ status.created_at }}</td>
-</tr>
-                              {% endfor %}
-</tbody>
-</table>
+            <hr>
+            <h6 class="mb-3">Status History</h6>
+            <div class="table-wrapper scroll-container" style="max-height: 200px;">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Role</th>
+                            <th>Course</th>
+                            <th>Resumes Shared</th>
+                            <th>Updated By</th>
+                            <th>Updated Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status in company.resume_shared_statuses.all %}
+                        <tr>
+                            <td>{{ status.get_status_display }}</td>
+                            <td>{{ status.role }}</td>
+                            <td>{% for course in status.courses.all %}{{ course.course_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+                            <td>{{ status.resumes_shared }}</td>
+                            <td>{{ status.created_by.name }}</td>
+                            <td>{{ status.created_at }}</td>
+                            <td style="text-align: center;">
+                                <a href="{% url 'edit_resume_shared_status' status_pk=status.id %}" class="view-link" ><i class="fas fa-edit"></i></a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
            </div>
-           {% endif %}
+            {% endif %}
        </div>
    </div>
    {% endif %}
@@ -294,7 +323,7 @@
 {% endblock %}
 
 {% block extra_js %}
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
   <script>
     $(document).ready(function() {
@@ -428,6 +457,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Listen for changes
     progressSelect.addEventListener('change', toggleReasonField);
+});
+</script>
+<script>
+$(document).ready(function() {
+    $('#id_courses').select2({
+        placeholder: "Select courses",
+        allowClear: true
+    });
 });
 </script>
 {% endblock %}

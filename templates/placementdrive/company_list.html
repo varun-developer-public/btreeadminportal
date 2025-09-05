@@ -41,14 +41,24 @@
    .progress-interview_completed { background-color: #a9dfbf; color: #196f3d; }
    
    /* Resume shared status colors */
-   .status-position_closed { background-color: #ff4d4d; color: #fff; }
+   .status-pending { background-color: #ff4d4d; color: #fff; }
+   .status-position_closed { background-color: #bd61ff; color: #fff; }
    .status-not_shortlisted { background-color: #f39c12; color: #fff; }
    .status-no_response { background-color: #3498db; color: #fff; }
+   .status-interview_stage { background-color: #0a446b; color: #fff; }
    
    .progress-resume-shared-special {
     color: #fff;                 
-    font-weight: bold;
-}
+   }
+   
+   /* Stack cell scrollable */
+   .stack-cell {
+       max-width: 200px !important;
+       max-height: 60px !important;
+       overflow-x: auto;
+       word-break: break-word;
+       word-wrap: break-word;
+   }
 </style>
 {% endblock %}
 
@@ -111,7 +121,7 @@
                     <th>Mobile</th>
                     <th>Email</th>
                     <th>Location</th>
-                    <th>Company Stack</th>
+                    <th>Stack</th>
                     <th>Progress</th>
                     <th>Date</th>
                     <th>Created By</th>
@@ -134,7 +144,7 @@
                     <td>{{ company.mobile }}</td>
                     <td>{{ company.email }}</td>
                     <td>{{ company.location|capfirst }}</td>
-                    <td>
+                    <td class="stack-cell scroll-container">
                         {% if company.unique_courses %}
                             {{ company.unique_courses|join:", " }}
                         {% else %}
@@ -145,7 +155,7 @@
                         {% if company.has_resume_shared_statuses and company.progress == 'resume_shared' %}
                             {% with latest_status=company.resume_shared_statuses.all.0 %}
                             <span class="progress-cell progress-resume-shared-special status-{{ latest_status.status }}">
-                                {{ latest_status.get_status_display }}
+                                RS&#8594;{{ latest_status.get_status_display }}
                             </span>
                             {% endwith %}
                         {% else %}
@@ -222,7 +232,15 @@
                                             <td>{{ forloop.counter }}</td>
                                             <td><span class="status-badge status-{{ status.status }}">{{ status.get_status_display }}</span></td>
                                             <td>{{ status.role }}</td>
-                                            <td>{{ status.course.course_name|default:'-' }}</td>
+                                            <td>
+                                                    {% if status.courses.exists %}
+                                                        {% for course in status.courses.all %}
+                                                        {{ course.course_name }}{% if not forloop.last %}, {% endif %}
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                            </td>
                                             <td>{{ status.resumes_shared }}</td>
                                             <td>{{ status.created_at }}</td>
                                             <td>
@@ -243,7 +261,7 @@
                     </tr>
                 {% endif %} 
             {% empty %}
-                <tr><td colspan="11" class="text-center py-4 text-muted">
+                <tr><td colspan="12" class="text-center py-4 text-muted">
                         <i class="fas fa-building me-2"></i>No companies found.
                     </td></tr>
             {% endfor %}
