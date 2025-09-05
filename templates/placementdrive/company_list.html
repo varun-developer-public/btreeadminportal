@@ -221,7 +221,7 @@
                                         <th>Role</th>
                                         <th>Course</th>
                                         <th>Resumes Shared</th>
-                                        <th>Date</th>
+                                        <th>Updated</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -242,7 +242,7 @@
                                                     {% endif %}
                                             </td>
                                             <td>{{ status.resumes_shared }}</td>
-                                            <td>{{ status.created_at }}</td>
+                                            <td><span style="color: #0a446b; margin-right: 2px;">{{ status.created_by.name }}</span>-{{ status.created_at }}</td>
                                             <td>
                                                 <a href="{% url 'edit_resume_shared_status' status_pk=status.id %}" class="btn btn-update btn-sm"><i class="fas fa-edit"></i></a>
                                             </td>

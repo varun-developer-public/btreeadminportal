@@ -148,6 +148,7 @@ th {
     display: inline-block;
     position: relative;
     color: #ddd;
+    transition: transform 0.3s ease, color 0.3s ease;
 }
 
 .indicator:before {
@@ -156,6 +157,7 @@ th {
     position: absolute;
     top: 0;
     left: 0;
+    transition: transform 0.3s ease;
 }
 
 /* Mock Interview Icon */
@@ -174,7 +176,29 @@ th {
 }
 
 .indicator.highlighted {
-    color: #28a745;
+    color: transparent;
+    transform: scale(1.2);
+}
+
+/* Colorful highlighted icons */
+.indicator:nth-child(1).highlighted:before {
+    color: #e74c3c; /* Red for microphone */
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.5);
+}
+
+.indicator:nth-child(2).highlighted:before {
+    color: #3498db; /* Blue for chalkboard */
+    text-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+.indicator:nth-child(3).highlighted:before {
+    color: #f1c40f; /* Yellow for certificate */
+    text-shadow: 0 0 5px rgba(241, 196, 15, 0.5);
+}
+
+/* Hover effects */
+.indicator:hover {
+    transform: scale(1.3);
 }
 
 .pending-amount {

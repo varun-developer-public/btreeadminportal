@@ -170,7 +170,7 @@
                         <div class="status-indicators">
                             <span class="indicator {% if placement.mock_interview_completed %}highlighted{% endif %}" title="Mock Interview"></span>
                             <span class="indicator {% if placement.placement_session_completed %}highlighted{% endif %}" title="Placement Session"></span>
-                            <span class="indicator {% if placement.certificate_issued %}highlighted{% endif %}" title="Certificate"></span>
+                            <span class="indicator {% if placement.certificate_issued %}highlighted{% endif %}" title="Certificate" style="margin-left: 5px;"></span>
                         </div>
                     </td>
                     <td>
@@ -240,20 +240,11 @@
     {% endif %}
 </div>
 <style>
+    /* These styles are intentionally left empty to allow the main CSS file to control the indicators */
     .status-indicators {
         display: flex;
         gap: 5px;
         justify-content: center;
-    }
-    .indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background-color: #ccc;
-        display: inline-block;
-    }
-    .indicator.highlighted {
-        background-color: #28a745;
     }
     .accordion-button {
         transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out;
