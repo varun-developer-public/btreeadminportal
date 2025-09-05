@@ -13,4 +13,5 @@ urlpatterns = [
     path('interview/<int:interview_pk>/postpone/', views.postpone_interview_round, name='postpone_interview_round'),
     path('interview/<int:interview_pk>/delete/', views.delete_interview_round, name='delete_interview_round'),
     path('company/<int:pk>/restart/', views.restart_interview_cycle, name='restart_interview_cycle'),
+    path('resume-status/<int:status_pk>/edit/', views.edit_resume_shared_status, name='edit_resume_shared_status'),
 ]

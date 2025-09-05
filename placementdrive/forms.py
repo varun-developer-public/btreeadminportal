@@ -40,7 +40,12 @@ class CompanyForm(forms.ModelForm):
 class ResumeSharedStatusForm(forms.ModelForm):
     class Meta:
         model = ResumeSharedStatus
-        fields = ['status', 'role', 'resumes_shared']
+        fields = ['status', 'role', 'resumes_shared', 'course']
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['course'].queryset = Course.objects.all()
+        self.fields['course'].widget.attrs.update({'class': 'select2'})
 
 class InterviewScheduleForm(forms.ModelForm):
     courses = forms.ModelMultipleChoiceField(
@@ -121,6 +126,11 @@ class CompanyFilterForm(forms.Form):
         choices=[('', 'All Progress')] + Company.PROGRESS_CHOICES,
         required=False,
         label="Progress"
+    )
+    resume_shared_status = forms.ChoiceField(
+        choices=[('', 'All Statuses')] + ResumeSharedStatus.STATUS_CHOICES,
+        required=False,
+        label="Resume Shared Status"
     )
     company_stack = forms.ModelMultipleChoiceField(
         queryset=Course.objects.all(),

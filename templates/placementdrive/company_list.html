@@ -39,8 +39,13 @@
    .progress-interview_scheduling { background-color: #f9e79f; color: #7d6608; }
    .progress-interview_not_conducted { background-color: #f5b7b1; color: #78281f; }
    .progress-interview_completed { background-color: #a9dfbf; color: #196f3d; }
+   
+   /* Resume shared status colors */
+   .status-position_closed { background-color: #ff4d4d; color: #fff; }
+   .status-not_shortlisted { background-color: #f39c12; color: #fff; }
+   .status-no_response { background-color: #3498db; color: #fff; }
+   
    .progress-resume-shared-special {
-    background-color: #ff4d4d;   
     color: #fff;                 
     font-weight: bold;
 }
@@ -67,6 +72,10 @@
             <div class="filter-group">
                 {{ form.progress.label_tag }}
                 {{ form.progress }}
+            </div>
+            <div class="filter-group">
+                {{ form.resume_shared_status.label_tag }}
+                {{ form.resume_shared_status }}
             </div>
             <div class="filter-group">
                 {{ form.company_stack.label_tag }}
@@ -133,9 +142,17 @@
                         {% endif %}
                     </td>
                     <td>
-                        <span class="progress-cell progress-{{ company.progress }} {% if company.has_resume_shared_statuses and company.progress == 'resume_shared' %}progress-resume-shared-special{% endif %}">
-                            {{ company.get_progress_display }}
-                        </span>
+                        {% if company.has_resume_shared_statuses and company.progress == 'resume_shared' %}
+                            {% with latest_status=company.resume_shared_statuses.all.0 %}
+                            <span class="progress-cell progress-resume-shared-special status-{{ latest_status.status }}">
+                                {{ latest_status.get_status_display }}
+                            </span>
+                            {% endwith %}
+                        {% else %}
+                            <span class="progress-cell progress-{{ company.progress }}">
+                                {{ company.get_progress_display }}
+                            </span>
+                        {% endif %}
                     </td>
                     <td>{{ company.date }}</td>
                     <td>{{ company.created_by.name }}</td>
@@ -192,8 +209,10 @@
                                         <th>S.No</th>
                                         <th>Status</th>
                                         <th>Role</th>
+                                        <th>Course</th>
                                         <th>Resumes Shared</th>
                                         <th>Date</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -201,10 +220,14 @@
                                         {% for status in company.resume_shared_statuses.all %}
                                         <tr>
                                             <td>{{ forloop.counter }}</td>
-                                            <td>{{ status.get_status_display }}</td>
+                                            <td><span class="status-badge status-{{ status.status }}">{{ status.get_status_display }}</span></td>
                                             <td>{{ status.role }}</td>
+                                            <td>{{ status.course.course_name|default:'-' }}</td>
                                             <td>{{ status.resumes_shared }}</td>
                                             <td>{{ status.created_at }}</td>
+                                            <td>
+                                                <a href="{% url 'edit_resume_shared_status' status_pk=status.id %}" class="btn btn-update btn-sm"><i class="fas fa-edit"></i></a>
+                                            </td>
                                         </tr>
                                         {% endfor %}
                                     {% else %}
@@ -248,6 +271,7 @@
             <input type="number" name="page" min="1" max="{{ companies.paginator.num_pages }}" placeholder="Page">
             <input type="hidden" name="q" value="{{ request.GET.q }}">
             <input type="hidden" name="progress" value="{{ request.GET.progress }}">
+            <input type="hidden" name="resume_shared_status" value="{{ request.GET.resume_shared_status }}">
             <input type="hidden" name="domain" value="{{ request.GET.domain }}">
             <input type="hidden" name="location" value="{{ request.GET.location }}">
             <input type="hidden" name="created_by" value="{{ request.GET.created_by }}">

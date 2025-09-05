@@ -97,10 +97,14 @@ class ResumeSharedStatus(models.Model):
     status = models.CharField(max_length=50, choices=STATUS_CHOICES)
     role = models.CharField(max_length=255, null=True, blank=True)
     resumes_shared = models.PositiveIntegerField(default=1)
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, related_name='resume_shared_statuses')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.company.company_name} - {self.get_status_display()}"
+        
+    class Meta:
+        ordering = ['-created_at']
 
 class Interview(models.Model):
     ROUND_CHOICES = [

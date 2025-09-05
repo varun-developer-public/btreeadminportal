@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from .models import Company, Interview, InterviewStudent
+from .models import Company, Interview, InterviewStudent, ResumeSharedStatus
 from .forms import CompanyForm, InterviewScheduleForm, InterviewStudentForm, CompanyFilterForm, ResumeSharedStatusForm
 from studentsdb.models import Student
 from coursedb.models import Course
@@ -25,6 +25,7 @@ def company_list(request):
     if form.is_valid():
         q = form.cleaned_data.get('q')
         progress = form.cleaned_data.get('progress')
+        resume_shared_status = form.cleaned_data.get('resume_shared_status')
         domain = form.cleaned_data.get('domain')
         location = form.cleaned_data.get('location')
         created_by = form.cleaned_data.get('created_by')
@@ -41,6 +42,10 @@ def company_list(request):
             )
         if progress:
             companies = companies.filter(progress=progress)
+        if resume_shared_status:
+            companies = companies.filter(
+                resume_shared_statuses__status=resume_shared_status
+            ).distinct()
         if domain:
             companies = companies.filter(email__icontains=domain)
         if location:
@@ -327,6 +332,26 @@ def company_delete(request, pk):
         company.delete()
         return redirect('company_list')
     return render(request, 'placementdrive/company_confirm_delete.html', {'company': company})
+
+@login_required
+def edit_resume_shared_status(request, status_pk):
+    status = get_object_or_404(ResumeSharedStatus, pk=status_pk)
+    company = status.company
+    
+    if request.method == 'POST':
+        form = ResumeSharedStatusForm(request.POST, instance=status)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Resume shared status updated successfully!")
+            return redirect('company_list')
+    else:
+        form = ResumeSharedStatusForm(instance=status)
+    
+    return render(request, 'placementdrive/edit_resume_shared_status.html', {
+        'form': form,
+        'status': status,
+        'company': company
+    })
 
 def load_students(request):
     course_ids_str = request.GET.get('course_ids', '')

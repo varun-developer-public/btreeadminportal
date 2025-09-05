@@ -105,6 +105,22 @@ th {
     background-color: #dc3545;
 }
 
+/* Resume shared status badges */
+.status-position_closed {
+    background-color: #ff4d4d;
+    color: #fff;
+}
+
+.status-not_shortlisted {
+    background-color: #f39c12;
+    color: #fff;
+}
+
+.status-no_response {
+    background-color: #3498db;
+    color: #fff;
+}
+
 .pending-amount {
     font-weight: 700;
 }
