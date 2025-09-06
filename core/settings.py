@@ -1,20 +1,22 @@
-"""
-Django settings for core project.
-"""
+"""Django settings for core project."""
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# It's recommended to load this from an environment variable or a secrets management tool.
+# Load from environment variable
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-g7ccbck23uiam(r(*0-&^57v#94(2^kt#buh!mn$fbq)l8+=$$')
 
 # --- PRODUCTION SETTINGS ---
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = ['btrees.in', 'admin.btrees.in']
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -75,15 +77,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 
-# Database - Production (PostgreSQL)
+# Database configuration from environment variables
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'btree_db',
-        'USER': 'btree_user',
-        'PASSWORD': 'BTree@2025',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.postgresql'),
+        'NAME': os.environ.get('DB_NAME', 'btree_db'),
+        'USER': os.environ.get('DB_USER', 'btree_user'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'BTree@2025'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -127,25 +129,11 @@ LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
-# local development settings
-# SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-# ALLOWED_HOSTS = ['*']
-
-
-# # developement db
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
-# Email Configuration
+# Email Configuration from environment variables
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'btreesystem@gmail.com'  # Replace with your Gmail address
-EMAIL_HOST_PASSWORD = 'xaiqetsigdskrwqn'  # Replace with your Gmail app password
-DEFAULT_FROM_EMAIL = 'btreesystem@gmail.com'
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'btreesystem@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'xaiqetsigdskrwqn')
+DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', 'btreesystem@gmail.com')
