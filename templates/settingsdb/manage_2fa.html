@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">Manage Two-Factor Authentication (2FA)</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Two-factor authentication adds an extra layer of security to your account.
+                        Once enabled, you will be required to enter a code from your authenticator app to log in.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-check form-switch mb-3">
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                                name="enable_2fa"
+                                id="id_enable_2fa"
+                                role="switch"
+                                {% if user_settings.enable_2fa %}checked{% endif %}>
+                            <label class="form-check-label" for="id_enable_2fa">
+                                Enable Two-Factor Authentication
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Settings</button>
+                    </form>
+
+                    {% if qr_code %}
+                    <hr>
+                    <div id="qr-code-section" class="mt-4 text-center">
+                        <div id="success-message" class="alert alert-success" style="display: none;">
+                            QR code successfully generated! Please scan it with your authenticator app.
+                        </div>
+                        <h4>Scan this QR code with your authenticator app</h4>
+                        <p>
+                            Use an app like Google Authenticator, Authy, or any other TOTP-compatible app
+                            to scan the QR code below. This will link your account to the app.
+                        </p>
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid" style="max-width: 250px;">
+                        <p class="mt-3 text-danger">
+                            <strong>Important:</strong> If you lose access to your authenticator app,
+                            you may lose access to your account.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // If the QR code section exists, show the success message
+    if ($('#qr-code-section').length) {
+        $('#success-message').fadeIn().delay(5000).fadeOut();
+    }
+});
+</script>
+{% endblock %}

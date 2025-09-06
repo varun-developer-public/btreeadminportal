@@ -1,7 +1,8 @@
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
-from .models import SourceOfJoining, PaymentAccount, TransactionLog
-from .forms import SourceForm, PaymentAccountForm
+from .models import SourceOfJoining, PaymentAccount, TransactionLog, UserSettings
+from .forms import SourceForm, PaymentAccountForm, UserSettingsForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import pandas as pd
 from django.http import HttpResponse
@@ -18,6 +19,11 @@ from placementdb.models import Placement, CompanyInterview
 from placementdrive.models import Company
 from accounts.models import CustomUser
 import json
+
+import pyotp
+import qrcode
+import base64
+
 
 @staff_member_required
 def settings_dashboard(request):
@@ -248,3 +254,40 @@ def export_student_courses(request):
             ])
 
     return response
+
+@login_required
+def manage_2fa(request):
+    user_settings, created = UserSettings.objects.get_or_create(user=request.user)
+    form = UserSettingsForm(instance=user_settings)
+    qr_code = None
+
+    if request.method == 'POST':
+        form = UserSettingsForm(request.POST, instance=user_settings)
+        if form.is_valid():
+            user_settings = form.save()
+            if user_settings.enable_2fa and not request.user.totp_secret:
+                # Generate and save a new TOTP secret
+                totp_secret = pyotp.random_base32()
+                request.user.totp_secret = totp_secret
+                request.user.save()
+
+                # Generate QR code
+                totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
+                    name=request.user.email, issuer_name="BTree"
+                )
+                img = qrcode.make(totp_uri)
+                buffered = BytesIO()
+                img.save(buffered, format="PNG")
+                qr_code = base64.b64encode(buffered.getvalue()).decode()
+
+            elif not user_settings.enable_2fa:
+                # Disable 2FA and clear the secret
+                request.user.totp_secret = None
+                request.user.save()
+
+    context = {
+        'form': form,
+        'qr_code': qr_code,
+        'user_settings': user_settings,
+    }
+    return render(request, 'settingsdb/manage_2fa.html', context)

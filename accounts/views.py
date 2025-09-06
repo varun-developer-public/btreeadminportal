@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 
 from consultantdb.models import Achievement, Goal
 from .models import CustomUser
+from settingsdb.models import UserSettings
 from .forms import UserForm, UserUpdateForm, PasswordChangeForm, PasswordResetForm
 
 def is_admin(user):
@@ -602,6 +603,14 @@ def login_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(request, username=email, password=password)
             if user is not None:
+                try:
+                    user_settings = UserSettings.objects.get(user=user)
+                    if user_settings.enable_2fa:
+                        request.session['2fa_user_id'] = user.id
+                        return redirect('verify_2fa')
+                except UserSettings.DoesNotExist:
+                    pass  # No settings, so no 2FA
+
                 login(request, user)
                 if user.role == 'admin':
                     return redirect('admin_dashboard')
@@ -772,3 +781,41 @@ def password_reset_new_password(request):
         form = PasswordResetForm(user)
 
     return render(request, 'accounts/password_reset_new_password.html', {'form': form})
+
+import pyotp
+from .forms import TwoFactorForm
+
+def verify_2fa(request):
+    user_id = request.session.get('2fa_user_id')
+    if not user_id:
+        return redirect('login')
+
+    try:
+        user = CustomUser.objects.get(id=user_id)
+    except CustomUser.DoesNotExist:
+        return redirect('login')
+
+    if request.method == 'POST':
+        form = TwoFactorForm(request.POST)
+        if form.is_valid():
+            otp = form.cleaned_data.get('otp')
+            totp = pyotp.TOTP(user.totp_secret)
+            if totp.verify(otp):
+                login(request, user)
+                del request.session['2fa_user_id']
+                if user.role == 'admin':
+                    return redirect('admin_dashboard')
+                elif user.role == 'consultant':
+                    return redirect('consultant_dashboard')
+                elif user.role == 'placement':
+                    return redirect('placement_dashboard')
+                elif user.role == 'batch_coordination':
+                    return redirect('batch_coordination_dashboard')
+                else:
+                    return redirect('staff_dashboard')
+            else:
+                messages.error(request, "Invalid one-time password.")
+    else:
+        form = TwoFactorForm()
+
+    return render(request, 'accounts/verify_2fa.html', {'form': form})

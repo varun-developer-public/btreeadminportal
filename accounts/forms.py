@@ -111,3 +111,6 @@ class PasswordResetForm(SetPasswordForm):
         super().__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+class TwoFactorForm(forms.Form):
+    otp = forms.CharField(label="One-Time Password", max_length=6, min_length=6, widget=forms.TextInput(attrs={'class': 'form-control'}))

@@ -13,4 +13,5 @@ urlpatterns = [
     path('import-courses/', views.import_student_courses, name='import_student_courses'),
     path('download-course-template/', views.download_course_template, name='download_course_template'),
     path('export-student-courses/', views.export_student_courses, name='export_student_courses'),
+    path('2fa/', views.manage_2fa, name='manage_2fa'),
 ]

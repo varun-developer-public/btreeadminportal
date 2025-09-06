@@ -31,3 +31,11 @@ class TransactionLog(models.Model):
         return f"{self.timestamp} | {self.table_name} | {self.action}"
 
 
+
+
+class UserSettings(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='settings')
+    enable_2fa = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Settings for {self.user.email}"

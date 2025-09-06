@@ -134,12 +134,16 @@
             </a>
         </li>
         {% endif %}
-        {% if user.role == 'admin' or user.role == 'staff' %}
-        <li>
-            <a href="{% url 'settings_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'settings_dashboard' %}active{% endif %}">
+        <li class="nav-item has-submenu">
+            <a href="#" class="nav-link submenu-toggle {% if request.resolver_match.app_name == 'settingsdb' %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#settings-submenu" aria-expanded="{% if request.resolver_match.app_name == 'settingsdb' %}true{% else %}false{% endif %}" aria-controls="settings-submenu">
                 <i class="fas fa-cog"></i><span>Settings</span>
             </a>
+            <ul class="submenu collapse {% if request.resolver_match.app_name == 'settingsdb' %}show{% endif %}" id="settings-submenu">
+                {% if user.role == 'admin' or user.role == 'staff' %}
+                <li><a href="{% url 'settings_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'settings_dashboard' %}active{% endif %}">General</a></li>
+                {% endif %}
+                <li><a href="{% url 'manage_2fa' %}" class="nav-link {% if request.resolver_match.url_name == 'manage_2fa' %}active{% endif %}">Security</a></li>
+            </ul>
         </li>
-        {% endif %}
     </ul>
 </div>
