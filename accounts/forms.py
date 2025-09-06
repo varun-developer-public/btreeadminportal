@@ -103,3 +103,11 @@ class PasswordChangeForm(AuthPasswordChangeForm):
         super().__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].widget.attrs.update({'class': 'form-control'})
+
+from django.contrib.auth.forms import SetPasswordForm
+
+class PasswordResetForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields:
+            self.fields[field].widget.attrs.update({'class': 'form-control'})

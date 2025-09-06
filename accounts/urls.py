@@ -1,5 +1,11 @@
 from django.urls import path
-from .views import user_list, create_user, update_user, delete_user, admin_dashboard, staff_dashboard, consultant_dashboard, logout_view, login_view, password_change, placement_dashboard, batch_coordination_dashboard
+from .views import (
+    user_list, create_user, update_user, delete_user,
+    admin_dashboard, staff_dashboard, consultant_dashboard,
+    logout_view, login_view, password_change,
+    placement_dashboard, batch_coordination_dashboard,
+    password_reset_request, password_reset_otp, password_reset_new_password
+)
 
 urlpatterns = [
     path('login/', login_view, name='login'),
@@ -14,4 +20,7 @@ urlpatterns = [
     path('users/<int:pk>/update/', update_user, name='update_user'),
     path('users/<int:pk>/delete/', delete_user, name='delete_user'),
     path('password_change/', password_change, name='password_change'),
+    path('password_reset/', password_reset_request, name='password_reset_request'),
+    path('password_reset/otp/', password_reset_otp, name='password_reset_otp'),
+    path('password_reset/new_password/', password_reset_new_password, name='password_reset_new_password'),
 ]

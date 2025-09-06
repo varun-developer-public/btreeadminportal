@@ -110,9 +110,9 @@ STATIC_URL = 'static/'
 
 
 # A list of directories where Django will look for your project's source static files.
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static'),
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 
 # --- MEDIA FILES CONFIGURATION (User-uploaded content) ---
@@ -129,14 +129,23 @@ LOGOUT_REDIRECT_URL = 'login'
 
 # local development settings
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
-# ALLOWED_HOSTS = ['*']
+DEBUG = True
+ALLOWED_HOSTS = ['*']
 
 
-# # developement db
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+# developement db
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'btreesystem@gmail.com'  # Replace with your Gmail address
+EMAIL_HOST_PASSWORD = 'xaiqetsigdskrwqn'  # Replace with your Gmail app password
+DEFAULT_FROM_EMAIL = 'btreesystem@gmail.com'

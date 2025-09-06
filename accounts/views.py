@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 
 from consultantdb.models import Achievement, Goal
 from .models import CustomUser
-from .forms import UserForm, UserUpdateForm, PasswordChangeForm
+from .forms import UserForm, UserUpdateForm, PasswordChangeForm, PasswordResetForm
 
 def is_admin(user):
     return user.is_authenticated and (user.role == 'admin' or user.is_superuser)
@@ -645,3 +645,130 @@ def password_change(request):
     else:
         form = PasswordChangeForm(request.user)
     return render(request, 'accounts/password_change.html', {'form': form})
+
+import random
+import string
+from django.conf import settings
+from datetime import timedelta
+from .utils import send_otp_email
+
+def password_reset_request(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            messages.error(request, "User with this email does not exist.")
+            return render(request, 'accounts/password_reset_request.html')
+
+        otp = ''.join(random.choices(string.digits, k=6))
+        request.session['otp'] = otp
+        request.session['otp_expiry'] = (timezone.now() + timedelta(minutes=3)).isoformat()
+        request.session['reset_email'] = email
+
+        send_otp_email(email, otp)
+        
+        messages.success(request, "An OTP has been sent to your email.")
+        request.session['otp_page_visited'] = False  # Flag for initial visit
+        return redirect('password_reset_otp')
+
+    return render(request, 'accounts/password_reset_request.html')
+
+def password_reset_otp(request):
+    # Security enhancement: Invalidate session on refresh/re-navigation
+    if request.method == 'GET':
+        if request.session.get('otp_page_visited', True): # Default to True to be safe
+            # If the flag is True, it's a refresh. Terminate.
+            if 'otp' in request.session: del request.session['otp']
+            if 'otp_expiry' in request.session: del request.session['otp_expiry']
+            if 'reset_email' in request.session: del request.session['reset_email']
+            messages.error(request, "For security, the password reset process has been terminated. Please start over.")
+            return redirect('password_reset_request')
+        else:
+            # First visit, set the flag to True
+            request.session['otp_page_visited'] = True
+            return render(request, 'accounts/password_reset_otp.html')
+
+    if request.method == 'POST':
+        otp_entered = request.POST.get('otp')
+        otp_session = request.session.get('otp')
+        otp_expiry_str = request.session.get('otp_expiry')
+
+        if not otp_session or not otp_expiry_str:
+            messages.error(request, "OTP has expired. Please request a new one.")
+            return redirect('password_reset_request')
+
+        otp_expiry = timezone.datetime.fromisoformat(otp_expiry_str)
+
+        if timezone.now() > otp_expiry:
+            messages.error(request, "OTP has expired. Please request a new one.")
+            # Clear the expired OTP from the session
+            del request.session['otp']
+            del request.session['otp_expiry']
+            return redirect('password_reset_request')
+
+        if otp_entered == otp_session:
+            # OTP is correct, clear it from session and proceed to new password form
+            del request.session['otp']
+            del request.session['otp_expiry']
+            request.session['reset_otp_verified'] = True
+            request.session['new_password_page_visited'] = False # Flag for initial visit
+            return redirect('password_reset_new_password')
+        else:
+            messages.error(request, "Invalid OTP.")
+            return render(request, 'accounts/password_reset_otp.html')
+
+
+def password_reset_new_password(request):
+    # Security enhancement: Invalidate session on refresh/re-navigation
+    if request.method == 'GET':
+        if request.session.get('new_password_page_visited', True): # Default to True to be safe
+            # If the flag is True, it's a refresh. Terminate.
+            if 'reset_otp_verified' in request.session: del request.session['reset_otp_verified']
+            if 'reset_email' in request.session: del request.session['reset_email']
+            messages.error(request, "For security, the password reset process has been terminated. Please start over.")
+            return redirect('password_reset_request')
+        else:
+            # First visit, set the flag to True
+            request.session['new_password_page_visited'] = True
+            # We need to pass the form to the template on the first GET request
+            email = request.session.get('reset_email')
+            if not email:
+                messages.error(request, "Something went wrong. Please start over.")
+                return redirect('password_reset_request')
+            try:
+                user = CustomUser.objects.get(email=email)
+            except CustomUser.DoesNotExist:
+                messages.error(request, "User not found.")
+                return redirect('password_reset_request')
+            form = PasswordResetForm(user)
+            return render(request, 'accounts/password_reset_new_password.html', {'form': form})
+
+    if not request.session.get('reset_otp_verified'):
+        messages.error(request, "Please verify your OTP first.")
+        return redirect('password_reset_request')
+
+    email = request.session.get('reset_email')
+    if not email:
+        messages.error(request, "Something went wrong. Please start over.")
+        return redirect('password_reset_request')
+
+    try:
+        user = CustomUser.objects.get(email=email)
+    except CustomUser.DoesNotExist:
+        messages.error(request, "User not found.")
+        return redirect('password_reset_request')
+
+    if request.method == 'POST':
+        form = PasswordResetForm(user, request.POST)
+        if form.is_valid():
+            form.save()
+            # Clean up session variables
+            del request.session['reset_email']
+            del request.session['reset_otp_verified']
+            messages.success(request, "Your password has been reset successfully. Please log in.")
+            return redirect('login')
+    else:
+        form = PasswordResetForm(user)
+
+    return render(request, 'accounts/password_reset_new_password.html', {'form': form})

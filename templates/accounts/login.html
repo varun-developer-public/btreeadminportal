@@ -40,6 +40,9 @@
             <button type="submit" class="login-button">
                 <i class="fas fa-sign-in-alt"></i> Login
             </button>
+            <div class="forgot-password">
+                <a href="{% url 'password_reset_request' %}">Forgot Password?</a>
+            </div>
         </form>
     </div>
 </div>
@@ -140,6 +143,17 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.forgot-password {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.forgot-password a {
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-size: 0.875rem;
 }
 </style>
 {% endblock %}
