@@ -327,11 +327,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
   <script>
     $(document).ready(function() {
-      // Initialize Select2
-      $('#id_courses, #id_students').select2({
-          dropdownParent: $('#scheduleInterviewModal')
-      });
-
       // Show/hide other location field
       $('#id_location').change(function() {
         if ($(this).val() === 'others') {
@@ -344,6 +339,13 @@
       // Open modal when "Add Interview" button is clicked
       $('#add-interview-btn').click(function() {
         $('#scheduleInterviewModal').modal('show');
+      });
+
+      // Initialize Select2 inside the modal AFTER it's shown
+      $('#scheduleInterviewModal').on('shown.bs.modal', function () {
+        $('#id_courses, #id_students').select2({
+            dropdownParent: $('#scheduleInterviewModal')
+        });
       });
 
       // Load students based on selected courses

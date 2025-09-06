@@ -92,6 +92,10 @@ class InterviewScheduleForm(forms.ModelForm):
             )
             self.fields['students'].queryset = selected_students_qs
         
+        else:
+            # For new interviews, populate with all courses
+            self.fields['courses'].queryset = Course.objects.all()
+
         if self.is_bound:
             course_ids = self.data.getlist('courses')
             if course_ids:
