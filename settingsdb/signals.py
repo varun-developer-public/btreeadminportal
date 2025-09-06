@@ -27,7 +27,13 @@ def serialize_model_instance(instance):
     and prioritizing human-readable identifiers.
     """
     data = {}
-    for field in instance._meta.get_fields():
+    for field in instance._meta.get_fields(include_parents=False):
+        # Skip reverse relations
+        if not field.concrete and not field.is_relation:
+            continue
+        if field.one_to_many or (field.one_to_one and field.auto_created):
+            continue
+
         field_name = field.name
         if field.is_relation:
             related_obj = getattr(instance, field_name)
