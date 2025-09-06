@@ -156,8 +156,8 @@
                 </div>
                 <div class="activity-content">
                     <div class="activity-header">
-                        <span class="activity-action">{{ log.get_action_display }}</span>
-                        <span class="activity-target">{{ log.table_name }}</span>
+                        {% load log_filters %}
+                        <span class="activity-description">{{ log|format_activity_description }}</span>
                     </div>
                     <div class="activity-details">
                         <span class="activity-user">{{ log.user.name }}</span>

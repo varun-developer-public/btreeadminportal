@@ -20,7 +20,7 @@ class Placement(models.Model):
         if self.pk:
             try:
                 old_instance = Placement.objects.get(pk=self.pk)
-                if old_instance.resume_link and self.resume_link != old_instance.resume_link:
+                if old_instance.resume_link and self.resume_link and self.resume_link != old_instance.resume_link:
                     old_instance.resume_link.delete(save=False)
             except Placement.DoesNotExist:
                 pass

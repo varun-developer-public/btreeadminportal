@@ -283,6 +283,16 @@
     color: var(--text-secondary);
 }
 
+.activity-description {
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.4;
+}
+
+.activity-description strong {
+    color: var(--primary-blue-new);
+}
+
 .activity-details {
     display: flex;
     justify-content: space-between;

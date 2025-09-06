@@ -21,29 +21,56 @@ def set_current_user(user):
 def is_running_migrations():
     return 'makemigrations' in sys.argv or 'migrate' in sys.argv
 
-def json_serializable(data):
-    """Convert model data to JSON-serializable format."""
-    def serialize_value(value):
-        if isinstance(value, (datetime, date)):
-            return value.isoformat()
-        elif isinstance(value, Decimal):
-            return float(value)
-        elif hasattr(value, 'url'):
-            try:
-                return value.url if value and hasattr(value, 'file') and value.name else None
-            except ValueError:
-                return None
-        elif hasattr(value, 'name'):
-            return value.name
-        return str(value)
+def serialize_model_instance(instance):
+    """
+    Serializes a model instance to a dictionary, handling relationships
+    and prioritizing human-readable identifiers.
+    """
+    data = {}
+    for field in instance._meta.get_fields():
+        field_name = field.name
+        if field.is_relation:
+            related_obj = getattr(instance, field_name)
+            if related_obj is None:
+                data[field_name] = None
+                continue
+            
+            # For ManyToMany, serialize as a list of strings
+            if field.many_to_many:
+                data[field_name] = [str(obj) for obj in related_obj.all()]
+                continue
 
-    result = {}
-    for k, v in data.items():
-        try:
-            result[k] = serialize_value(v)
-        except Exception as e:
-            result[k] = f"Unserializable: {str(e)}"
-    return result
+            # Prioritize human-readable fields on related objects
+            priority_fields = [
+                'student_id', 'batch_id', 'company_code', 'consultant_id',
+                'trainer_id', 'payment_id', 'course_name', 'name'
+            ]
+            serialized = False
+            for p_field in priority_fields:
+                if hasattr(related_obj, p_field):
+                    data[field_name] = getattr(related_obj, p_field)
+                    serialized = True
+                    break
+            if not serialized:
+                data[field_name] = str(related_obj)
+
+        else:
+            value = getattr(instance, field_name)
+            if isinstance(value, (datetime, date)):
+                data[field_name] = value.isoformat()
+            elif isinstance(value, Decimal):
+                data[field_name] = float(value)
+            elif hasattr(value, 'name'):  # Check for 'name' which doesn't raise an error
+                if value:  # Check if a file is associated
+                    try:
+                        data[field_name] = value.url
+                    except ValueError:
+                        data[field_name] = None  # Handle cases where URL can't be generated
+                else:
+                    data[field_name] = None
+            else:
+                data[field_name] = value
+    return data
 
 
 @receiver(pre_save)
@@ -57,7 +84,7 @@ def capture_old_instance(sender, instance, **kwargs):
 
     try:
         old_instance = sender.objects.get(pk=instance.pk)
-        _old_instance_data.value = model_to_dict(old_instance)
+        _old_instance_data.value = serialize_model_instance(old_instance)
     except sender.DoesNotExist:
         _old_instance_data.value = None
 
@@ -71,12 +98,8 @@ def track_save(sender, instance, created, **kwargs):
         return
 
     app_label = sender._meta.app_label
-    new_data = model_to_dict(instance)
-    new_data = json_serializable(new_data)
-
+    new_data = serialize_model_instance(instance)
     old_data = getattr(_old_instance_data, 'value', None)
-    if old_data:
-        old_data = json_serializable(old_data)
 
     if created or not old_data:
         changes = {'app': app_label, **new_data}
@@ -88,7 +111,8 @@ def track_save(sender, instance, created, **kwargs):
             new_value = new_data.get(key)
             if old_value != new_value:
                 diff[key] = {'old': old_value, 'new': new_value}
-        changes = {'app': app_label, **diff}
+        
+        changes = {'app': app_label, 'diff': diff, **new_data}
         action = 'UPDATE'
 
     _old_instance_data.value = None
@@ -111,8 +135,7 @@ def track_delete(sender, instance, **kwargs):
         return
 
     app_label = sender._meta.app_label
-    data = model_to_dict(instance)
-    data = json_serializable(data)
+    data = serialize_model_instance(instance)
     changes = {'app': app_label, **data}
 
     TransactionLog.objects.create(
