@@ -238,3 +238,16 @@ class StudentFilterForm(forms.Form):
         widget=forms.DateInput(attrs={'type': 'date'}),
         label="Enrollment End Date"
     )
+    status = forms.ChoiceField(
+        choices=[
+            ('', 'All'),
+            ('mock_interview_completed', 'Mock Interview Completed'),
+            ('placement_session_completed', 'Placement Session Completed'),
+            ('certificate_issued', 'Certificate Issued'),
+            ('onboardingcalldone', 'Onboarding Call Done'),
+            ('interviewquestion_shared', 'Interview Question Shared'),
+            ('resume_template_shared', 'Resume Template Shared'),
+        ],
+        required=False,
+        label="Status"
+    )

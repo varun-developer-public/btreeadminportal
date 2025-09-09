@@ -84,9 +84,13 @@
                                {{ form.is_active.label_tag }}
                                {{ form.is_active }}
                           </div>
+                          <div class="filter-group">
+                               {{ form.status.label_tag }}
+                               {{ form.status }}
+                          </div>
                        </div>
-                       <div class="filter-actions">
-                            <button type="submit" class="btn-primary">Apply Filters</button>
+                      <div class="filter-actions">
+                           <button type="submit" class="btn-primary">Apply Filters</button>
                             <a href="{% url 'placementdb:placement_list' %}" class="btn-secondary">Reset</a>
                         </div>
                     </form>

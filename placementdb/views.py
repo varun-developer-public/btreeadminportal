@@ -32,7 +32,10 @@ def placement_list(request):
         resume_status = form.cleaned_data.get('resume_status')
         is_active = form.cleaned_data.get('is_active')
         interview_count = form.cleaned_data.get('interview_count')
+        status = form.cleaned_data.get('status')
 
+        if status:
+            placements = placements.filter(**{f'student__{status}': True})
         if q:
             placements = placements.filter(
                 Q(student__first_name__icontains=q) |

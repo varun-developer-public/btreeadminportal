@@ -139,7 +139,7 @@ class CompanyFilterForm(forms.Form):
     resume_shared_status = forms.ChoiceField(
         choices=[('', 'All Statuses'), ('none', 'No Status')] + ResumeSharedStatus.STATUS_CHOICES,
         required=False,
-        label="Resume Shared Status"
+        label="Resume Shared"
     )
     company_stack = forms.MultipleChoiceField(
         choices=[],
@@ -161,6 +161,16 @@ class CompanyFilterForm(forms.Form):
         queryset=User.objects.none(),
         required=False,
         label='Created By'
+    )
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Start Date"
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="End Date"
     )
 
     def __init__(self, *args, **kwargs):

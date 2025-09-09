@@ -30,8 +30,14 @@ def company_list(request):
         location = form.cleaned_data.get('location')
         created_by = form.cleaned_data.get('created_by')
         company_stack = form.cleaned_data.get('company_stack')
+        start_date = form.cleaned_data.get('start_date')
+        end_date = form.cleaned_data.get('end_date')
 
 
+        if start_date and end_date:
+            companies = companies.filter(
+                resume_shared_statuses__created_at__range=(start_date, end_date)
+            ).distinct()
         if q:
             companies = companies.filter(
                 Q(company_name__icontains=q) |

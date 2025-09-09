@@ -93,7 +93,10 @@ def student_list(request):
         course_status = form.cleaned_data.get('course_status')
         start_date = form.cleaned_data.get('start_date')
         end_date = form.cleaned_data.get('end_date')
+        status = form.cleaned_data.get('status')
 
+        if status:
+            student_list = student_list.filter(**{f'{status}': True})
         if query:
             student_list = student_list.filter(
                 Q(first_name__icontains=query) |

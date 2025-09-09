@@ -111,9 +111,22 @@ class PlacementFilterForm(forms.Form):
     is_active = forms.ChoiceField(
         choices=[('', 'All'), ('yes', 'Active'), ('no', 'Inactive')],
         required=False,
-        label="Status"
+        label="Active"
     )
     interview_count = forms.IntegerField(required=False, label='Interview Count')
+    status = forms.ChoiceField(
+        choices=[
+            ('', 'All'),
+            ('mock_interview_completed', 'Mock Interview Completed'),
+            ('placement_session_completed', 'Placement Session Completed'),
+            ('certificate_issued', 'Certificate Issued'),
+            ('onboardingcalldone', 'Onboarding Call Done'),
+            ('interviewquestion_shared', 'Interview Question Shared'),
+            ('resume_template_shared', 'Resume Template Shared'),
+        ],
+        required=False,
+        label="Status"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

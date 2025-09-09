@@ -91,6 +91,8 @@
                 {{ form.company_stack.label_tag }}
                 {{ form.company_stack }}
             </div>
+        </div>
+        <div class="filter-row">
             <div class="filter-group">
                 {{ form.domain.label_tag }}
                 {{ form.domain }}
@@ -103,7 +105,17 @@
                 {{ form.created_by.label_tag }}
                 {{ form.created_by }}
             </div>
+            
+            <div class="filter-group">
+                {{ form.start_date.label_tag }}
+                {{ form.start_date }}
+            </div>
+            <div class="filter-group">
+                {{ form.end_date.label_tag }}
+                {{ form.end_date }}
+            </div>
         </div>
+             <div class="filter-group" style="flex: 2;"></div>
         <div class="filter-actions">
             <button type="submit" class="btn btn-primary">Apply Filters</button>
             <a href="{% url 'company_list' %}" class="btn btn-secondary">Reset</a>
