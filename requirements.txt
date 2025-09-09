@@ -59,3 +59,4 @@ django-select2
 pyotp 
 qrcode[pil] 
 python-dotenv
+psycopg2-binary
