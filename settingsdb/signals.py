@@ -1,6 +1,6 @@
 import sys
 import json
-from datetime import datetime, date
+from datetime import datetime, date, time
 from decimal import Decimal
 from threading import local
 from django.db.models.signals import post_save, pre_delete, pre_save
@@ -64,6 +64,8 @@ def serialize_model_instance(instance):
             value = getattr(instance, field_name)
             if isinstance(value, (datetime, date)):
                 data[field_name] = value.isoformat()
+            elif isinstance(value, time):
+                data[field_name] = value.strftime('%H:%M:%S')
             elif isinstance(value, Decimal):
                 data[field_name] = float(value)
             elif hasattr(value, 'name'):  # Check for 'name' which doesn't raise an error

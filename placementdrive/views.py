@@ -9,6 +9,17 @@ from placementdb.models import CompanyInterview
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, Prefetch
 from django.contrib import messages
+import json
+from datetime import time, datetime
+
+# Custom JSON encoder to handle time objects
+class TimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, time):
+            return obj.strftime('%H:%M:%S')
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        return super().default(obj)
 
 @login_required
 def company_list(request):
@@ -384,8 +395,8 @@ def load_students(request):
         course_ids = [int(cid) for cid in course_ids_str.split(',') if cid.isdigit()]
         students = Student.objects.filter(course_id__in=course_ids, pl_required=True, placement__is_active=True).distinct()
         student_data = [{"id": s.id, "student_name": f"{s.student_id} - {s.first_name} {s.last_name or ''}"} for s in students]
-        return JsonResponse(student_data, safe=False)
-    return JsonResponse([], safe=False)
+        return JsonResponse(student_data, safe=False, encoder=TimeEncoder)
+    return JsonResponse([], safe=False, encoder=TimeEncoder)
 
 @login_required
 def postpone_interview_round(request, interview_pk):
