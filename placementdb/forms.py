@@ -5,6 +5,12 @@ from .models import Placement, CompanyInterview
 from placementdrive.models import Company
 
 class PlacementUpdateForm(forms.ModelForm):
+    mock_interview_completed = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    placement_session_completed = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    onboardingcalldone = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    interviewquestion_shared = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+    resume_template_shared = forms.BooleanField(required=False, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
+
     class Meta:
         model = Placement
         fields = [
@@ -13,16 +19,38 @@ class PlacementUpdateForm(forms.ModelForm):
             'reason_for_inactive',
             'mock_interview_completed',
             'placement_session_completed',
-            'certificate_issued',
+            'onboardingcalldone',
+            'interviewquestion_shared',
+            'resume_template_shared',
         ]
         widgets = {
             'resume_link': forms.FileInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'reason_for_inactive': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'mock_interview_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'placement_session_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'certificate_issued': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.student:
+            self.fields['mock_interview_completed'].initial = self.instance.student.mock_interview_completed
+            self.fields['placement_session_completed'].initial = self.instance.student.placement_session_completed
+            self.fields['onboardingcalldone'].initial = self.instance.student.onboardingcalldone
+            self.fields['interviewquestion_shared'].initial = self.instance.student.interviewquestion_shared
+            self.fields['resume_template_shared'].initial = self.instance.student.resume_template_shared
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if instance.student:
+            instance.student.mock_interview_completed = self.cleaned_data['mock_interview_completed']
+            instance.student.placement_session_completed = self.cleaned_data['placement_session_completed']
+            instance.student.onboardingcalldone = self.cleaned_data['onboardingcalldone']
+            instance.student.interviewquestion_shared = self.cleaned_data['interviewquestion_shared']
+            instance.student.resume_template_shared = self.cleaned_data['resume_template_shared']
+            if commit:
+                instance.student.save()
+        if commit:
+            instance.save()
+        return instance
 
 class CompanyInterviewForm(forms.ModelForm):
     class Meta:

@@ -65,6 +65,14 @@ class Student(models.Model):
     week_type = models.CharField(max_length=2, choices=WEEK_TYPE)
     consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True)
 
+    # Placement Status
+    mock_interview_completed = models.BooleanField(default=False, blank=True, null=True)
+    placement_session_completed = models.BooleanField(default=False, blank=True, null=True)
+    certificate_issued = models.BooleanField(default=False, blank=True, null=True)
+    onboardingcalldone = models.BooleanField(default=False, blank=True, null=True)
+    interviewquestion_shared = models.BooleanField(default=False, blank=True, null=True)
+    resume_template_shared = models.BooleanField(default=False, blank=True, null=True)
+
     @property
     def course(self):
         from coursedb.models import Course

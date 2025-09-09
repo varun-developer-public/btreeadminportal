@@ -339,7 +339,7 @@
             </div>
         </div>
 
-        {% if request.user.is_staff %}
+        {% if request.user.role == 'placement' or request.user.is_superuser %}
         <div class="form-section-card">
             <div class="form-section-header">
                 <h5 style="color: white;"><i class="fas fa-id-card me-2" style="color: white;"></i>Placement Details</h5>
@@ -368,24 +368,42 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="{{ placement_form.mock_interview_completed.id_for_label }}">Mock Interview Completed</label>
-                            {{ placement_form.mock_interview_completed }}
+                            {{ form.mock_interview_completed.label_tag }}
+                            {{ form.mock_interview_completed }}
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="{{ placement_form.placement_session_completed.id_for_label }}">Placement Session Completed</label>
-                            {{ placement_form.placement_session_completed }}
+                            {{ form.placement_session_completed.label_tag }}
+                            {{ form.placement_session_completed }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.certificate_issued.label_tag }}
+                            {{ form.certificate_issued }}
                         </div>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="{{ placement_form.certificate_issued.id_for_label }}">Certificate Issued</label>
-                            {{ placement_form.certificate_issued }}
+                            {{ form.onboardingcalldone.label_tag }}
+                            {{ form.onboardingcalldone }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.interviewquestion_shared.label_tag }}
+                            {{ form.interviewquestion_shared }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.resume_template_shared.label_tag }}
+                            {{ form.resume_template_shared }}
                         </div>
                     </div>
                 </div>

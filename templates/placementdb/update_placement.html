@@ -49,25 +49,38 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="{{ form.mock_interview_completed.id_for_label }}">Mock Interview Completed</label>
+                            {{ form.mock_interview_completed.label_tag }}
                             {{ form.mock_interview_completed }}
                         </div>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="{{ form.placement_session_completed.id_for_label }}">Placement Session Completed</label>
+                            {{ form.placement_session_completed.label_tag }}
                             {{ form.placement_session_completed }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.onboardingcalldone.label_tag }}
+                            {{ form.onboardingcalldone }}
                         </div>
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <div class="form-group">
-                            <label for="{{ form.certificate_issued.id_for_label }}">Certificate Issued</label>
-                            {{ form.certificate_issued }}
+                            {{ form.interviewquestion_shared.label_tag }}
+                            {{ form.interviewquestion_shared }}
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            {{ form.resume_template_shared.label_tag }}
+                            {{ form.resume_template_shared }}
                         </div>
                     </div>
                 </div>

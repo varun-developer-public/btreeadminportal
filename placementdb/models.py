@@ -7,9 +7,6 @@ class Placement(models.Model):
     resume_link = models.FileField(upload_to='resumes/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     reason_for_inactive = models.TextField(blank=True, null=True)
-    mock_interview_completed = models.BooleanField(default=False, blank=True, null=True)
-    placement_session_completed = models.BooleanField(default=False, blank=True, null=True)
-    certificate_issued = models.BooleanField(default=False, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 

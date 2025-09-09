@@ -366,12 +366,18 @@ def placement_dashboard(request):
     
     placement_rate = ((total_placed / total_placement_pool) * 100) if total_placement_pool > 0 else 0
     active_drives_count = drives.count()
+    
+    # Correctly count scheduled and completed interviews
     interviews_scheduled = Company.objects.filter(progress='interview_scheduling').count()
+    interviews_completed_count = Company.objects.filter(progress='interview_completed').count()
+    onboarding_call_done_count = Student.objects.filter(onboardingcalldone=True).count()
+    interview_questions_shared_count = Student.objects.filter(interviewquestion_shared=True).count()
+    resume_templates_shared_count = Student.objects.filter(resume_template_shared=True).count()
 
     # New stats for mock interviews, placement sessions, and certificates
-    mock_interviews_completed_count = placements.filter(mock_interview_completed=True).count()
-    placement_sessions_completed_count = placements.filter(placement_session_completed=True).count()
-    certificates_issued_count = placements.filter(certificate_issued=True).count()
+    mock_interviews_completed_count = Student.objects.filter(mock_interview_completed=True).count()
+    placement_sessions_completed_count = Student.objects.filter(placement_session_completed=True).count()
+    certificates_issued_count = Student.objects.filter(certificate_issued=True).count()
 
     # --- Refined Resume Statistics ---
     # 1. Start with students who need placement and are in an active course status.
@@ -469,6 +475,10 @@ def placement_dashboard(request):
         'placement_rate': round(placement_rate, 1),
         'active_drives_count': active_drives_count,
         'interviews_scheduled': interviews_scheduled,
+        'interviews_completed': interviews_completed_count,
+        'onboarding_call_done_count': onboarding_call_done_count,
+        'interview_questions_shared_count': interview_questions_shared_count,
+        'resume_templates_shared_count': resume_templates_shared_count,
         'mock_interviews_completed': mock_interviews_completed_count,
         'placement_sessions_completed': placement_sessions_completed_count,
         'certificates_issued': certificates_issued_count,

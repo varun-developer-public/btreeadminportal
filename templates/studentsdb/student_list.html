@@ -94,6 +94,7 @@
             <th>Current Batches</th>
             <th>Course Status</th>
             <th>Enrollment Date</th>
+            <th>Status</th>
             {% if request.user.role != 'batch_coordination' %}
             <th>Actions</th>
             {% endif %}
@@ -125,6 +126,11 @@
             </td>
             <td>{{ student.get_course_status_display }}</td>
             <td>{{ student.enrollment_date }}</td>
+            <td>
+                <div class="status-indicators">
+                    <span class="indicator indicator-certificate {% if student.certificate_issued %}highlighted{% endif %}" title="Certificate Issued"></span>
+                </div>
+            </td>
             {% if request.user.role != 'batch_coordination' %}
             <td>
                 <div class="d-flex gap-2 justify-content-center">

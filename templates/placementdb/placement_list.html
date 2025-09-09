@@ -119,7 +119,7 @@
                     <th>Course Percentage</th>
                     <th style="display: flex; flex-direction: column; align-items: center;">Status
                         <br>
-                        <span style="font-size: 10px; font-weight: 100;">M-P-C</span>
+                        <span style="font-size: 10px; font-weight: 100;">O-P-I-R-M</span>
                     </th>
                     <th>Resume Link</th>
                     <th>Actions</th>
@@ -127,9 +127,17 @@
             </thead>
             <tbody>
                 {% for placement in placements %}
-                <tr class="{% if not placement.is_active %}inactive-row{% endif %}" data-bs-toggle="{% if not placement.is_active %}collapse{% endif %}" data-bs-target="#reason-{{ placement.id }}" aria-expanded="false" aria-controls="reason-{{ placement.id }}">
+                <tr class="{% if not placement.is_active %}inactive-row{% endif %}">
                     <td>
-                        <span class="status-indicator {% if placement.is_active %}status-active{% else %}status-inactive{% endif %}" style="margin-right: 6%;"></span>
+                        <span class="status-indicator {% if placement.is_active %}status-active{% else %}status-inactive{% endif %}"
+                              {% if not placement.is_active %}
+                                  data-bs-toggle="collapse"
+                                  data-bs-target="#reason-{{ placement.id }}"
+                                  style="margin-right: 6%; cursor: pointer;"
+                              {% else %}
+                                  style="margin-right: 6%;"
+                              {% endif %}>
+                        </span>
                         <a href="{% url 'student_report' placement.student.student_id %}" class="view-link">
                             {{ placement.student.student_id }}
                         </a>
@@ -168,9 +176,11 @@
                     <td>{{ placement.student.course_percentage|default:"0" }}%</td>
                     <td>
                         <div class="status-indicators">
-                            <span class="indicator {% if placement.mock_interview_completed %}highlighted{% endif %}" title="Mock Interview"></span>
-                            <span class="indicator {% if placement.placement_session_completed %}highlighted{% endif %}" title="Placement Session"></span>
-                            <span class="indicator {% if placement.certificate_issued %}highlighted{% endif %}" title="Certificate" style="margin-left: 5px;"></span>
+                            <span class="indicator indicator-onboarding-call {% if placement.student.onboardingcalldone %}highlighted{% endif %}" title="Onboarding Call Done"></span>
+                            <span class="indicator indicator-placement-session {% if placement.student.placement_session_completed %}highlighted{% endif %}" title="Placement Session"></span>
+                            <span class="indicator indicator-interview-question {% if placement.student.interviewquestion_shared %}highlighted{% endif %}" title="Interview Question Shared"></span>
+                            <span class="indicator indicator-resume-template {% if placement.student.resume_template_shared %}highlighted{% endif %}" title="Resume Template Shared"></span>
+                            <span class="indicator indicator-mock-interview {% if placement.student.mock_interview_completed %}highlighted{% endif %}" title="Mock Interview"></span>
                         </div>
                     </td>
                     <td>
@@ -349,6 +359,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         }
     });
+
 });
 </script>
 {% endblock %}

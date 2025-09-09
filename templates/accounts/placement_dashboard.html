@@ -89,7 +89,11 @@
                     <i class="fas fa-calendar-check stat-icon"></i>
                     <h3 class="stat-title">Interview Scheduling in Progress</h3>
                 </div>
-                <p class="stat-value">{{ interviews_scheduled }}</p>
+                <p class="stat-value">{{ interviews_scheduled }}
+                    <span class="stat-breakdown">
+                        Completed: {{ interviews_completed }}
+                    </span>
+                </p>
             </div>
         </div>
     </div>
@@ -120,6 +124,36 @@
                     <h3 class="stat-title">Certificates Issued</h3>
                 </div>
                 <p class="stat-value">{{ certificates_issued }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="stat-card h-100">
+                <div class="stat-header">
+                    <i class="fas fa-phone-alt stat-icon"></i>
+                    <h3 class="stat-title">Onboarding Call Done</h3>
+                </div>
+                <p class="stat-value">{{ onboarding_call_done_count }}</p>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="stat-card h-100">
+                <div class="stat-header">
+                    <i class="fas fa-question-circle stat-icon"></i>
+                    <h3 class="stat-title">Interview Questions Shared</h3>
+                </div>
+                <p class="stat-value">{{ interview_questions_shared_count }}</p>
+            </div>
+        </div>
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="stat-card h-100">
+                <div class="stat-header">
+                    <i class="fas fa-file-word stat-icon"></i>
+                    <h3 class="stat-title">Resume Templates Shared</h3>
+                </div>
+                <p class="stat-value">{{ resume_templates_shared_count }}</p>
             </div>
         </div>
     </div>
