@@ -35,49 +35,43 @@ def serialize_model_instance(instance):
             continue
 
         field_name = field.name
-        if field.is_relation:
-            related_obj = getattr(instance, field_name)
-            if related_obj is None:
-                data[field_name] = None
-                continue
-            
-            # For ManyToMany, serialize as a list of strings
-            if field.many_to_many:
-                data[field_name] = [str(obj) for obj in related_obj.all()]
-                continue
+        if hasattr(instance, field_name):
+            if field.is_relation:
+                related_obj = getattr(instance, field_name)
+                if related_obj is None:
+                    data[field_name] = None
+                    continue
+                
+                # For ManyToMany, serialize as a list of strings
+                if field.many_to_many:
+                    data[field_name] = [str(obj) for obj in related_obj.all()]
+                    continue
 
-            # Prioritize human-readable fields on related objects
-            priority_fields = [
-                'student_id', 'batch_id', 'company_code', 'consultant_id',
-                'trainer_id', 'payment_id', 'course_name', 'name'
-            ]
-            serialized = False
-            for p_field in priority_fields:
-                if hasattr(related_obj, p_field):
-                    data[field_name] = getattr(related_obj, p_field)
-                    serialized = True
-                    break
-            if not serialized:
-                data[field_name] = str(related_obj)
+                # Prioritize human-readable fields on related objects
+                if hasattr(related_obj, 'get_display_name'):
+                    data[field_name] = related_obj.get_display_name()
+                elif hasattr(related_obj, 'name'):
+                    data[field_name] = related_obj.name
+                elif hasattr(related_obj, 'course_name'):
+                    data[field_name] = related_obj.course_name
+                else:
+                    data[field_name] = str(related_obj)
 
-        else:
-            value = getattr(instance, field_name)
-            if isinstance(value, (datetime, date)):
-                data[field_name] = value.isoformat()
-            elif isinstance(value, time):
-                data[field_name] = value.strftime('%H:%M:%S')
-            elif isinstance(value, Decimal):
-                data[field_name] = float(value)
-            elif hasattr(value, 'name'):  # Check for 'name' which doesn't raise an error
-                if value:  # Check if a file is associated
+            else:
+                value = getattr(instance, field_name)
+                if isinstance(value, (datetime, date)):
+                    data[field_name] = value.isoformat()
+                elif isinstance(value, time):
+                    data[field_name] = value.strftime('%H:%M:%S')
+                elif isinstance(value, Decimal):
+                    data[field_name] = float(value)
+                elif hasattr(value, 'url'):
                     try:
                         data[field_name] = value.url
                     except ValueError:
-                        data[field_name] = None  # Handle cases where URL can't be generated
+                        data[field_name] = None
                 else:
-                    data[field_name] = None
-            else:
-                data[field_name] = value
+                    data[field_name] = value
     return data
 
 

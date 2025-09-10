@@ -43,40 +43,74 @@ def course_list(request):
 @login_required
 def course_create(request):
     if request.method == 'POST':
+        print("--- CREATE COURSE POST REQUEST ---")
+        print("Request POST data:", request.POST)
         form = CourseForm(request.POST)
         if form.is_valid():
+            print("CourseForm is valid.")
             try:
                 with transaction.atomic():
-                    course = form.save()
+                    course = form.save(commit=False)  # Don't save to DB yet
+                    print(f"Course object created (not saved): {course}")
                     
                     module_names = request.POST.getlist('module_name')
                     module_hours = request.POST.getlist('module_hours')
+                    print("Module names:", module_names)
+                    print("Module hours:", module_hours)
                     
+                    total_module_duration = sum(int(h) for h in module_hours if h)
+                    print(f"Calculated total module duration: {total_module_duration}")
+                    print(f"Course total duration from form: {course.total_duration}")
+
+                    if course.total_duration != total_module_duration:
+                        print("Validation Error: Duration mismatch.")
+                        form.add_error('total_duration', f"The sum of module durations ({total_module_duration} hours) must equal the total course duration ({course.total_duration} hours).")
+                        raise ValidationError("Module duration mismatch")
+
+                    print("Durations match. Saving course...")
+                    course.save() # Save the course instance now
+                    print(f"Course saved with ID: {course.id}")
+
                     for i in range(len(module_names)):
                         has_topics = request.POST.get(f'has_topics_module_{i}') == 'on'
                         
+                        print(f"Creating module {i+1}: Name={module_names[i]}, Duration={module_hours[i]}, Has Topics={has_topics}")
                         module = CourseModule.objects.create(
                             course=course,
                             name=module_names[i],
                             module_duration=module_hours[i],
                             has_topics=has_topics
                         )
+                        print(f"Module created with ID: {module.id}")
 
                         if has_topics:
                             topic_names = request.POST.getlist(f'topic_name_module_{i}')
                             topic_hours = request.POST.getlist(f'topic_hours_module_{i}')
+                            print(f"  Topic names for module {i+1}: {topic_names}")
+                            print(f"  Topic hours for module {i+1}: {topic_hours}")
                             for j in range(len(topic_names)):
+                                print(f"  Creating topic {j+1}: Name={topic_names[j]}, Duration={topic_hours[j]}")
                                 Topic.objects.create(
                                     module=module,
                                     name=topic_names[j],
                                     topic_duration=topic_hours[j]
                                 )
                     
+                    print("--- CREATE COURSE SUCCESS ---")
                     messages.success(request, "Course created successfully.")
                     return redirect('coursedb:course_list')
+            except ValidationError:
+                print("--- CREATE COURSE VALIDATION FAILED ---")
+                messages.error(request, "Please correct the validation errors below.")
+                pass
             except Exception as e:
+                print(f"--- CREATE COURSE EXCEPTION: {e} ---")
                 messages.error(request, f"An error occurred: {e}")
+        else:
+            print("--- CREATE COURSE FORM INVALID ---")
+            print("Form errors:", form.errors)
     else:
+        print("--- CREATE COURSE GET REQUEST ---")
         form = CourseForm()
 
     context = {
@@ -92,45 +126,80 @@ def course_update(request, pk):
     course = get_object_or_404(Course.objects.prefetch_related('modules__topics'), pk=pk)
 
     if request.method == 'POST':
+        print(f"--- UPDATE COURSE POST REQUEST (PK: {pk}) ---")
+        print("Request POST data:", request.POST)
         form = CourseForm(request.POST, instance=course)
         if form.is_valid():
+            print("CourseForm is valid.")
             try:
                 with transaction.atomic():
-                    course = form.save()
+                    course = form.save(commit=False)
+                    print(f"Course object updated (not saved): {course}")
                     
-                    # Clear existing modules and topics to handle updates and deletions
-                    course.modules.all().delete()
-
                     module_names = request.POST.getlist('module_name')
                     module_hours = request.POST.getlist('module_hours')
+                    print("Module names:", module_names)
+                    print("Module hours:", module_hours)
+
+                    total_module_duration = sum(int(h) for h in module_hours if h)
+                    print(f"Calculated total module duration: {total_module_duration}")
+                    print(f"Course total duration from form: {course.total_duration}")
+
+                    if course.total_duration != total_module_duration:
+                        print("Validation Error: Duration mismatch.")
+                        form.add_error('total_duration', f"The sum of module durations ({total_module_duration} hours) must equal the total course duration ({course.total_duration} hours).")
+                        raise ValidationError("Module duration mismatch")
+
+                    print("Durations match. Saving course...")
+                    course.save()
+                    print(f"Course saved with ID: {course.id}")
                     
+                    # Clear existing modules and topics to handle updates and deletions
+                    print("Deleting existing modules...")
+                    course.modules.all().delete()
+                    print("Existing modules deleted.")
+
                     for i in range(len(module_names)):
                         has_topics = request.POST.get(f'has_topics_module_{i}') == 'on'
                         
+                        print(f"Creating module {i+1}: Name={module_names[i]}, Duration={module_hours[i]}, Has Topics={has_topics}")
                         module = CourseModule.objects.create(
                             course=course,
                             name=module_names[i],
                             module_duration=module_hours[i],
                             has_topics=has_topics
                         )
+                        print(f"Module created with ID: {module.id}")
 
                         if has_topics:
                             topic_names = request.POST.getlist(f'topic_name_module_{i}')
                             topic_hours = request.POST.getlist(f'topic_hours_module_{i}')
+                            print(f"  Topic names for module {i+1}: {topic_names}")
+                            print(f"  Topic hours for module {i+1}: {topic_hours}")
                             for j in range(len(topic_names)):
+                                print(f"  Creating topic {j+1}: Name={topic_names[j]}, Duration={topic_hours[j]}")
                                 Topic.objects.create(
                                     module=module,
                                     name=topic_names[j],
                                     topic_duration=topic_hours[j]
                                 )
                     
+                    print("--- UPDATE COURSE SUCCESS ---")
                     messages.success(request, "Course updated successfully.")
                     return redirect('coursedb:course_list')
+            except ValidationError:
+                print("--- UPDATE COURSE VALIDATION FAILED ---")
+                messages.error(request, "Please correct the validation errors below.")
+                pass
             except Exception as e:
+                print(f"--- UPDATE COURSE EXCEPTION: {e} ---")
                 messages.error(request, f"An error occurred: {e}")
         else:
+            print("--- UPDATE COURSE FORM INVALID ---")
+            print("Form errors:", form.errors)
             messages.error(request, "Please correct the errors below.")
     else:
+        print(f"--- UPDATE COURSE GET REQUEST (PK: {pk}) ---")
         form = CourseForm(instance=course)
 
     context = {
