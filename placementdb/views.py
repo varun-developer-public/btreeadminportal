@@ -1,3 +1,4 @@
+from studentsdb.forms import StudentPlacementForm
 from .models import Placement, CompanyInterview
 # from .models import Company
 from django.shortcuts import render, get_object_or_404, redirect
@@ -184,19 +185,27 @@ def pending_resumes_list(request):
 @login_required
 def update_placement(request, pk):
     placement = get_object_or_404(Placement, pk=pk)
+    student = placement.student
 
     if request.method == 'POST':
-        form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
-        if form.is_valid():
-            form.save()
+        placement_form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
+        student_form = StudentPlacementForm(request.POST, instance=student)
+        
+        if placement_form.is_valid() and student_form.is_valid():
+            placement_form.save()
+            student_form.save()
             messages.success(request, "Placement updated successfully.")
             return redirect('placementdb:placement_list')
-
-    form = PlacementUpdateForm(instance=placement)
+        
+    else:
+        placement_form = PlacementUpdateForm(instance=placement)
+        student_form = StudentPlacementForm(instance=student)
+        
     interviews = placement.interviews.all()
 
     return render(request, 'placementdb/update_placement.html', {
-        'form': form,
+        'placement_form': placement_form,
+        'student_form': student_form,
         'placement': placement,
         'interviews': interviews,
     })

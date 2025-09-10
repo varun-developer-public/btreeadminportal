@@ -149,21 +149,43 @@ def update_student(request, student_id):
         form = StudentUpdateForm(request.POST, instance=student, user=request.user)
         placement_form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
 
-        if form.is_valid() and placement_form.is_valid():
-            updated_student = form.save(commit=False)
+        # Debug form validation
+        form_valid = form.is_valid()
+        placement_form_valid = placement_form.is_valid()
+        print(f"Form valid: {form_valid}, Placement form valid: {placement_form_valid}")
+        
+        if form_valid and placement_form_valid:
+            try:
+                # Debug information
+                print(f"Before save - Student ID: {student.student_id}, First name: {student.first_name}")
+                
+                updated_student = form.save(commit=False)
+                
+                # Debug information
+                print(f"After form.save(commit=False) - Student ID: {updated_student.student_id}, First name: {updated_student.first_name}")
 
-            # Get course_id from the form and assign it to the student
-            course = form.cleaned_data.get('course')
-            if course:
-                updated_student.course_id = course.id
+                # Get course_id from the form and assign it to the student
+                course = form.cleaned_data.get('course')
+                if course:
+                    updated_student.course_id = course.id
 
-            # Auto-set end_date if not already set
-            if not updated_student.end_date:
-                updated_student.end_date = updated_student.enrollment_date + relativedelta(months=4)
+                # Auto-set end_date if not already set
+                if not updated_student.end_date:
+                    updated_student.end_date = updated_student.enrollment_date + relativedelta(months=4)
 
-            updated_student.save()
-            placement_form.save()
-
+                # Debug information
+                print(f"Before final save - Student ID: {updated_student.student_id}, First name: {updated_student.first_name}")
+                
+                # Set current user for transaction logging
+                from settingsdb.signals import set_current_user
+                set_current_user(request.user)
+                
+                updated_student.save()
+                placement_form.save()
+            except Exception as e:
+                # Debug information
+                print(f"Error saving student: {str(e)}")
+                messages.error(request, f"Error saving student: {str(e)}", extra_tags='student_message')
             # === Placement Sync Logic ===
             if updated_student.pl_required:
                 # Create if not exists
@@ -176,12 +198,15 @@ def update_student(request, student_id):
             return redirect('student_list')
         else:
             # If form is not valid, add errors to messages framework
+            print("Form errors:")
             for field, errors in form.errors.items():
+                print(f"Field {field}: {errors}")
                 for error in errors:
                     # Check if the field has a label before trying to access it
                     label = form.fields[field].label if field in form.fields else field.capitalize()
                     messages.error(request, f"{label}: {error}", extra_tags='student_message')
             for field, errors in placement_form.errors.items():
+                print(f"Placement field {field}: {errors}")
                 for error in errors:
                     label = placement_form.fields[field].label if field in placement_form.fields else field.capitalize()
                     messages.error(request, f"{label}: {error}", extra_tags='student_message')

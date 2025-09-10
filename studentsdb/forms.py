@@ -251,3 +251,22 @@ class StudentFilterForm(forms.Form):
         required=False,
         label="Status"
     )
+class StudentPlacementForm(forms.ModelForm):
+    class Meta:
+        model = Student
+        fields = [
+            'mock_interview_completed',
+            'placement_session_completed',
+            'certificate_issued',
+            'onboardingcalldone',
+            'interviewquestion_shared',
+            'resume_template_shared',
+        ]
+        widgets = {
+            'mock_interview_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'placement_session_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'certificate_issued': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'onboardingcalldone': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'interviewquestion_shared': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'resume_template_shared': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
