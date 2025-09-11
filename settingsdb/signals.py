@@ -3,6 +3,7 @@ import json
 from datetime import datetime, date, time
 from decimal import Decimal
 from threading import local
+from django.db.models import FileField
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
@@ -65,10 +66,13 @@ def serialize_model_instance(instance):
                     data[field_name] = value.strftime('%H:%M:%S')
                 elif isinstance(value, Decimal):
                     data[field_name] = float(value)
-                elif hasattr(value, 'url'):
-                    try:
-                        data[field_name] = value.url
-                    except ValueError:
+                elif isinstance(field, FileField):
+                    if value and getattr(value, 'name', None):
+                        try:
+                            data[field_name] = value.url
+                        except ValueError:
+                            data[field_name] = None  # No file associated
+                    else:
                         data[field_name] = None
                 else:
                     data[field_name] = value

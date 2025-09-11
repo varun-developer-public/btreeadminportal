@@ -36,6 +36,15 @@
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
+                            <label for="{{ placement_form.std_professional_photo.id_for_label }}">Professional Photo</label>
+                            {{ placement_form.std_professional_photo }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
                             <label for="{{ placement_form.is_active.id_for_label }}">Is Active</label>
                             {{ placement_form.is_active }}
                         </div>

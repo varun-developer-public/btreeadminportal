@@ -9,11 +9,13 @@ class PlacementUpdateForm(forms.ModelForm):
         model = Placement
         fields = [
             'resume_link',
+            'std_professional_photo',
             'is_active',
             'reason_for_inactive',
         ]
         widgets = {
             'resume_link': forms.FileInput(attrs={'class': 'form-control'}),
+            'std_professional_photo': forms.FileInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'reason_for_inactive': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

@@ -102,6 +102,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Photo</th>
                     <th>Student ID</th>
                     <th>Inv.C</th>
                     <th>Batch ID</th>
@@ -133,8 +134,17 @@
                 {% for placement in placements %}
                 <tr class="{% if not placement.is_active %}inactive-row{% endif %}">
                     <td>
+                        {% if placement.std_professional_photo %}
+                            <a href="{{ placement.std_professional_photo.url }}" target="_blank">
+                                <img src="{{ placement.std_professional_photo.url }}" alt="Photo" width="40" height="40" style="border-radius: 50%;">
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
                         <span class="status-indicator {% if placement.is_active %}status-active{% else %}status-inactive{% endif %}"
-                              {% if not placement.is_active %}
+                               {% if not placement.is_active %}
                                   data-bs-toggle="collapse"
                                   data-bs-target="#reason-{{ placement.id }}"
                                   style="margin-right: 6%; cursor: pointer;"

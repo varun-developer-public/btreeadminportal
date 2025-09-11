@@ -5,6 +5,7 @@ from placementdrive.models import Company
 class Placement(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='placement')
     resume_link = models.FileField(upload_to='resumes/', blank=True, null=True)
+    std_professional_photo = models.ImageField(upload_to='professional_photos/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     reason_for_inactive = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, null=True)
