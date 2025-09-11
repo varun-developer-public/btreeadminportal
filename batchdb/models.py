@@ -117,12 +117,26 @@ class Batch(models.Model):
         if is_new:
             students = self.students.all()
             for student in students:
-                BatchStudent.objects.create(
+                batch_student, created = BatchStudent.objects.get_or_create(
                     batch=self,
                     student=student,
-                    is_active=True,
-                    activated_at=timezone.now()
+                    defaults={
+                        'is_active': True,
+                        'activated_at': timezone.now()
+                    }
                 )
+                if created:
+                    BatchTransaction.log_transaction(
+                        batch=self,
+                        transaction_type='STUDENT_ADDED',
+                        user=user,
+                        details={
+                            'student_id': student.id,
+                            'student_name': str(student),
+                            'activated_at': str(batch_student.activated_at)
+                        },
+                        affected_students=[student]
+                    )
         
         # Log the transaction if user is provided
         if user:
@@ -210,6 +224,35 @@ class BatchStudent(models.Model):
                     },
                     affected_students=[self.student]
                 )
+
+    @classmethod
+    def get_student_batch_history(cls, student):
+        """
+        Retrieves the batch history for a specific student.
+        """
+        history = {
+            'student_name': f"{student.first_name} {student.last_name or ''}".strip(),
+            'current_batch': None,
+            'batch_history': []
+        }
+
+        batch_students = cls.objects.filter(student=student).select_related('batch__course', 'batch__trainer').order_by('activated_at')
+
+        for bs in batch_students:
+            batch_info = {
+                'batch_id': bs.batch.batch_id,
+                'course': str(bs.batch.course) if bs.batch.course else 'N/A',
+                'trainer': str(bs.batch.trainer) if bs.batch.trainer else 'N/A',
+                'activated_at': bs.activated_at,
+                'deactivated_at': bs.deactivated_at,
+                'status': 'Active' if bs.is_active else 'Inactive'
+            }
+            if bs.is_active:
+                history['current_batch'] = batch_info
+            else:
+                history['batch_history'].append(batch_info)
+        
+        return history
 
 
 class BatchTransaction(models.Model):

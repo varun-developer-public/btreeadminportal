@@ -261,46 +261,31 @@ class BatchTransactionDetailSerializer(BatchTransactionSerializer):
 
 class StudentBatchHistorySerializer(serializers.Serializer):
     student_id = serializers.IntegerField()
-    student_name = serializers.CharField(read_only=True)
-    batch_history = serializers.SerializerMethodField()
-    transaction_history = serializers.SerializerMethodField()
-    
-    def get_student_name(self, obj):
+
+    def to_representation(self, instance):
+        student_id = instance.get('student_id')
         try:
-            student = Student.objects.get(id=obj['student_id'])
-            return str(student)
+            student = Student.objects.get(id=student_id)
         except Student.DoesNotExist:
-            return "Unknown Student"
-    
-    def get_batch_history(self, obj):
-        try:
-            student = Student.objects.get(id=obj['student_id'])
-            batch_students = BatchStudent.objects.filter(student=student).order_by('activated_at')
-            
-            return [{
-                'batch_id': bs.batch.batch_id,
-                'course': str(bs.batch.course) if bs.batch.course else None,
-                'trainer': str(bs.batch.trainer) if bs.batch.trainer else None,
-                'activated_at': bs.activated_at,
-                'deactivated_at': bs.deactivated_at,
-                'is_active': bs.is_active,
-                'status': 'Active' if bs.is_active else 'Inactive'
-            } for bs in batch_students]
-        except Student.DoesNotExist:
-            return []
-    
-    def get_transaction_history(self, obj):
-        try:
-            student = Student.objects.get(id=obj['student_id'])
-            transactions = BatchTransaction.objects.filter(affected_students=student).order_by('-timestamp')
-            
-            return [{
-                'id': t.id,
-                'batch_id': t.batch.batch_id,
-                'transaction_type': t.get_transaction_type_display(),
-                'timestamp': t.timestamp,
-                'details': t.details,
-                'user': str(t.user) if t.user else None
-            } for t in transactions]
-        except Student.DoesNotExist:
-            return []
+            raise serializers.ValidationError("Student not found.")
+
+        batch_history_data = BatchStudent.get_student_batch_history(student)
+
+        # Get transaction history
+        transactions = BatchTransaction.objects.filter(affected_students=student).order_by('-timestamp')
+        transaction_history = [{
+            'id': t.id,
+            'batch_id': t.batch.batch_id,
+            'transaction_type': t.get_transaction_type_display(),
+            'timestamp': t.timestamp,
+            'details': t.details,
+            'user': str(t.user) if t.user else None
+        } for t in transactions]
+
+        return {
+            'student_id': student.id,
+            'student_name': batch_history_data['student_name'],
+            'current_batch': batch_history_data['current_batch'],
+            'batch_history': batch_history_data['batch_history'],
+            'transaction_history': transaction_history
+        }

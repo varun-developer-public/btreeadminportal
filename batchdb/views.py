@@ -750,9 +750,19 @@ def available_batches_for_transfer(request):
         return Response({'error': 'Student ID is required'}, status=status.HTTP_400_BAD_REQUEST)
     
     student = get_object_or_404(Student, pk=student_id)
+    
+    # Get the course of the student's current active batch
+    try:
+        current_batch_student = BatchStudent.objects.get(student=student, is_active=True)
+        current_course = current_batch_student.batch.course
+    except BatchStudent.DoesNotExist:
+        return Response({'error': 'Student is not currently in an active batch.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Exclude batches that the student is already a part of (active or inactive)
     current_batch_ids = student.batches.values_list('id', flat=True)
     
-    available_batches = Batch.objects.exclude(id__in=current_batch_ids)
+    # Filter batches by the same course and exclude current batches
+    available_batches = Batch.objects.filter(course=current_course).exclude(id__in=current_batch_ids)
     serializer = BatchSerializer(available_batches, many=True)
     return Response(serializer.data)
 

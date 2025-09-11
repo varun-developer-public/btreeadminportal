@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% load custom_filter %}
 {% block title %}Batch List{% endblock %}
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- jQuery (required for your select2 + ajax code) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap Bundle JS (with Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 {% block content %}
 <style>
@@ -13,6 +21,14 @@
     .student-list-cell::-webkit-scrollbar {
         display: none;
     }
+    .select2-container--open {
+    z-index: 2000 !important;
+}
+
+.modal .select2-container {
+    z-index: 2000 !important;
+}
+
 </style>
 
 {% if messages %}
@@ -95,19 +111,19 @@
                 <h5 class="modal-title" id="transferModalLabel">Transfer Students</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'batchdb:batchdb_api:transferrequest-list' %}">
+            <form method="post" action="{% url 'batchdb:batchdb_api:transferrequest' %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <input type="hidden" name="from_batch" id="fromBatchId">
                     <div class="mb-3">
                         <label for="transferStudents" class="form-label">Select Students</label>
-                        <select class="form-select" id="transferStudents" name="students" multiple required>
+                        <select class="form-select modal-select2" id="transferStudents" name="students" multiple required>
                             <!-- Students will be loaded here -->
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="toBatch" class="form-label">Target Batch</label>
-                        <select class="form-select django-select2" id="toBatch" name="to_batch" required>
+                        <select class="form-select django-select2 modal-select2" id="toBatch" name="to_batch" required>
                             <option value="">Select a batch</option>
                             {% for batch in batches %}
                                 {% if batch.batch_status == 'IP' or batch.batch_status == 'YTS' %}
@@ -118,7 +134,7 @@
                     </div>
                     <div class="mb-3">
                         <label for="transferReason" class="form-label">Reason for Transfer</label>
-                        <textarea class="form-control" id="transferReason" name="reason" rows="3" required></textarea>
+                        <textarea class="form-control" id="transferReason" name="remarks" rows="3" required></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -144,7 +160,7 @@
                     <input type="hidden" name="batch" id="handoverBatchId">
                     <div class="mb-3">
                         <label for="newTrainer" class="form-label">New Trainer</label>
-                        <select class="form-select django-select2" id="newTrainer" name="new_trainer" required>
+                        <select class="form-select django-select2 modal-select2" id="newTrainer" name="new_trainer" required>
                             <option value="">Select a trainer</option>
                             {% for trainer in trainers %}
                             <option value="{{ trainer.id }}">{{ trainer.name }}</option>
@@ -261,8 +277,8 @@
                                     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#transferModal" data-batch-id="{{ batch.pk }}"><i class="fas fa-exchange-alt me-1"></i>Transfer Students</a></li>
                                     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#handoverModal" data-batch-id="{{ batch.pk }}"><i class="fas fa-user-friends me-1"></i>Trainer Handover</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item" href="#" onclick="viewStudentList({{ batch.pk }})"><i class="fas fa-users me-1"></i>View Students</a></li>
-                                    <li><a class="dropdown-item" href="#" onclick="viewBatchTransactions({{ batch.pk }})"><i class="fas fa-history me-1"></i>View Transactions</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewStudentList('{{ batch.pk }}')"><i class="fas fa-users me-1"></i>View Students</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewBatchTransactions('{{ batch.pk }}')"><i class="fas fa-history me-1"></i>View Transactions</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -303,6 +319,10 @@
 <script>
     $(document).ready(function() {
         $('.django-select2').select2();
+        
+    $('.modal-select2').select2({
+        dropdownParent: $('#transferModal, #handoverModal') // attach dropdown inside modal
+    });
     });
     
     function viewStudentList(batchId) {
@@ -427,6 +447,30 @@
         let button = $(event.relatedTarget);
         let batchId = button.data('batch-id');
         $('#handoverBatchId').val(batchId);
+
+        // Load available trainers for handover
+        $.ajax({
+            url: '{% url "batchdb:batchdb_api:available-trainers-for-handover" %}',
+            data: { batch_id: batchId },
+            dataType: 'json',
+            success: function(data) {
+                let trainerSelect = $('#newTrainer');
+                trainerSelect.empty().append('<option value="">Select a trainer</option>');
+                
+                if (data.length > 0) {
+                    data.forEach(function(trainer) {
+                        trainerSelect.append(`<option value="${trainer.id}">${trainer.name}</option>`);
+                    });
+                } else {
+                    trainerSelect.html('<option disabled>No other trainers available</option>');
+                }
+                
+                trainerSelect.select2({
+                    placeholder: 'Select a new trainer',
+                    width: '100%'
+                });
+            }
+        });
     });
 </script>
 {{ form.media.js }}
