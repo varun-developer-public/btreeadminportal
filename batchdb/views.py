@@ -298,33 +298,6 @@ class BatchViewSet(viewsets.ModelViewSet):
         except Student.DoesNotExist:
             return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
             
-    @action(detail=False, methods=['get'])
-    def transactions(self, request):
-        """Get transaction history for a batch"""
-        batch_id = request.query_params.get('batch_id')
-        
-        if not batch_id:
-            return Response({'error': 'Batch ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            batch = Batch.objects.get(pk=batch_id)
-            transactions = BatchTransaction.objects.filter(batch=batch).order_by('-timestamp')
-            
-            page = self.paginate_queryset(transactions)
-            if page is not None:
-                serializer = BatchTransactionDetailSerializer(page, many=True)
-                response = self.get_paginated_response(serializer.data)
-                response.data['batch_id'] = batch.batch_id
-                return response
-            
-            serializer = BatchTransactionDetailSerializer(transactions, many=True)
-            return Response({
-                'batch_id': batch.batch_id,
-                'results': serializer.data
-            })
-        except Batch.DoesNotExist:
-            return Response({'error': 'Batch not found'}, status=status.HTTP_404_NOT_FOUND)
-        
         # Check if student is already in this batch
         if BatchStudent.objects.filter(batch=batch, student=student).exists():
             batch_student = BatchStudent.objects.get(batch=batch, student=student)
@@ -372,6 +345,47 @@ class BatchViewSet(viewsets.ModelViewSet):
         
         serializer = BatchStudentSerializer(batch_student)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+    @action(detail=False, methods=['get'])
+    def transactions(self, request):
+        """Get transaction history for a batch"""
+        batch_id = request.query_params.get('batch_id')
+        
+        if not batch_id:
+            return Response({'error': 'Batch ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            batch = Batch.objects.get(pk=batch_id)
+            transactions = BatchTransaction.objects.filter(batch=batch).order_by('-timestamp')
+            
+            # Filter by transaction type
+            transaction_type = request.query_params.get('transaction_type', None)
+            if transaction_type:
+                transactions = transactions.filter(transaction_type=transaction_type)
+            
+            # Filter by date range
+            start_date = request.query_params.get('start_date', None)
+            if start_date:
+                transactions = transactions.filter(timestamp__date__gte=start_date)
+            
+            end_date = request.query_params.get('end_date', None)
+            if end_date:
+                transactions = transactions.filter(timestamp__date__lte=end_date)
+            
+            page = self.paginate_queryset(transactions)
+            if page is not None:
+                serializer = BatchTransactionDetailSerializer(page, many=True)
+                response = self.get_paginated_response(serializer.data)
+                response.data['batch_id'] = batch.batch_id
+                return response
+            
+            serializer = BatchTransactionDetailSerializer(transactions, many=True)
+            return Response({
+                'batch_id': batch.batch_id,
+                'results': serializer.data
+            })
+        except Batch.DoesNotExist:
+            return Response({'error': 'Batch not found'}, status=status.HTTP_404_NOT_FOUND)
     
     @action(detail=True, methods=['post'])
     def remove_student(self, request, pk=None):
@@ -391,28 +405,29 @@ class BatchViewSet(viewsets.ModelViewSet):
         
         return Response({'message': 'Student removed from batch'}, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['get'])
-    def transactions(self, request, pk=None):
-        batch = self.get_object()
-        transactions = BatchTransaction.objects.filter(batch=batch)
-        
-        # Filter by transaction type
-        transaction_type = request.query_params.get('transaction_type', None)
-        if transaction_type:
-            transactions = transactions.filter(transaction_type=transaction_type)
-        
-        # Filter by date range
-        start_date = request.query_params.get('start_date', None)
-        end_date = request.query_params.get('end_date', None)
-        
-        if start_date:
-            transactions = transactions.filter(timestamp__date__gte=start_date)
-        
-        if end_date:
-            transactions = transactions.filter(timestamp__date__lte=end_date)
-        
-        serializer = BatchTransactionSerializer(transactions, many=True)
-        return Response(serializer.data)
+    # This method is redundant as there's already a transactions action defined above
+    # @action(detail=True, methods=['get'])
+    # def transactions(self, request, pk=None):
+    #     batch = self.get_object()
+    #     transactions = BatchTransaction.objects.filter(batch=batch)
+    #     
+    #     # Filter by transaction type
+    #     transaction_type = request.query_params.get('transaction_type', None)
+    #     if transaction_type:
+    #         transactions = transactions.filter(transaction_type=transaction_type)
+    #     
+    #     # Filter by date range
+    #     start_date = request.query_params.get('start_date', None)
+    #     end_date = request.query_params.get('end_date', None)
+    #     
+    #     if start_date:
+    #         transactions = transactions.filter(timestamp__date__gte=start_date)
+    #     
+    #     if end_date:
+    #         transactions = transactions.filter(timestamp__date__lte=end_date)
+    #     
+    #     serializer = BatchTransactionSerializer(transactions, many=True)
+    #     return Response(serializer.data)
 
 
 class TransferRequestViewSet(viewsets.ModelViewSet):
