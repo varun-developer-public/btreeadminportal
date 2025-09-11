@@ -75,7 +75,7 @@ class Batch(models.Model):
             category_initial = category.name[0].upper()
             
             # Get the course code (assuming it's stored in the course model)
-            course_code = course.code
+            course_code = course.code[-2:].upper() if course.code else 'XX'
             
             # Find the last batch with this category and course combination
             last_batch = cls.objects.filter(

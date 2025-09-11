@@ -95,7 +95,7 @@
                 <h5 class="modal-title" id="transferModalLabel">Transfer Students</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'batchdb:transfer_request_create' %}">
+            <form method="post" action="{% url 'batchdb:batchdb_api:transferrequest-list' %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <input type="hidden" name="from_batch" id="fromBatchId">
@@ -138,7 +138,7 @@
                 <h5 class="modal-title" id="handoverModalLabel">Trainer Handover</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'batchdb:trainer_handover_create' %}">
+            <form method="post" action="{% url 'batchdb:batchdb_api:trainerhandover-list' %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <input type="hidden" name="batch" id="handoverBatchId">
@@ -350,7 +350,7 @@
         
         // Load transaction data via AJAX
         $.ajax({
-            url: '{% url "batchdb:api:batch-transactions" %}',
+            url: '{% url "batchdb:batchdb_api:batchtransaction-list" %}',
             data: { batch_id: batchId },
             dataType: 'json',
             success: function(data) {

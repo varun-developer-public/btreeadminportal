@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 # REST Framework imports
 from rest_framework import viewsets, status, filters
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -650,24 +650,28 @@ class BatchTransactionViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 # Student History Report
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def student_batch_history(request):
-    """API endpoint to get a student's batch history"""
+    """View to display a student's batch history"""
     student_id = request.GET.get('student_id')
     
     if not student_id:
-        return Response({'error': 'Student ID is required'}, status=400)
-    
-    # Check if student exists
+        messages.error(request, "Student ID is required.")
+        return redirect('batchdb:batch_list')
+
     try:
         student = Student.objects.get(pk=student_id)
     except Student.DoesNotExist:
-        return Response({'error': 'Student not found'}, status=404)
-    
-    # Serialize the data
+        messages.error(request, "Student not found.")
+        return redirect('batchdb:batch_list')
+
     serializer = StudentBatchHistorySerializer({'student_id': int(student_id)})
-    return Response(serializer.data)
+    
+    context = {
+        'student': student,
+        'history': serializer.data
+    }
+    
+    return render(request, 'batchdb/student_history.html', context)
 
 
 @require_GET
@@ -706,7 +710,7 @@ def get_courses_by_category(request):
     if not category_id:
         return JsonResponse({'error': 'Category ID is required'}, status=400)
     
-    courses = Course.objects.filter(category_id=category_id).values('id', 'name', 'code')
+    courses = Course.objects.filter(category_id=category_id).values('id', 'course_name', 'code')
     return JsonResponse(list(courses), safe=False)
 
 

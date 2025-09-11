@@ -1,22 +1,14 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter
 from . import views
-
-# Create a router for API ViewSets
-router = DefaultRouter()
-router.register(r'api/batches', views.BatchViewSet)
-router.register(r'api/transfer-requests', views.TransferRequestViewSet)
-router.register(r'api/trainer-handovers', views.TrainerHandoverViewSet)
-router.register(r'api/transactions', views.BatchTransactionViewSet)
 
 app_name = 'batchdb'
 
 urlpatterns = [
     # Include API router URLs
-    path('', include(router.urls)),
+    path('api/', include('batchdb.api_urls')),
     
     # Traditional views
-    path('', views.batch_list, name='batch_list'),
+    path('list/', views.batch_list, name='batch_list'),
     path('create/', views.create_batch, name='create_batch'),
     path('<int:pk>/update/', views.update_batch, name='update_batch'),
     path('import/', views.import_batches, name='import_batches'),
