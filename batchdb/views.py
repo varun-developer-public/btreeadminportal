@@ -412,6 +412,9 @@ class TransferRequestViewSet(viewsets.ModelViewSet):
     ordering_fields = ['requested_at', 'status']
     ordering = ['-requested_at']
     
+    def perform_create(self, serializer):
+        serializer.save(requested_by=self.request.user)
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return TransferRequestDetailSerializer
@@ -426,12 +429,12 @@ class TransferRequestViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(status=status)
         
         # Filter by from_batch
-        from_batch_id = self.request.query_params.get('from_batch_id', None)
+        from_batch_id = self.request.query_params.get('from_batch', None)
         if from_batch_id:
             queryset = queryset.filter(from_batch_id=from_batch_id)
         
         # Filter by to_batch
-        to_batch_id = self.request.query_params.get('to_batch_id', None)
+        to_batch_id = self.request.query_params.get('to_batch', None)
         if to_batch_id:
             queryset = queryset.filter(to_batch_id=to_batch_id)
         
@@ -501,6 +504,9 @@ class TrainerHandoverViewSet(viewsets.ModelViewSet):
     ordering_fields = ['requested_at', 'status']
     ordering = ['-requested_at']
     
+    def perform_create(self, serializer):
+        serializer.save(requested_by=self.request.user)
+
     def get_queryset(self):
         queryset = TrainerHandover.objects.all()
         

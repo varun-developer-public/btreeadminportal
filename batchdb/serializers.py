@@ -85,24 +85,30 @@ class BatchDetailSerializer(BatchSerializer):
 
 class TransferRequestSerializer(serializers.ModelSerializer):
     from_batch_id = serializers.StringRelatedField(source='from_batch', read_only=True)
+    from_batch_code = serializers.StringRelatedField(source='from_batch.batch_id', read_only=True)
     to_batch_id = serializers.StringRelatedField(source='to_batch', read_only=True)
+    to_batch_code = serializers.StringRelatedField(source='to_batch.batch_id', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     requested_by_name = serializers.StringRelatedField(source='requested_by', read_only=True)
     approved_by_name = serializers.StringRelatedField(source='approved_by', read_only=True)
     student_count = serializers.SerializerMethodField()
+    students_data = serializers.SerializerMethodField(source='get_students_data', read_only=True) 
     
     class Meta:
         model = TransferRequest
         fields = [
-            'id', 'from_batch', 'from_batch_id', 'to_batch', 'to_batch_id',
+            'id', 'from_batch', 'from_batch_id','from_batch_code', 'to_batch', 'to_batch_id','to_batch_code',
             'status', 'status_display', 'requested_by', 'requested_by_name',
             'requested_at', 'approved_by', 'approved_by_name', 'approved_at',
-            'remarks', 'student_count'
+            'remarks', 'student_count', 'students_data'
         ]
-        read_only_fields = ['requested_at', 'approved_at', 'status', 'approved_by']
+        read_only_fields = ['requested_by','requested_at', 'approved_at', 'status', 'approved_by']
     
     def get_student_count(self, obj):
         return obj.students.count()
+    
+    def get_students_data(self, obj):
+        return [{"id": s.student_id, "name": f"{s.first_name} {s.last_name or ''}"} for s in obj.students.all()]
     
     def create(self, validated_data):
         user = self.context['request'].user
@@ -188,7 +194,7 @@ class TrainerHandoverSerializer(serializers.ModelSerializer):
             'requested_by', 'requested_by_name', 'requested_at',
             'approved_by', 'approved_by_name', 'approved_at', 'remarks'
         ]
-        read_only_fields = ['requested_at', 'approved_at', 'status', 'approved_by']
+        read_only_fields = ['requested_by','requested_at', 'approved_at', 'status', 'approved_by']
     
     def create(self, validated_data):
         user = self.context['request'].user
