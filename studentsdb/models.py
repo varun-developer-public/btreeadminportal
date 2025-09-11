@@ -83,6 +83,34 @@ class Student(models.Model):
                 return None
         return None
 
+    def get_batch_history(self):
+        history = []
+        batch_students = self.batchstudent_set.order_by('activated_at')
+
+        for bs in batch_students:
+            history.append({
+                'type': 'BATCH_JOINED',
+                'batch': bs.batch.batch_id,
+                'date': bs.activated_at,
+                'details': f'Joined batch {bs.batch.batch_id}'
+            })
+            if not bs.is_active:
+                history.append({
+                    'type': 'BATCH_LEFT',
+                    'batch': bs.batch.batch_id,
+                    'date': bs.deactivated_at,
+                    'details': f'Left batch {bs.batch.batch_id}'
+                })
+
+        transfers = self.transfer_requests.filter(status='APPROVED').order_by('approved_at')
+        for transfer in transfers:
+            history.append({
+                'type': 'TRANSFER',
+                'date': transfer.approved_at,
+                'details': f'Transferred from {transfer.from_batch.batch_id} to {transfer.to_batch.batch_id}'
+            })
+        
+        return sorted(history, key=lambda x: x['date'])
     def __str__(self):
         return f"{self.student_id} - {self.first_name} {self.last_name}"
 

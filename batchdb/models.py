@@ -113,6 +113,16 @@ class Batch(models.Model):
         
         # Save the batch
         super().save(*args, **kwargs)
+
+        if is_new:
+            students = self.students.all()
+            for student in students:
+                BatchStudent.objects.create(
+                    batch=self,
+                    student=student,
+                    is_active=True,
+                    activated_at=timezone.now()
+                )
         
         # Log the transaction if user is provided
         if user:

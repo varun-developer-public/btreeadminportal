@@ -8,6 +8,15 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = '__all__'
+
+class TrainerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trainer
+        fields = '__all__'
 
 class BatchStudentSerializer(serializers.ModelSerializer):
     student_name = serializers.StringRelatedField(source='student', read_only=True)

@@ -14,8 +14,6 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
 # Model imports
 from .models import (
@@ -30,13 +28,13 @@ from .serializers import (
     TransferRequestApprovalSerializer, TransferRequestRejectionSerializer,
     TrainerHandoverSerializer, TrainerHandoverApprovalSerializer,
     TrainerHandoverRejectionSerializer, BatchTransactionSerializer,
-    BatchTransactionDetailSerializer, StudentBatchHistorySerializer
+    BatchTransactionDetailSerializer, StudentBatchHistorySerializer,
+    StudentSerializer, TrainerSerializer
 )
 
 # Form imports
 from .forms import BatchCreationForm, BatchUpdateForm, BatchFilterForm
 
-from datetime import datetime
 import json
 import pandas as pd
 
@@ -404,31 +402,6 @@ class BatchViewSet(viewsets.ModelViewSet):
         batch_student.deactivate(user=request.user)
         
         return Response({'message': 'Student removed from batch'}, status=status.HTTP_200_OK)
-    
-    # This method is redundant as there's already a transactions action defined above
-    # @action(detail=True, methods=['get'])
-    # def transactions(self, request, pk=None):
-    #     batch = self.get_object()
-    #     transactions = BatchTransaction.objects.filter(batch=batch)
-    #     
-    #     # Filter by transaction type
-    #     transaction_type = request.query_params.get('transaction_type', None)
-    #     if transaction_type:
-    #         transactions = transactions.filter(transaction_type=transaction_type)
-    #     
-    #     # Filter by date range
-    #     start_date = request.query_params.get('start_date', None)
-    #     end_date = request.query_params.get('end_date', None)
-    #     
-    #     if start_date:
-    #         transactions = transactions.filter(timestamp__date__gte=start_date)
-    #     
-    #     if end_date:
-    #         transactions = transactions.filter(timestamp__date__lte=end_date)
-    #     
-    #     serializer = BatchTransactionSerializer(transactions, many=True)
-    #     return Response(serializer.data)
-
 
 class TransferRequestViewSet(viewsets.ModelViewSet):
     queryset = TransferRequest.objects.all()
@@ -519,7 +492,6 @@ class TransferRequestViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class TrainerHandoverViewSet(viewsets.ModelViewSet):
     queryset = TrainerHandover.objects.all()
     serializer_class = TrainerHandoverSerializer
@@ -603,7 +575,6 @@ class TrainerHandoverViewSet(viewsets.ModelViewSet):
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class BatchTransactionViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = BatchTransaction.objects.all()
     serializer_class = BatchTransactionSerializer
@@ -648,6 +619,21 @@ class BatchTransactionViewSet(viewsets.ReadOnlyModelViewSet):
         
         return queryset
 
+class StudentHistoryViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        student_id = request.query_params.get('student_id')
+        if not student_id:
+            return Response({'error': 'Student ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            student = Student.objects.get(pk=student_id)
+        except Student.DoesNotExist:
+            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        history_data = student.get_batch_history()
+        return Response(history_data)
 
 # Student History Report
 def student_batch_history(request):
@@ -672,7 +658,6 @@ def student_batch_history(request):
     }
     
     return render(request, 'batchdb/student_history.html', context)
-
 
 @require_GET
 def get_students_for_batch(request):
@@ -701,7 +686,6 @@ def get_students_for_batch(request):
     except Batch.DoesNotExist:
         return JsonResponse({'error': 'Batch not found'}, status=404)
 
-
 # AJAX endpoints for cascading selects
 @require_GET
 def get_courses_by_category(request):
@@ -713,7 +697,6 @@ def get_courses_by_category(request):
     courses = Course.objects.filter(category_id=category_id).values('id', 'course_name', 'code')
     return JsonResponse(list(courses), safe=False)
 
-
 @require_GET
 def get_trainers_by_course(request):
     course_id = request.GET.get('course_id')
@@ -724,7 +707,6 @@ def get_trainers_by_course(request):
     # Get trainers who can teach this course
     trainers = Trainer.objects.filter(courses=course_id).values('id', 'name', 'email', 'phone')
     return JsonResponse(list(trainers), safe=False)
-
 
 @require_GET
 def get_students_by_course(request):
@@ -749,8 +731,56 @@ def get_students_by_course(request):
     students = students_query.values('id', 'name', 'email', 'phone')
     return JsonResponse(list(students), safe=False)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def available_students_for_transfer(request):
+    batch_id = request.query_params.get('batch_id')
+    if not batch_id:
+        return Response({'error': 'Batch ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    students = Student.objects.filter(batchstudent__batch_id=batch_id, batchstudent__is_active=True)
+    serializer = StudentSerializer(students, many=True)
+    return Response(serializer.data)
 
-from placementdb.models import Placement
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def available_batches_for_transfer(request):
+    student_id = request.query_params.get('student_id')
+    if not student_id:
+        return Response({'error': 'Student ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    student = get_object_or_404(Student, pk=student_id)
+    current_batch_ids = student.batches.values_list('id', flat=True)
+    
+    available_batches = Batch.objects.exclude(id__in=current_batch_ids)
+    serializer = BatchSerializer(available_batches, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def available_trainers_for_handover(request):
+    batch_id = request.query_params.get('batch_id')
+    if not batch_id:
+        return Response({'error': 'Batch ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    batch = get_object_or_404(Batch, pk=batch_id)
+    
+    # Exclude the current trainer from the list of available trainers
+    available_trainers = Trainer.objects.exclude(id=batch.trainer.id)
+    serializer = TrainerSerializer(available_trainers, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def available_batches_for_handover(request):
+    trainer_id = request.query_params.get('trainer_id')
+    if not trainer_id:
+        return Response({'error': 'Trainer ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get all batches assigned to the specified trainer
+    batches = Batch.objects.filter(trainer_id=trainer_id)
+    serializer = BatchSerializer(batches, many=True)
+    return Response(serializer.data)
 
 @login_required
 def download_batch_template(request):
