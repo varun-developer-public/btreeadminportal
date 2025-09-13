@@ -148,23 +148,48 @@ class TransferRequestApprovalSerializer(serializers.Serializer):
         required=False
     )
     remarks = serializers.CharField(required=False, allow_blank=True)
-    
+
     def validate(self, data):
         transfer_request = self.context['transfer_request']
-        
+
         if transfer_request.status != 'PENDING':
             raise serializers.ValidationError("Only pending transfer requests can be approved.")
-        
-        # If approved_students is provided, validate that they are part of the transfer request
+
         if 'approved_students' in data:
             request_students = set(transfer_request.students.values_list('id', flat=True))
             approved_students = set(student.id for student in data['approved_students'])
-            
+
             if not approved_students.issubset(request_students):
-                raise serializers.ValidationError("Some approved students are not part of this transfer request.")
-        
+                raise serializers.ValidationError(
+                    "Some approved students are not part of this transfer request."
+                )
+
         return data
 
+    def save(self, **kwargs):
+        request = self.context['request']
+        transfer_request = self.context['transfer_request']
+
+        # If not provided, approve all students in the request
+        approved_students = self.validated_data.get(
+            'approved_students',
+            transfer_request.students.all()
+        )
+
+        for student in approved_students:
+            # ✅ Create new batch entry for each approved student
+            BatchStudent.objects.create(
+                batch=transfer_request.to_batch,
+                student=student,
+                user=request.user
+            )
+
+        # ✅ Update transfer request status
+        transfer_request.status = "APPROVED"
+        transfer_request.remarks = self.validated_data.get("remarks", "")
+        transfer_request.save()
+
+        return transfer_request
 
 class TransferRequestRejectionSerializer(serializers.Serializer):
     remarks = serializers.CharField(required=False, allow_blank=True)

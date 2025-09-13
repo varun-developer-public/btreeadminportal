@@ -166,7 +166,6 @@ class BatchStudent(models.Model):
     deactivated_at = models.DateTimeField(null=True, blank=True)
     
     class Meta:
-        unique_together = ('batch', 'student')
         verbose_name = 'Batch Student'
         verbose_name_plural = 'Batch Students'
     
@@ -178,7 +177,12 @@ class BatchStudent(models.Model):
         user = kwargs.pop('user', None)
         if user:
             self._user = user
-        
+        if not self.pk:  # only for new objects
+            BatchStudent.objects.filter(
+                student=self.student,
+                batch=self.batch,
+                is_active=True
+            ).update(is_active=False, deactivated_at=timezone.now())
         # Call the original save method
         super().save(*args, **kwargs)
     
