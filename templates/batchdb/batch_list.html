@@ -102,6 +102,9 @@
                     <tbody id="transactionListBody"></tbody>
                 </table>
             </div>
+            <div class="modal-footer">
+                <a href="#" id="viewMoreLink" class="btn btn-primary">View More</a>
+            </div>
         </div>
     </div>
 </div>
@@ -238,7 +241,7 @@
             <tbody>
                 {% for batch in batches %}
                 <tr>
-                    <td><span class="badge bg-secondary">{{ batch.batch_id }}</span></td>
+                    <td><a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-secondary">{{ batch.batch_id }}</span></a></td>
                     <td>{{ batch.course.course_name }}</td>
                     <td>{{ batch.trainer.name }}</td>
                     <td>
@@ -362,11 +365,14 @@ function viewStudentList(batchId) {
 // Load Transactions
 function viewBatchTransactions(batchId) {
     $('#transactionModal').modal('show');
+    var reportUrl = "{% url 'batchdb:batch_report' 0 %}".replace('0', batchId);
+    $('#viewMoreLink').attr('href', reportUrl);
+
     $.get("{% url 'batchdb:batchdb_api:batchtransaction-list' %}", { batch_id: batchId, page_size: 5 }, function(data) {
         let list = $('#transactionListBody').empty();
         let transactions = data.results || data;
         if (transactions.length) {
-            transactions.forEach(t => {
+            transactions.slice(0, 5).forEach(t => {
                 let badge = t.transaction_type.includes("ADD") ? "bg-success" :
                             t.transaction_type.includes("REMOVE") ? "bg-danger" :
                             t.transaction_type.includes("TRANSFER") ? "bg-warning text-dark" : "bg-info";

@@ -15,6 +15,7 @@ urlpatterns = [
     path('template/', views.download_batch_template, name='download_batch_template'),
     path('error-report/', views.download_error_report_batch, name='download_error_report_batch'),
     path('<int:pk>/delete/', views.delete_batch, name='delete_batch'),
+    path('batch/<int:pk>/report/', views.batch_report, name='batch_report'),
     
     # Student history report
     path('student/history/', views.student_batch_history, name='student-batch-history'),

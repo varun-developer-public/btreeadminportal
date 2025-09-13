@@ -950,3 +950,47 @@ def download_error_report_batch(request):
     del request.session['error_rows_batch']
 
     return response
+
+@login_required
+def batch_report(request, pk):
+    batch = get_object_or_404(Batch, pk=pk)
+    
+    # Get all students who have ever been in the batch
+    all_batch_students = BatchStudent.objects.filter(batch=batch).select_related('student').order_by('student__first_name')
+    
+    # Separate active and inactive students
+    active_students = [bs.student for bs in all_batch_students if bs.is_active]
+    inactive_students = []
+    for bs in all_batch_students:
+        if not bs.is_active:
+            student = bs.student
+            # Find the transfer reason
+            transfer_request = TransferRequest.objects.filter(
+                from_batch=batch,
+                students=student
+            ).order_by('-requested_at').first()
+            student.transfer_reason = transfer_request.remarks if transfer_request else "N/A"
+            inactive_students.append(student)
+    
+    # Get all transactions for the batch
+    transactions = BatchTransaction.objects.filter(batch=batch).select_related('user').order_by('-timestamp')
+    
+    # Paginate transactions
+    paginator = Paginator(transactions, 10)
+    page = request.GET.get('page')
+    
+    try:
+        transactions_page = paginator.page(page)
+    except PageNotAnInteger:
+        transactions_page = paginator.page(1)
+    except EmptyPage:
+        transactions_page = paginator.page(paginator.num_pages)
+        
+    context = {
+        'batch': batch,
+        'active_students': active_students,
+        'inactive_students': inactive_students,
+        'transactions': transactions_page,
+    }
+    
+    return render(request, 'batchdb/batch_report.html', context)

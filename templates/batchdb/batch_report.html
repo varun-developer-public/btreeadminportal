@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Batch Report - {{ batch.batch_id }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="student-form-container">
+    <div class="form-header">
+        <h1>Batch Report: {{ batch.batch_id }}</h1>
+        <p class="form-subtitle">Detailed report for the batch.</p>
+    </div>
+
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-info-circle me-2"></i>Batch Details</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Course:</strong> {{ batch.course.course_name }}</p>
+                    <p><strong>Trainer:</strong> {{ batch.trainer.name }}</p>
+                    <p><strong>Start Date:</strong> {{ batch.start_date }}</p>
+                    <p><strong>End Date:</strong> {{ batch.end_date }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Batch Type:</strong> {{ batch.get_batch_type_display }}</p>
+                    <p><strong>Status:</strong> {{ batch.get_batch_status_display }}</p>
+                    <p><strong>Timings:</strong> {{ batch.get_slottime }}</p>
+                    <p><strong>Completion:</strong> {{ batch.batch_percentage }}%</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-user-graduate me-2"></i>Active Students ({{ active_students|length }})</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="activeStudentsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in active_students %}
+                        <tr>
+                            <td>{{ student.student_id }}</td>
+                            <td>{{ student.first_name }} {{ student.last_name }}</td>
+                            <td>{{ student.email }}</td>
+                            <td>{{ student.phone }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">No active students in this batch.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-user-slash me-2"></i>Inactive Students ({{ inactive_students|length }})</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="inactiveStudentsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Transfer Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in inactive_students %}
+                        <tr>
+                            <td>{{ student.student_id }}</td>
+                            <td>{{ student.first_name }} {{ student.last_name }}</td>
+                            <td>{{ student.email }}</td>
+                            <td>{{ student.phone }}</td>
+                            <td>{{ student.transfer_reason }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">No inactive students in this batch.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-history me-2"></i>Transaction History</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="transactionsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Type</th>
+                            <th>User</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                        <tr>
+                            <td>{{ transaction.timestamp }}</td>
+                            <td>{{ transaction.get_transaction_type_display }}</td>
+                            <td>{{ transaction.user.name }}</td>
+                            <td>
+                                {% if transaction.details %}
+                                    <ul>
+                                    {% for key, value in transaction.details.items %}
+                                        <li><strong>{{ key|title }}:</strong> {{ value }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4">No transactions found for this batch.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <nav>
+                <ul class="pagination">
+                    {% if transactions.has_previous %}
+                        <li class="page-item"><a class="page-link" href="?page=1">&laquo; First</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ transactions.previous_page_number }}">Previous</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><a class="page-link" href="#">Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}</a></li>
+                    {% if transactions.has_next %}
+                        <li class="page-item"><a class="page-link" href="?page={{ transactions.next_page_number }}">Next</a></li>
+                        <li class="page-item"><a class="page-link" href="?page={{ transactions.paginator.num_pages }}">Last &raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %}
