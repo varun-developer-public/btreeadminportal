@@ -247,6 +247,7 @@ class BatchStudent(models.Model):
                 'batch_id': bs.batch.batch_id,
                 'course': str(bs.batch.course) if bs.batch.course else 'N/A',
                 'trainer': str(bs.batch.trainer) if bs.batch.trainer else 'N/A',
+                'slot_time': bs.batch.get_slottime,
                 'activated_at': bs.activated_at,
                 'deactivated_at': bs.deactivated_at,
                 'status': 'Active' if bs.is_active else 'Inactive'
@@ -255,6 +256,10 @@ class BatchStudent(models.Model):
                 history['current_batch'] = batch_info
             else:
                 history['batch_history'].append(batch_info)
+        
+        # Also, fetch the transaction history for the student
+        transactions = BatchTransaction.objects.filter(affected_students=student).select_related('batch', 'user').order_by('-timestamp')
+        history['transactions'] = transactions
         
         return history
 
@@ -275,7 +280,7 @@ class BatchTransaction(models.Model):
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='batch_transactions')
     timestamp = models.DateTimeField(default=timezone.now)
-    details = JSONField(blank=True, null=True, help_text='Additional details about the transaction')
+    details = models.JSONField(blank=True, null=True, help_text='Additional details about the transaction')
     affected_students = models.ManyToManyField(Student, blank=True, related_name='batch_transactions')
     
     class Meta:
@@ -460,15 +465,19 @@ class TransferRequest(models.Model):
             except BatchStudent.DoesNotExist:
                 pass
             
-            # Activate in the destination batch
-            batch_student, created = BatchStudent.objects.get_or_create(
+            # Deactivate any existing entries for the student in the destination batch.
+            BatchStudent.objects.filter(batch=self.to_batch, student=student, is_active=True).update(
+                is_active=False,
+                deactivated_at=timezone.now()
+            )
+
+            # Create a new active entry for the student in the destination batch.
+            batch_student = BatchStudent.objects.create(
                 batch=self.to_batch,
                 student=student,
-                defaults={'is_active': True, 'activated_at': timezone.now()}
+                is_active=True,
+                activated_at=timezone.now()
             )
-            
-            if not created and not batch_student.is_active:
-                batch_student.activate(user=approved_by)
             
             # Log the transfer in transaction
             BatchTransaction.log_transaction(

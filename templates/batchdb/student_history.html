@@ -20,12 +20,12 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Name:</strong> <span id="student-name">{{ student_data.student_name }}</span></p>
-                    <p><strong>Email:</strong> <span id="student-email">{{ student_data.student.email }}</span></p>
+                    <p><strong>Name:</strong> <span id="student-name">{{ student.first_name }} {{ student.last_name }}</span></p>
+                    <p><strong>Email:</strong> <span id="student-email">{{ student.email }}</span></p>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Phone:</strong> <span id="student-phone">{{ student_data.student.phone }}</span></p>
-                    <p><strong>Enrollment Date:</strong> <span id="student-enrollment">{{ student_data.student.enrollment_date|date:"d-m-Y" }}</span></p>
+                    <p><strong>Phone:</strong> <span id="student-phone">{{ student.phone }}</span></p>
+                    <p><strong>Enrollment Date:</strong> <span id="student-enrollment">{{ student.enrollment_date|date:"d-m-Y" }}</span></p>
                 </div>
             </div>
         </div>
@@ -50,25 +50,23 @@
                         </tr>
                     </thead>
                     <tbody id="current-batches">
-                        {% for batch in student_data.batch_history %}
-                            {% if batch.is_active %}
+                        {% if student_data.current_batch %}
                             <tr>
-                                <td><span class="badge bg-secondary">{{ batch.batch_id }}</span></td>
-                                <td>{{ batch.course }}</td>
-                                <td>{{ batch.trainer }}</td>
-                                <td>{{ batch.activated_at|date:"d-m-Y" }}</td>
-                                <td>{{ batch.deactivated_at|date:"d-m-Y"|default:"-" }}</td>
-                                <td>{{ batch.slot_time }}</td>
-                                <td>{{ batch.activated_at|date:"d-m-Y" }}</td>
+                                <td><span class="badge bg-secondary">{{ student_data.current_batch.batch_id }}</span></td>
+                                <td>{{ student_data.current_batch.course }}</td>
+                                <td>{{ student_data.current_batch.trainer }}</td>
+                                <td>{{ student_data.current_batch.activated_at|date:"d-m-Y" }}</td>
+                                <td>{{ student_data.current_batch.deactivated_at|date:"d-m-Y"|default:"-" }}</td>
+                                <td>{{ student_data.current_batch.slot_time|default:"-" }}</td>
+                                <td>{{ student_data.current_batch.activated_at|date:"d-m-Y" }}</td>
                             </tr>
-                            {% endif %}
-                        {% empty %}
+                        {% else %}
                             <tr>
                                 <td colspan="7" class="text-center py-4 text-muted">
                                     <i class="fas fa-info-circle me-2"></i>No active batches found.
                                 </td>
                             </tr>
-                        {% endfor %}
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -95,17 +93,15 @@
                     </thead>
                     <tbody id="previous-batches">
                         {% for batch in student_data.batch_history %}
-                            {% if not batch.is_active %}
                             <tr>
                                 <td><span class="badge bg-secondary">{{ batch.batch_id }}</span></td>
                                 <td>{{ batch.course }}</td>
                                 <td>{{ batch.trainer }}</td>
                                 <td>{{ batch.activated_at|date:"d-m-Y" }}</td>
                                 <td>{{ batch.deactivated_at|date:"d-m-Y" }}</td>
-                                <td>{{ batch.slot_time }}</td>
+                                <td>{{ batch.slot_time|default:"-" }}</td>
                                 <td><span class="badge bg-secondary">Inactive</span></td>
                             </tr>
-                            {% endif %}
                         {% empty %}
                             <tr>
                                 <td colspan="7" class="text-center py-4 text-muted">
@@ -136,21 +132,31 @@
                         </tr>
                     </thead>
                     <tbody id="transaction-history">
-                        {% for transaction in student_data.transaction_history %}
+                        {% for transaction in student_data.transactions %}
                         <tr>
                             <td>{{ transaction.timestamp|date:"d-m-Y H:i" }}</td>
-                            <td><span class="badge bg-secondary">{{ transaction.batch_id }}</span></td>
+                            <td><span class="badge bg-secondary">{{ transaction.batch.batch_id }}</span></td>
                             <td>
-                                <span class="badge 
-                                    {% if 'ADD' in transaction.transaction_type %}bg-success
-                                    {% elif 'REMOVE' in transaction.transaction_type %}bg-danger
-                                    {% elif 'TRANSFER' in transaction.transaction_type %}bg-warning text-dark
+                                <span class="badge
+                                    {% if 'ADD' in transaction.get_transaction_type_display %}bg-success
+                                    {% elif 'REMOVE' in transaction.get_transaction_type_display %}bg-danger
+                                    {% elif 'TRANSFER' in transaction.get_transaction_type_display %}bg-warning text-dark
                                     {% else %}bg-info{% endif %}">
-                                    {{ transaction.transaction_type }}
+                                    {{ transaction.get_transaction_type_display }}
                                 </span>
                             </td>
-                            <td>{{ transaction.details }}</td>
-                            <td>{{ transaction.user }}</td>
+                            <td>
+                                {% if transaction.details %}
+                                    <ul>
+                                        {% for key, value in transaction.details.items %}
+                                            <li><strong>{{ key|title }}:</strong> {{ value }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ transaction.user.name }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -161,6 +167,19 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            <div class="pagination">
+                {% if student_data.transactions.has_previous %}
+                    <a href="?student_id={{ student.id }}&page=1">&laquo; first</a>
+                    <a href="?student_id={{ student.id }}&page={{ student_data.transactions.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="current">
+                    Page {{ student_data.transactions.number }} of {{ student_data.transactions.paginator.num_pages }}.
+                </span>
+                {% if student_data.transactions.has_next %}
+                    <a href="?student_id={{ student.id }}&page={{ student_data.transactions.next_page_number }}">next</a>
+                    <a href="?student_id={{ student.id }}&page={{ student_data.transactions.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
             </div>
         </div>
     </div>

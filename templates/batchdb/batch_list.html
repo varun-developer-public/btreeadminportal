@@ -26,6 +26,22 @@
         padding: 0;
         z-index: 2000 !important;
     }
+    #transactionModal .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    #transactionModal .table td,
+    #transactionModal .table th {
+        word-wrap: break-word;
+        overflow-x: auto;
+        width: auto;
+    }
+    #transactionModal .table td::-webkit-scrollbar{
+        display: none;
+    }
+    #transactionModal .table td ul {
+        padding: 0;
+    }
 </style>
 
 {% if messages %}
@@ -227,8 +243,10 @@
                     <td>{{ batch.trainer.name }}</td>
                     <td>
                         <div class="student-list-cell">
-                            {% for student in batch.students.all %}
-                                <span class="badge bg-light text-dark">{{ student.first_name }} {{ student.last_name|default:"" }}</span>
+                            {% for batch_student in batch.batchstudent_set.all %}
+                                {% if batch_student.is_active %}
+                                    <span class="badge bg-light text-dark">{{ batch_student.student.first_name }} {{ batch_student.student.last_name|default:"" }}</span>
+                                {% endif %}
                             {% empty %}
                                 <span class="text-muted">No students</span>
                             {% endfor %}
@@ -330,10 +348,12 @@ function viewStudentList(batchId) {
         let list = $('#studentListBody').empty();
         if (data.students.length) {
             data.students.forEach(s => {
-                list.append(`<tr>
-                    <td>${s.name}</td><td>${s.email}</td><td>${s.phone}</td>
-                    <td><a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn-info btn-sm"><i class="fas fa-history"></i></a></td>
-                </tr>`);
+                if (s.is_active) {
+                    list.append(`<tr>
+                        <td>${s.name}</td><td>${s.email}</td><td>${s.phone}</td>
+                        <td><a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn-info btn-sm"><i class="fas fa-history"></i></a></td>
+                    </tr>`);
+                }
             });
         } else list.html("<tr><td colspan='4'>No students</td></tr>");
     });
@@ -342,17 +362,30 @@ function viewStudentList(batchId) {
 // Load Transactions
 function viewBatchTransactions(batchId) {
     $('#transactionModal').modal('show');
-    $.get("{% url 'batchdb:batchdb_api:batchtransaction-list' %}", { batch_id: batchId }, function(data) {
+    $.get("{% url 'batchdb:batchdb_api:batchtransaction-list' %}", { batch_id: batchId, page_size: 5 }, function(data) {
         let list = $('#transactionListBody').empty();
-        if (data.results.length) {
-            data.results.forEach(t => {
+        let transactions = data.results || data;
+        if (transactions.length) {
+            transactions.forEach(t => {
                 let badge = t.transaction_type.includes("ADD") ? "bg-success" :
                             t.transaction_type.includes("REMOVE") ? "bg-danger" :
                             t.transaction_type.includes("TRANSFER") ? "bg-warning text-dark" : "bg-info";
                 list.append(`<tr>
                     <td>${new Date(t.timestamp).toLocaleString()}</td>
                     <td><span class="badge ${badge}">${t.transaction_type}</span></td>
-                    <td>${t.details}</td>
+                    <td>
+                        ${t.details && typeof t.details === 'object' ?
+                            `<ul>
+                                ${Object.entries(t.details).map(([key, value]) => {
+                                    if (key === "deactivated_at" && value) {
+                                        let dateOnly = new Date(value).toLocaleDateString();
+                                        return `<li><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${dateOnly}</li>`;
+                                    }
+                                    return `<li><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}</li>`;
+                                }).join('')}
+                            </ul>` : t.details || '-'
+                        }
+                    </td>
                     <td>${t.user_name}</td>
                 </tr>`);
             });

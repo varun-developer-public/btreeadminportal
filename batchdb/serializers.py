@@ -259,7 +259,7 @@ class TrainerHandoverRejectionSerializer(serializers.Serializer):
 class BatchTransactionSerializer(serializers.ModelSerializer):
     batch_id = serializers.StringRelatedField(source='batch', read_only=True)
     transaction_type_display = serializers.CharField(source='get_transaction_type_display', read_only=True)
-    user_name = serializers.StringRelatedField(source='user', read_only=True)
+    user_name = serializers.SerializerMethodField()
     affected_students_count = serializers.SerializerMethodField()
     
     class Meta:
@@ -269,6 +269,9 @@ class BatchTransactionSerializer(serializers.ModelSerializer):
             'user', 'user_name', 'timestamp', 'details', 'affected_students_count'
         ]
         read_only_fields = fields
+        
+    def get_user_name(self, obj):
+        return obj.user.name if obj.user else "System"
     
     def get_affected_students_count(self, obj):
         return obj.affected_students.count()
@@ -278,7 +281,7 @@ class BatchTransactionDetailSerializer(BatchTransactionSerializer):
     affected_students_data = serializers.SerializerMethodField()
     
     class Meta(BatchTransactionSerializer.Meta):
-        fields = BatchTransactionSerializer.Meta.fields + ['affected_students_data']
+        fields = BatchTransactionSerializer.Meta.fields + ['affected_students_data', 'details']
     
     def get_affected_students_data(self, obj):
         students = obj.affected_students.all()

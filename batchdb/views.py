@@ -591,9 +591,7 @@ class BatchTransactionViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-timestamp']
     
     def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return BatchTransactionDetailSerializer
-        return BatchTransactionSerializer
+        return BatchTransactionDetailSerializer
     
     def get_queryset(self):
         queryset = BatchTransaction.objects.all()
@@ -656,11 +654,33 @@ def student_batch_history(request):
         messages.error(request, "Student not found.")
         return redirect('batchdb:batch_list')
 
-    serializer = StudentBatchHistorySerializer({'student_id': int(student_id)})
+    history_data = BatchStudent.get_student_batch_history(student)
+    
+    transactions = history_data['transactions']
+    paginator = Paginator(transactions, 10)
+    page = request.GET.get('page')
+    
+    try:
+        transactions = paginator.page(page)
+    except PageNotAnInteger:
+        transactions = paginator.page(1)
+    except EmptyPage:
+        transactions = paginator.page(paginator.num_pages)
+        
+    for transaction in transactions:
+        details = transaction.details
+        if isinstance(details, str):
+            try:
+                details = json.loads(details)
+            except json.JSONDecodeError:
+                details = {}
+        transaction.details = details
+        
+    history_data['transactions'] = transactions
     
     context = {
         'student': student,
-        'history': serializer.data
+        'student_data': history_data,
     }
     
     return render(request, 'batchdb/student_history.html', context)
