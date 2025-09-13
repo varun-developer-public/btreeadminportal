@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load custom_filter %}
+
 {% block title %}Batch List{% endblock %}
 
 {% block content %}
@@ -12,6 +13,34 @@
     }
     .student-list-cell::-webkit-scrollbar {
         display: none;
+    }
+    .select2-container--open {
+        z-index: 2000 !important;
+    }
+    .modal .select2-container {
+        z-index: 2000 !important;
+    }
+
+     .modal-select2 .select2-container {
+        width: 100% !important;
+        padding: 0;
+        z-index: 2000 !important;
+    }
+    #transactionModal .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    #transactionModal .table td,
+    #transactionModal .table th {
+        word-wrap: break-word;
+        overflow-x: auto;
+        width: auto;
+    }
+    #transactionModal .table td::-webkit-scrollbar{
+        display: none;
+    }
+    #transactionModal .table td ul {
+        padding: 0;
     }
 </style>
 
@@ -27,44 +56,173 @@
 </div>
 {% endif %}
 
+<!-- Student List Modal -->
+<div class="modal fade" id="studentListModal" tabindex="-1" aria-labelledby="studentListTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studentListTitle">Students in Batch</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentListBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction History Modal -->
+<div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="transactionTitle">Batch Transactions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Type</th>
+                            <th>Details</th>
+                            <th>User</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionListBody"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <a href="#" id="viewMoreLink" class="btn btn-primary">View More</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transfer Students Modal -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="transferModalLabel">Transfer Students</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="transferForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" id="fromBatchId">
+          <div class="mb-3">
+            <label class="form-label">Select Students</label>
+            <select class="form-select modal-select2" id="transferStudents" multiple required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Target Batch</label>
+            <select class="form-select modal-select2" id="toBatch" required>
+              <option value="">Select a batch</option>
+              {% for batch in batches %}
+                {% if batch.batch_status in 'IP YTS' %}
+                  <option value="{{ batch.pk }}">{{ batch.batch_id }} - {{ batch.course.course_name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Reason</label>
+            <textarea class="form-control" id="transferReason" rows="3" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Submit Transfer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Trainer Handover Modal -->
+<div class="modal fade" id="handoverModal" tabindex="-1" aria-labelledby="handoverModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="handoverModalLabel">Trainer Handover</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="handoverForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" id="handoverBatchId">
+          <div class="mb-3">
+            <label class="form-label">New Trainer</label>
+            <select class="form-select modal-select2" id="newTrainer" required></select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Reason</label>
+            <textarea class="form-control" id="handoverReason" rows="3" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Handover Date</label>
+            <input type="date" class="form-control" id="handoverDate" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Submit Handover</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Transfer Requests Modal -->
+<div class="modal fade" id="transferRequestsModal" tabindex="-1" aria-labelledby="transferRequestsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="transferRequestsLabel">Transfer Requests</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="transfer-requests-body">
+        <p class="text-muted">Loading...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
 <div class="list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0"><i class="fas fa-users me-2"></i>Batch List</h2>
+        <h2><i class="fas fa-users me-2"></i>Batch List</h2>
         <div class="d-flex gap-2">
-            <a href="{% url 'batchdb:create_batch' %}" class="btn-primary">
-                <i class="fas fa-plus me-2"></i>Add New Batch
-            </a>
-            <a href="{% url 'batchdb:import_batches' %}" class="btn-secondary">
-                <i class="fas fa-file-import me-2"></i>Import from Excel
-            </a>
+            <a href="{% url 'batchdb:create_batch' %}" class="btn-primary"><i class="fas fa-plus me-1"></i>Add Batch</a>
+            <a href="{% url 'batchdb:import_batches' %}" class="btn-secondary"><i class="fas fa-file-import me-1"></i>Import</a>
         </div>
     </div>
 
+    <!-- Filters -->
     <form method="get" class="filters mb-4">
         <div class="filter-row">
-            <div class="filter-group">
-                {{ form.q.label_tag }}
-                {{ form.q }}
-            </div>
-            <div class="filter-group">
-                {{ form.course.label_tag }}
-                {{ form.course }}
-            </div>
-            <div class="filter-group">
-                {{ form.trainer.label_tag }}
-                {{ form.trainer }}
-            </div>
-            <div class="filter-group">
-                {{ form.batch_status.label_tag }}
-                {{ form.batch_status }}
-            </div>
+            <div class="filter-group">{{ form.q.label_tag }} {{ form.q }}</div>
+            <div class="filter-group">{{ form.course.label_tag }} {{ form.course }}</div>
+            <div class="filter-group">{{ form.trainer.label_tag }} {{ form.trainer }}</div>
+            <div class="filter-group">{{ form.batch_status.label_tag }} {{ form.batch_status }}</div>
         </div>
         <div class="filter-actions">
-            <button type="submit" class="btn-primary">Apply Filters</button>
+            <button type="submit" class="btn-primary">Apply</button>
             <a href="{% url 'batchdb:batch_list' %}" class="btn-secondary">Reset</a>
         </div>
     </form>
 
+    <!-- Batch Table -->
     <div class="table-wrapper">
         <table>
             <thead>
@@ -73,9 +231,9 @@
                     <th>Course</th>
                     <th>Trainer</th>
                     <th>Students</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Time Slot</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Slot</th>
                     <th>Status</th>
                     <th>Actions</th>
                 </tr>
@@ -83,13 +241,15 @@
             <tbody>
                 {% for batch in batches %}
                 <tr>
-                    <td><span class="badge bg-secondary">{{ batch.batch_id }}</span></td>
+                    <td><a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-secondary">{{ batch.batch_id }}</span></a></td>
                     <td>{{ batch.course.course_name }}</td>
                     <td>{{ batch.trainer.name }}</td>
                     <td>
                         <div class="student-list-cell">
-                            {% for student in batch.students.all %}
-                                <span class="badge bg-light text-dark">{{ student.first_name }} {{ student.last_name|default:"" }}</span>
+                            {% for batch_student in batch.batchstudent_set.all %}
+                                {% if batch_student.is_active %}
+                                    <span class="badge bg-light text-dark">{{ batch_student.student.first_name }} {{ batch_student.student.last_name|default:"" }}</span>
+                                {% endif %}
                             {% empty %}
                                 <span class="text-muted">No students</span>
                             {% endfor %}
@@ -99,58 +259,348 @@
                     <td>{{ batch.end_date|date:"d-m-Y" }}</td>
                     <td>{{ batch.get_slottime }}</td>
                     <td>
-                        <span class="badge
-                            {% if batch.batch_status == 'YTS' %}bg-warning text-dark
-                            {% elif batch.batch_status == 'IP' %}bg-success
-                            {% elif batch.batch_status == 'C' %}bg-secondary
-                            {% else %}bg-light text-dark{% endif %}">
+                        <span class="badge {% if batch.batch_status == 'YTS' %}bg-warning text-dark{% elif batch.batch_status == 'IP' %}bg-success{% else %}bg-secondary{% endif %}">
                             {{ batch.get_batch_status_display }}
                         </span>
                     </td>
                     <td>
-                        <div class="d-flex gap-2 justify-content-center">
+                        <div class="d-flex gap-2">
                             <a href="{% url 'batchdb:update_batch' batch.pk %}" class="btn-update"><i class="fas fa-edit"></i></a>
                             <a href="{% url 'batchdb:delete_batch' batch.pk %}" class="btn-danger"><i class="fas fa-trash"></i></a>
+                            <div class="dropdown">
+                                <button class="btn-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#transferModal" data-batch-id="{{ batch.pk }}"><i class="fas fa-exchange-alt me-1"></i>Transfer Students</a></li>
+                                    <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#handoverModal" data-batch-id="{{ batch.pk }}"><i class="fas fa-user-friends me-1"></i>Trainer Handover</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                    <a class="dropdown-item" href="javascript:void(0);" onclick="viewTransferRequests('{{ batch.pk }}')">
+                                        <i class="fas fa-exchange-alt me-1"></i>View Transfer Requests
+                                    </a>
+                                    </li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewStudentList('{{ batch.pk }}')"><i class="fas fa-users me-1"></i>View Students</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewBatchTransactions('{{ batch.pk }}')"><i class="fas fa-history me-1"></i>View Transactions</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="9" class="text-center py-4 text-muted">
-                        <i class="fas fa-search me-2"></i>No batches found.
-                    </td>
-                </tr>
+                <tr><td colspan="9" class="text-center text-muted">No batches found</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
+    <!-- Pagination -->
     <div class="pagination">
-        <span class="step-links">
-            {% if batches.has_previous %}
-                <a href="?page=1&{{ request.GET.urlencode }}">&laquo; first</a>
-                <a href="?page={{ batches.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
-            {% endif %}
-
-            <span class="current">
-                Page {{ batches.number }} of {{ batches.paginator.num_pages }}.
-            </span>
-
-            {% if batches.has_next %}
-                <a href="?page={{ batches.next_page_number }}&{{ request.GET.urlencode }}">next</a>
-                <a href="?page={{ batches.paginator.num_pages }}&{{ request.GET.urlencode }}">last &raquo;</a>
-            {% endif %}
-        </span>
+        {% if batches.has_previous %}
+            <a href="?page=1&{{ request.GET.urlencode }}">&laquo; first</a>
+            <a href="?page={{ batches.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
+        {% endif %}
+        <span>Page {{ batches.number }} of {{ batches.paginator.num_pages }}</span>
+        {% if batches.has_next %}
+            <a href="?page={{ batches.next_page_number }}&{{ request.GET.urlencode }}">next</a>
+            <a href="?page={{ batches.paginator.num_pages }}&{{ request.GET.urlencode }}">last &raquo;</a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+
 <script>
-    $(document).ready(function() {
-        $('.django-select2').select2();
-    });
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
 </script>
+
+
+<script>
+$(document).ready(function() {
+    $('.django-select2').select2();
+    $('#transferModal').on('shown.bs.modal', function () {
+        $('#transferStudents, #toBatch').select2({
+            dropdownParent: $('#transferModal')
+        });
+    });
+
+    $('#handoverModal').on('shown.bs.modal', function () {
+        $('#newTrainer').select2({
+            dropdownParent: $('#handoverModal')
+        });
+    });
+});
+
+// Load Students
+function viewStudentList(batchId) {
+    $('#studentListModal').modal('show');
+    $.get("{% url 'batchdb:get_students_for_batch' %}", { batch_id: batchId }, function(data) {
+        let list = $('#studentListBody').empty();
+        if (data.students.length) {
+            data.students.forEach(s => {
+                if (s.is_active) {
+                    list.append(`<tr>
+                        <td>${s.name}</td><td>${s.email}</td><td>${s.phone}</td>
+                        <td><a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn-info btn-sm"><i class="fas fa-history"></i></a></td>
+                    </tr>`);
+                }
+            });
+        } else list.html("<tr><td colspan='4'>No students</td></tr>");
+    });
+}
+
+// Load Transactions
+function viewBatchTransactions(batchId) {
+    $('#transactionModal').modal('show');
+    var reportUrl = "{% url 'batchdb:batch_report' 0 %}".replace('0', batchId);
+    $('#viewMoreLink').attr('href', reportUrl);
+
+    $.get("{% url 'batchdb:batchdb_api:batchtransaction-list' %}", { batch_id: batchId, page_size: 5 }, function(data) {
+        let list = $('#transactionListBody').empty();
+        let transactions = data.results || data;
+        if (transactions.length) {
+            transactions.slice(0, 5).forEach(t => {
+                let badge = t.transaction_type.includes("ADD") ? "bg-success" :
+                            t.transaction_type.includes("REMOVE") ? "bg-danger" :
+                            t.transaction_type.includes("TRANSFER") ? "bg-warning text-dark" : "bg-info";
+                list.append(`<tr>
+                    <td>${new Date(t.timestamp).toLocaleString()}</td>
+                    <td><span class="badge ${badge}">${t.transaction_type}</span></td>
+                    <td>
+                        ${t.details && typeof t.details === 'object' ?
+                            `<ul>
+                                ${Object.entries(t.details).map(([key, value]) => {
+                                    if (key === "deactivated_at" && value) {
+                                        let dateOnly = new Date(value).toLocaleDateString();
+                                        return `<li><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${dateOnly}</li>`;
+                                    }
+                                    return `<li><strong>${key.charAt(0).toUpperCase() + key.slice(1)}:</strong> ${value}</li>`;
+                                }).join('')}
+                            </ul>` : t.details || '-'
+                        }
+                    </td>
+                    <td>${t.user_name}</td>
+                </tr>`);
+            });
+        } else list.html("<tr><td colspan='4'>No transactions</td></tr>");
+    });
+}
+
+// Transfer Modal
+$('#transferModal').on('show.bs.modal', function (e) {
+    let batchId = $(e.relatedTarget).data('batch-id');
+    $('#fromBatchId').val(batchId);
+    $.get("{% url 'batchdb:get_students_for_batch' %}", { batch_id: batchId }, function(data) {
+        let select = $('#transferStudents').empty();
+        if (data.students.length) {
+            data.students.forEach(s => select.append(`<option value="${s.id}">${s.name}</option>`));
+        } else select.html("<option disabled>No students</option>");
+        select.select2({ placeholder: 'Select students', width: '100%' });
+    });
+});
+
+// Handover Modal
+$('#handoverModal').on('show.bs.modal', function (e) {
+    let batchId = $(e.relatedTarget).data('batch-id');
+    $('#handoverBatchId').val(batchId);
+    $.get("{% url 'batchdb:batchdb_api:available-trainers-for-handover' %}", { batch_id: batchId }, function(data) {
+        let select = $('#newTrainer').empty().append("<option value=''>Select a trainer</option>");
+        if (data.length) {
+            data.forEach(t => select.append(`<option value="${t.id}">${t.name}</option>`));
+        } else select.html("<option disabled>No trainers available</option>");
+        select.select2({ placeholder: 'Select trainer', width: '100%' });
+    });
+});
+
+// Transfer request submit
+$('#transferForm').on('submit', function(e) {
+  e.preventDefault();
+
+  let data = {
+    from_batch: $('#fromBatchId').val(),
+    students: $('#transferStudents').val(),
+    to_batch: $('#toBatch').val(),
+    remarks: $('#transferReason').val()
+  };
+
+  $.ajax({
+    url: "{% url 'batchdb:batchdb_api:transferrequest-list' %}",
+    type: "POST",
+    contentType: "application/json",
+    data: JSON.stringify(data),
+    headers: { "X-CSRFToken": "{{ csrf_token }}" },
+    success: function(response) {
+      $('#transferModal').modal('hide');
+      alert("✅ Transfer request submitted successfully!");
+      location.reload();
+    },
+    error: function(xhr) {
+      alert("❌ Error: " + xhr.responseText);
+    }
+  });
+});
+
+// Trainer handover submit
+$('#handoverForm').on('submit', function(e) {
+  e.preventDefault();
+
+  let data = {
+    batch: $('#handoverBatchId').val(),
+    new_trainer: $('#newTrainer').val(),
+    reason: $('#handoverReason').val(),
+    handover_date: $('#handoverDate').val()
+  };
+
+  $.ajax({
+    url: "{% url 'batchdb:batchdb_api:trainerhandover-list' %}",
+    type: "POST",
+    contentType: "application/json",
+    data: JSON.stringify(data),
+    headers: { "X-CSRFToken": "{{ csrf_token }}" },
+    success: function(response) {
+      $('#handoverModal').modal('hide');
+      alert("✅ Trainer handover submitted successfully!");
+      location.reload();
+    },
+    error: function(xhr) {
+      alert("❌ Error: " + xhr.responseText);
+    }
+  });
+});
+
+</script>
+<!-- Transfer Request  -->
+<script>
+function viewTransferRequests(batchId) {
+    $("body").data("current-batch", batchId);  
+    $("#transfer-requests-body").html("<p class='text-muted'>Loading...</p>");
+    $("#transferRequestsModal").modal("show");
+
+    $.ajax({
+        url: "/batches/api/transfer-requests/?to_batch=" + batchId, 
+        type: "GET",
+        success: function(data) {
+            if (data.length === 0) {
+                $("#transfer-requests-body").html("<p class='text-muted'>No transfer requests found.</p>");
+                return;
+            }
+
+            let html = `
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>From Batch</th>
+                            <th>To Batch</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(req => {
+                let studentNames = req.students_data.map(s => s.name).join(", ");
+                let studentIds = req.students_data.map(s => s.id).join(", ");
+                html += `
+                    <tr>
+                        <td>${studentNames}[${studentIds}]</td>
+                        <td>${req.from_batch_code}</td>
+                        <td>${req.to_batch_code}</td>
+                        <td>
+                            <span class="badge ${req.status === 'PENDING' ? 'bg-warning' : req.status === 'approved' ? 'bg-success' : 'bg-danger'}">
+                                ${req.status}
+                            </span>
+                        </td>
+                        <td>
+                            ${req.status === "PENDING" ? `
+                                <button class="" onclick="updateTransferStatus(${req.id}, 'approve')">Approve</button>
+                                <button class="" onclick="updateTransferStatus(${req.id}, 'rejecte')">Reject</button>
+                            ` : "-"}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+            $("#transfer-requests-body").html(html);
+        },
+        error: function() {
+            $("#transfer-requests-body").html("<p class='text-danger'>Failed to load requests.</p>");
+        }
+    });
+}
+
+
+function updateTransferStatus(requestId, actionType) {
+    let url = `/batches/api/transfer-requests/${requestId}/${actionType}/`;
+    let data = {};
+
+    if (actionType === "approve") {
+        data = {
+            approved_students: [],  // optional
+            remarks: "Approved via modal"
+        };
+    } else if (actionType === "reject") {
+        data = { remarks: "Rejected via modal" };
+    }
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(data),
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+        dataType: "json",           // 🔑 important
+        success: function(response) {
+            let currentBatch = $("body").data("current-batch");
+            viewTransferRequests(currentBatch); // reload modal
+            // show message properly
+            const toastHtml = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+                ${response.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            $("body").prepend(toastHtml);
+        },
+        error: function(xhr) {
+            const msg = xhr.responseJSON?.message || JSON.stringify(xhr.responseJSON) || xhr.responseText;
+            const toastHtml = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ❌ ${msg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            $("body").prepend(toastHtml);
+        }
+    });
+}
+
+
+
+// Delegated event handlers for dynamically added buttons
+$('#transfer-requests-body').on('click', '.approve-btn', function() {
+    let requestId = $(this).data('id');
+    updateTransferStatus(requestId, 'approved');
+});
+
+$('#transfer-requests-body').on('click', '.reject-btn', function() {
+    let requestId = $(this).data('id');
+    updateTransferStatus(requestId, 'rejected');
+});
+
+</script>
+
 {{ form.media.js }}
 {% endblock %}
 

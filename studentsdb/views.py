@@ -546,9 +546,33 @@ def student_report(request, student_id):
 
     # Sort the data by the earliest interview date, most recent first
     company_interview_data.sort(key=lambda x: x['earliest_interview_date'], reverse=True)
+    
+    # Get batch history for the student
+    from batchdb.models import Batch, BatchStudent, BatchTransaction
+    
+    # Get current batches (active batches)
+    current_batches = Batch.objects.filter(
+        batchstudent__student_id=student.id,
+        batch_status__in=['ACTIVE', 'SCHEDULED']
+    ).select_related('course', 'trainer')
+    
+    # Get previous batches (completed or inactive batches)
+    previous_batches = Batch.objects.filter(
+        batchstudent__student_id=student.id,
+        batch_status__in=['COMPLETED', 'CANCELLED']
+    ).select_related('course', 'trainer')
+    
+    # Get batch transactions for this student
+    transactions = BatchTransaction.objects.filter(
+        batch__batchstudent__student_id=student.id,
+        transaction_type__in=['ADD_STUDENT', 'REMOVE_STUDENT', 'TRANSFER_STUDENT']
+    ).select_related('batch', 'user').order_by('-timestamp')
 
     context = {
         'student': student,
         'company_interview_data': company_interview_data,
+        'current_batches': current_batches,
+        'previous_batches': previous_batches,
+        'transactions': transactions,
     }
     return render(request, 'studentsdb/student_report.html', context)
