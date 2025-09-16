@@ -8,12 +8,15 @@ import pandas as pd
 from django.http import HttpResponse
 from io import BytesIO
 import csv
+from django.db import IntegrityError, models
+from django.core.exceptions import ObjectDoesNotExist
+from django.apps import apps
 
 from coursedb.models import Course, CourseCategory
 from studentsdb.models import Student
 from trainersdb.models import Trainer
 from consultantdb.models import Consultant
-from batchdb.models import Batch
+from batchdb.models import Batch, BatchStudent
 from paymentdb.models import Payment
 from placementdb.models import Placement, CompanyInterview
 from placementdrive.models import Company
@@ -146,7 +149,14 @@ def import_data(request):
         xls = pd.ExcelFile(excel_file)
         
         with transaction.atomic():
-            for sheet_name in xls.sheet_names:
+            sheet_order = [
+                'SourceOfJoining', 'PaymentAccounts', 'CourseCategories', 'Courses',
+                'Trainers', 'Consultants', 'Users', 'Students', 'Batches',
+                'Payments', 'PlacementDrives', 'Placements', 'CompanyInterviews'
+            ]
+            for sheet_name in sheet_order:
+                if sheet_name not in xls.sheet_names:
+                    continue
                 df = pd.read_excel(xls, sheet_name).replace({pd.NaT: None, float('nan'): None})
                 model = None
                 if sheet_name == 'Students': model = Student
@@ -165,7 +175,43 @@ def import_data(request):
 
                 if model:
                     for _, row in df.iterrows():
-                        model.objects.update_or_create(id=row['id'], defaults=row.to_dict())
+                        row_data = row.to_dict()
+                        
+                        if sheet_name == 'Trainers':
+                            for field in ['timing_slots', 'commercials']:
+                                if field in row_data and isinstance(row_data[field], str):
+                                    try:
+                                        row_data[field] = json.loads(row_data[field].replace("'", '"'))
+                                    except json.JSONDecodeError:
+                                        row_data[field] = []
+
+                        # Handle foreign key relationships
+                        for field, value in row_data.items():
+                            if isinstance(value, float) and pd.isna(value):
+                                row_data[field] = None
+                            elif field.endswith('_id') and value is not None:
+                                # This is a simplified approach. A more robust solution would map model names to app labels.
+                                # For now, we'll assume the related model is in the same app or a known app.
+                                pass
+                        try:
+                            # Separate foreign key fields
+                            fk_fields = {}
+                            for field in model._meta.fields:
+                                if isinstance(field, models.ForeignKey):
+                                    fk_fields[field.name + '_id'] = row_data.pop(field.name + '_id', None)
+
+                            # Create or update the object without the foreign keys
+                            obj, created = model.objects.update_or_create(id=row_data.pop('id'), defaults=row_data)
+
+                            # Set the foreign keys separately
+                            for field, value in fk_fields.items():
+                                if value is not None:
+                                    setattr(obj, field, value)
+                            obj.save()
+
+                        except (IntegrityError, ObjectDoesNotExist) as e:
+                            print(f"Error importing row for {sheet_name}: {row_data} - {e}")
+                            continue
 
         return redirect('settings_dashboard')
     return render(request, 'settingsdb/import_data.html')
@@ -291,3 +337,23 @@ def manage_2fa(request):
         'user_settings': user_settings,
     }
     return render(request, 'settingsdb/manage_2fa.html', context)
+@staff_member_required
+def delete_all_data(request):
+    models_to_truncate = [
+        Payment, CompanyInterview, Placement, BatchStudent, Batch, Student,
+        Course, CourseCategory, Trainer, Consultant, CustomUser,
+        SourceOfJoining, PaymentAccount, Company
+    ]
+
+    if request.method == 'POST':
+        for model in models_to_truncate:
+            model.objects.all().delete()
+        return redirect('settings_dashboard')
+
+    return render(request, 'settingsdb/delete_all_data.html', {
+        'models_to_truncate': [model.__name__ for model in models_to_truncate]
+    })
+
+@staff_member_required
+def settings_view(request):
+    return render(request, 'settingsdb/settings.html')

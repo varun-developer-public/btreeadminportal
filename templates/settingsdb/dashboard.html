@@ -15,6 +15,7 @@
         {% if request.user.role == 'admin' %}
         <li style="margin-bottom: 10px;"><a href="{% url 'transaction_log' %}" class="btn">View Transaction Logs</a></li>
         {% endif %}
+        <li style="margin-bottom: 10px;"><a href="{% url 'settings' %}" class="btn">Settings</a></li>
     </ul>
     <a href="{% url 'admin:index' %}" class="btn btn-secondary">Go to Django Admin</a>
 </div>

@@ -129,10 +129,20 @@ def create_db_backup():
 def upload_to_gdrive(file_path):
     remote_path = f"{RCLONE_REMOTE}:{RCLONE_BACKUP_DIR}"
     try:
-        # Use rclone copy instead of move to avoid cross-remote issues
-        cmd = ['rclone', 'copy', file_path, remote_path, '--transfers', '4', '--checkers', '8']
+        # Use rclone with explicit parameters to avoid backup-dir issues
+        # First, create the destination directory if it doesn't exist
+        mkdir_cmd = ['rclone', 'mkdir', remote_path]
+        try:
+            subprocess.run(mkdir_cmd, check=True)
+            logger.info(f"Ensured remote directory exists: {remote_path}")
+        except subprocess.CalledProcessError:
+            logger.warning(f"Could not create directory {remote_path}, it may already exist")
+        
+        # Use copyto instead of copy to be more explicit about the destination
+        filename = os.path.basename(file_path)
+        cmd = ['rclone', 'copyto', file_path, f"{remote_path}/{filename}", '--no-traverse']
         subprocess.run(cmd, check=True)
-        logger.info(f"Backup uploaded to Google Drive: {os.path.basename(file_path)}")
+        logger.info(f"Backup uploaded to Google Drive: {filename}")
         
         # Delete the local file after successful upload
         os.remove(file_path)
@@ -145,20 +155,22 @@ def upload_to_gdrive(file_path):
 def cleanup_old_backups():
     remote_path = f"{RCLONE_REMOTE}:{RCLONE_BACKUP_DIR}"
     try:
-        # First, check if the remote directory exists
-        check_cmd = ['rclone', 'lsf', remote_path]
-        result = subprocess.run(check_cmd, capture_output=True, text=True)
-        
-        if result.returncode != 0:
-            # Directory doesn't exist, create it
-            mkdir_cmd = ['rclone', 'mkdir', remote_path]
+        # First, ensure the remote directory exists
+        mkdir_cmd = ['rclone', 'mkdir', remote_path]
+        try:
             subprocess.run(mkdir_cmd, check=True)
-            logger.info(f"Created remote directory: {remote_path}")
-            return True  # No files to clean up in a new directory
+            logger.info(f"Ensured remote directory exists: {remote_path}")
+        except subprocess.CalledProcessError:
+            # Directory likely already exists, continue
+            pass
             
-        # List all files in the backup directory
-        list_cmd = ['rclone', 'lsf', '--format', 'tp', remote_path]
-        result = subprocess.run(list_cmd, capture_output=True, text=True, check=True)
+        # List all files in the backup directory with a more reliable command
+        list_cmd = ['rclone', 'lsf', remote_path, '--format', 'tp']
+        result = subprocess.run(list_cmd, capture_output=True, text=True)
+        
+        if result.returncode != 0 or not result.stdout.strip():
+            logger.info(f"No files found in remote directory or directory is empty")
+            return True  # No files to clean up
         
         # Calculate the cutoff date
         cutoff_date = datetime.datetime.now() - datetime.timedelta(days=BACKUP_RETENTION_DAYS)
@@ -176,8 +188,8 @@ def cleanup_old_backups():
             try:
                 date_part = filename.split('_')[1]  # Extract YYYY-MM-DD part
                 if date_part < cutoff_str:
-                    # Delete the file
-                    delete_cmd = ['rclone', 'deletefile', f"{remote_path}/{filename}"]
+                    # Delete the file with a more explicit command
+                    delete_cmd = ['rclone', 'delete', f"{remote_path}/{filename}", '--no-traverse']
                     subprocess.run(delete_cmd, check=True)
                     deleted_count += 1
                     logger.info(f"Deleted old backup: {filename}")

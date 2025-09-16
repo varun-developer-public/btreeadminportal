@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm Delete All Data{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Confirm Deletion of All Data</h2>
+    <div class="alert alert-danger" role="alert">
+        <strong>Warning!</strong> You are about to permanently delete all data from the following tables:
+        <ul>
+            {% for model_name in models_to_truncate %}
+                <li>{{ model_name }}</li>
+            {% endfor %}
+        </ul>
+        This action is irreversible and cannot be undone.
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">I understand, delete all data</button>
+        <a href="{% url 'settings_dashboard' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}
