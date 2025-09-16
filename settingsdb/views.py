@@ -1,16 +1,18 @@
 from django.contrib.admin.views.decorators import staff_member_required
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, render, redirect
-from .models import SourceOfJoining, PaymentAccount, TransactionLog, UserSettings
-from .forms import SourceForm, PaymentAccountForm, UserSettingsForm
+from .models import SourceOfJoining, PaymentAccount, TransactionLog, UserSettings, DBBackupImport
+from .forms import SourceForm, PaymentAccountForm, UserSettingsForm, DBBackupImportForm
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import pandas as pd
 from django.http import HttpResponse
 from io import BytesIO
 import csv
-from django.db import IntegrityError, models
+from django.db import IntegrityError, models, connections
 from django.core.exceptions import ObjectDoesNotExist
 from django.apps import apps
+from django.contrib import messages
+from django.utils import timezone
 
 from coursedb.models import Course, CourseCategory
 from studentsdb.models import Student
@@ -26,6 +28,8 @@ import json
 import pyotp
 import qrcode
 import base64
+
+from .db_utils import get_current_db_engine, import_sql_backup
 
 
 @staff_member_required
@@ -357,3 +361,72 @@ def delete_all_data(request):
 @staff_member_required
 def settings_view(request):
     return render(request, 'settingsdb/settings.html')
+
+
+def is_superuser(user):
+    return user.is_superuser
+
+@user_passes_test(is_superuser)
+def import_db_backup(request):
+    """
+    View for importing database backup (SQL file).
+    Only accessible to superusers.
+    """
+    # Get current database engine
+    db_engine = get_current_db_engine()
+    db_engine_display = {
+        'sqlite': 'SQLite',
+        'postgresql': 'PostgreSQL',
+        'mysql': 'MySQL',
+        'unknown': 'Unknown'
+    }.get(db_engine, db_engine.capitalize())
+    
+    # Get recent imports
+    recent_imports = DBBackupImport.objects.order_by('-uploaded_at')[:5]
+    
+    if request.method == 'POST':
+        form = DBBackupImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            # Create the import record but don't save it yet
+            db_import = form.save(commit=False)
+            db_import.imported_by = request.user
+            db_import.status = 'PROCESSING'
+            db_import.save()
+            
+            # Process the uploaded file
+            try:
+                success, message, tables_affected = import_sql_backup(
+                    db_import.uploaded_file.path, 
+                    request.user
+                )
+                
+                # Update the import record
+                db_import.processed_at = timezone.now()
+                db_import.status = 'COMPLETED' if success else 'FAILED'
+                db_import.error_message = None if success else message
+                db_import.db_engine_used = db_engine
+                db_import.tables_affected = tables_affected
+                db_import.save()
+                
+                if success:
+                    messages.success(request, f"Database backup imported successfully. Affected {len(tables_affected)} tables.")
+                else:
+                    messages.error(request, f"Error importing database backup: {message}")
+                    
+            except Exception as e:
+                # Handle any unexpected errors
+                db_import.processed_at = timezone.now()
+                db_import.status = 'FAILED'
+                db_import.error_message = str(e)
+                db_import.save()
+                messages.error(request, f"Unexpected error importing database backup: {str(e)}")
+            
+            return redirect('import_db_backup')
+    else:
+        form = DBBackupImportForm()
+    
+    return render(request, 'settingsdb/import_db_backup.html', {
+        'form': form,
+        'db_engine': db_engine_display,
+        'recent_imports': recent_imports
+    })

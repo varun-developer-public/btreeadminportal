@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Import DB Backup{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Import Database Backup</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Current Database Configuration</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Database Engine:</strong> {{ db_engine }}</p>
+            <p class="text-muted">The uploaded SQL backup will be imported into this database engine.</p>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5>Upload SQL Backup File</h5>
+        </div>
+        <div class="card-body">
+            <p>Upload a SQL backup file (.sql) to import into the current database.</p>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                        {% if field.errors %}
+                            <div class="text-danger">
+                                {% for error in field.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <button type="submit" class="btn btn-primary">Import Backup</button>
+            </form>
+        </div>
+    </div>
+    
+    {% if recent_imports %}
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5>Recent Import History</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Uploaded At</th>
+                        <th>Status</th>
+                        <th>DB Engine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for import_record in recent_imports %}
+                    <tr>
+                        <td>{{ import_record.file_name }}</td>
+                        <td>{{ import_record.uploaded_at }}</td>
+                        <td>
+                            {% if import_record.status == 'COMPLETED' %}
+                                <span class="badge badge-success">Completed</span>
+                            {% elif import_record.status == 'FAILED' %}
+                                <span class="badge badge-danger">Failed</span>
+                            {% elif import_record.status == 'PROCESSING' %}
+                                <span class="badge badge-warning">Processing</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ import_record.db_engine_used }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
