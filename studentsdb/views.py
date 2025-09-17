@@ -152,8 +152,6 @@ def update_student(request, student_id):
         # Debug form validation
         form_valid = form.is_valid()
         placement_form_valid = placement_form.is_valid()
-        print(f"Form valid: {form_valid}, Placement form valid: {placement_form_valid}")
-        
         if form_valid and placement_form_valid:
             try:
                 updated_student = form.save(commit=False)
@@ -177,10 +175,13 @@ def update_student(request, student_id):
                 messages.error(request, f"Error saving student: {str(e)}", extra_tags='student_message')
             # === Placement Sync Logic ===
             if updated_student.pl_required:
-                # Create if not exists
-                Placement.objects.get_or_create(student=updated_student)
+                # Activate placement if exists or create new
+                placement, created = Placement.objects.get_or_create(student=updated_student)
+                if not created and not placement.is_active:
+                    placement.is_active = True
+                    placement.save()
             else:
-                # Remove placement if exists
+                # Only deactivate if currently active
                 Placement.objects.filter(student=updated_student).delete()
 
             messages.success(request, f"{updated_student.student_id} updated successfully.", extra_tags='student_message')
