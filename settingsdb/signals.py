@@ -100,7 +100,7 @@ def track_save(sender, instance, created, **kwargs):
         return
 
     user = get_current_user()
-    if user is None:
+    if user is None or not user.pk:
         return
 
     app_label = sender._meta.app_label

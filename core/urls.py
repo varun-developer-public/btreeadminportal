@@ -18,6 +18,7 @@ urlpatterns = [
     path('coursedb/', include('coursedb.urls')),
     path('placement-drive/', include('placementdrive.urls')),
     path('api/', include('coursedb.api_urls')),
+    path('api/', include('batchdb.api_urls')),
 ]
 
 

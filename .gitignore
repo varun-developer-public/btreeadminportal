@@ -1,2 +1,12 @@
-db.sqlite3
 /media/
+# Django
+
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+
+# IDE files
+.idea/
+.vscode/

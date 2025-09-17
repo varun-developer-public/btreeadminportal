@@ -206,12 +206,20 @@ def get_trainer_slots(request):
 
 @login_required
 def get_students_for_course(request):
-    course_id = request.GET.get('course_id')
-    students = Student.objects.filter(
-        course_id=course_id,
-        course_status__in=['YTS', 'IP']
-    ).values('id', 'first_name', 'last_name')
-    return JsonResponse(list(students), safe=False)
+   course_id = request.GET.get('course_id')
+   exclude_students_in_any_batch = request.GET.get('exclude_students_in_any_batch', 'false').lower() == 'true'
+
+   students = Student.objects.filter(
+       course_id=course_id,
+       course_status__in=['YTS', 'IP']
+   )
+
+   if exclude_students_in_any_batch:
+       active_student_ids = BatchStudent.objects.filter(is_active=True).values_list('student_id', flat=True)
+       students = students.exclude(id__in=active_student_ids)
+
+   student_data = list(students.values('id', 'first_name', 'last_name'))
+   return JsonResponse(student_data, safe=False)
 
 # API ViewSets
 
@@ -285,64 +293,42 @@ class BatchViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def add_student(self, request, pk=None):
-        batch = self.get_object()
-        student_id = request.data.get('student_id')
-        
-        if not student_id:
-            return Response({'error': 'Student ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            student = Student.objects.get(pk=student_id)
-        except Student.DoesNotExist:
-            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
-            
-        # Check if student is already in this batch
-        if BatchStudent.objects.filter(batch=batch, student=student).exists():
-            batch_student = BatchStudent.objects.get(batch=batch, student=student)
-            if batch_student.is_active:
-                return Response({'error': 'Student is already active in this batch'}, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                # Reactivate the student
-                batch_student.activate(user=request.user)
-                return Response({'message': 'Student reactivated in batch'}, status=status.HTTP_200_OK)
-        
-        # Check for timing conflicts with other active batches
-        active_batches = BatchStudent.objects.filter(student=student, is_active=True).values_list('batch', flat=True)
-        conflicting_batches = Batch.objects.filter(
-            id__in=active_batches,
-            start_time__lt=batch.end_time,
-            end_time__gt=batch.start_time
-        )
-        
-        if conflicting_batches.exists():
-            return Response({
-                'error': 'Student has timing conflicts with other active batches',
-                'conflicting_batches': [b.batch_id for b in conflicting_batches]
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Add student to batch
-        batch_student = BatchStudent.objects.create(
-            batch=batch,
-            student=student,
-            is_active=True,
-            activated_at=datetime.now()
-        )
-        
-        # Log the transaction
-        BatchTransaction.log_transaction(
-            batch=batch,
-            transaction_type='STUDENT_ADDED',
-            user=request.user,
-            details={
-                'student_id': student.id,
-                'student_name': str(student),
-                'activated_at': str(batch_student.activated_at)
-            },
-            affected_students=[student]
-        )
-        
-        serializer = BatchStudentSerializer(batch_student)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+       batch = self.get_object()
+       student_ids = request.data.get('student_ids', [])
+
+       if not student_ids:
+           return Response({'error': 'Student IDs are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+       students_added = []
+       errors = []
+
+       for student_id in student_ids:
+           try:
+               student = Student.objects.get(pk=student_id)
+           except Student.DoesNotExist:
+               errors.append({'student_id': student_id, 'error': 'Student not found'})
+               continue
+
+           if BatchStudent.objects.filter(batch=batch, student=student, is_active=True).exists():
+               errors.append({'student_id': student_id, 'error': 'Student is already active in this batch'})
+               continue
+
+           # Add student to batch
+           batch_student, created = BatchStudent.objects.get_or_create(
+               batch=batch,
+               student=student,
+               defaults={'is_active': True, 'activated_at': timezone.now()}
+           )
+
+           if not created and not batch_student.is_active:
+               batch_student.activate(user=request.user)
+
+           students_added.append(student)
+
+       if errors:
+           return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+
+       return Response({'message': f'{len(students_added)} students added successfully'}, status=status.HTTP_200_OK)
             
     @action(detail=False, methods=['get'])
     def transactions(self, request):
@@ -756,6 +742,27 @@ def get_students_by_course(request):
     
     students = students_query.values('id', 'name', 'email', 'phone')
     return JsonResponse(list(students), safe=False)
+
+@login_required
+def get_students_not_in_batch(request):
+   """
+   AJAX view to get students who are not in any active batch.
+   """
+   search_term = request.GET.get('q', '')
+   
+   # Get IDs of students who are already in an active batch
+   active_student_ids = BatchStudent.objects.filter(is_active=True).values_list('student_id', flat=True)
+   
+   # Filter students who are not in the active list
+   students = Student.objects.exclude(id__in=active_student_ids)
+   
+   if search_term:
+       students = students.filter(
+           Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term)
+       )
+       
+   student_data = list(students.values('id', 'first_name', 'last_name'))
+   return JsonResponse(student_data, safe=False)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

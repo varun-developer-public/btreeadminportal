@@ -1,4 +1,5 @@
 import re
+import csv
 import os
 import tempfile
 import subprocess
@@ -107,31 +108,52 @@ def convert_postgres_to_sqlite(sql_statement):
         
         logger.debug(f"Converted CREATE TABLE result: {sql[:100]}...")
     
-    # Handle INSERT statements
-    elif re.search(r'\bINSERT\s+INTO\b', sql, flags=re.IGNORECASE):
-        logger.debug(f"Converting INSERT statement: {sql[:100]}...")
-        # Fix PostgreSQL-specific syntax for INSERT statements
-        # Replace true/false with 1/0 for SQLite
-        sql = re.sub(r'\btrue\b', '1', sql, flags=re.IGNORECASE)
-        sql = re.sub(r'\bfalse\b', '0', sql, flags=re.IGNORECASE)
+    # Handle COPY statements
+    elif re.search(r'\bCOPY\b', sql, flags=re.IGNORECASE):
+        logger.debug(f"Converting COPY statement: {sql[:100]}...")
         
-        # Handle PostgreSQL-specific date/time literals
-        sql = re.sub(r"'\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\.\d+[+-]\d{2}'::timestamp with time zone", 
-                     lambda m: m.group().split('::')[0], sql)
-        sql = re.sub(r"'[^']*'::timestamp(?:\s+with(?:out)?\s+time\s+zone)?", 
-                     lambda m: m.group().split('::')[0], sql)
-        sql = re.sub(r"'[^']*'::date", lambda m: m.group().split('::')[0], sql)
+        # Extract table name and columns from COPY statement
+        copy_match = re.search(r'COPY\s+([\w\.]+)\s+\((.*?)\)\s+FROM\s+stdin;', sql, re.DOTALL | re.IGNORECASE)
+        if not copy_match:
+            return None
+            
+        table_name = copy_match.group(1).split('.')[-1]
+        columns = [col.strip() for col in copy_match.group(2).split(',')]
         
-        # Handle other PostgreSQL type casts
-        sql = re.sub(r"'[^']*'::\w+", lambda m: m.group().split('::')[0], sql)
+        # Extract data from the COPY statement
+        data_lines = sql.splitlines()[1:-1] # Exclude COPY line and '\.'
         
-        # Handle NULL::type syntax
-        sql = re.sub(r'NULL::\w+', 'NULL', sql, flags=re.IGNORECASE)
-        
-        # Fix NULL values that might be incorrectly formatted
-        sql = re.sub(r"'NULL'", 'NULL', sql, flags=re.IGNORECASE)
-        
-        logger.debug(f"Converted INSERT result: {sql[:100]}...")
+        # Generate INSERT statements
+        insert_statements = []
+        for line in data_lines:
+            # Use csv module to handle tab-separated data robustly
+            # This handles escaped characters and quotes better.
+            reader = csv.reader([line], delimiter='\t', quotechar='"')
+            values = next(reader)
+
+            if len(values) != len(columns):
+                logger.warning(f"Skipping line due to column mismatch. Expected {len(columns)}, got {len(values)}. Line: {line}")
+                continue
+
+            formatted_values = []
+            for val in values:
+                if val == r'\N':
+                    formatted_values.append('NULL')
+                else:
+                    # Escape single quotes for SQL
+                    val = val.replace("'", "''")
+                    # Handle boolean values
+                    if val.lower() == 't':
+                        formatted_values.append('1')
+                    elif val.lower() == 'f':
+                        formatted_values.append('0')
+                    else:
+                        formatted_values.append(f"'{val}'")
+            
+            insert_sql = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({', '.join(formatted_values)});"
+            insert_statements.append(insert_sql)
+            
+        return "\n".join(insert_statements)
     
     return sql
 
@@ -275,8 +297,31 @@ def import_sql_backup(file_path, user):
             converted_stmt = stmt
             
         if converted_stmt:
-            converted_statements.append(converted_stmt)
+            # The conversion might return multiple statements (e.g., for COPY)
+            converted_statements.extend(converted_stmt.splitlines())
     
+    # Define the correct insertion order based on model dependencies
+    insertion_order = [
+        'accounts_customuser', 'consultantdb_consultant', 'coursedb_coursecategory', 'settingsdb_sourceofjoining',
+        'settingsdb_paymentaccount', 'placementdrive_company', 'trainersdb_trainer',
+        'consultantdb_consultantprofile', 'consultantdb_goal', 'consultantdb_achievement', 'coursedb_course',
+        'settingsdb_usersettings', 'settingsdb_dbbackupimport', 'settingsdb_transactionlog',
+        'batchdb_batch', 'coursedb_coursemodule', 'coursedb_topic', 'paymentdb_payment', 'placementdb_placement',
+        'placementdrive_resumesharedstatus', 'studentsdb_student',
+        'batchdb_batchstudent', 'batchdb_batchtransaction', 'batchdb_trainerhandover', 'batchdb_transferrequest',
+        'placementdb_companyinterview', 'placementdrive_interview',
+        'placementdrive_interviewstudent'
+    ]
+
+    # Group statements by table
+    grouped_statements = {table: [] for table in insertion_order}
+    for stmt in converted_statements:
+        match = re.search(r'INSERT\s+INTO\s+([\w_]+)', stmt, re.IGNORECASE)
+        if match:
+            table_name = match.group(1)
+            if table_name in grouped_statements:
+                grouped_statements[table_name].append(stmt)
+
     # Execute the converted statements
     try:
         success_count = 0
@@ -284,48 +329,47 @@ def import_sql_backup(file_path, user):
         error_messages = []
         skipped_count = 0
         
-        # Get database connection and cursor
+        # Get database connection
         connection = connections['default']
-        cursor = connection.cursor()
         
-        # Log the number of statements to execute
-        logger.info(f"Executing {len(converted_statements)} SQL statements")
-        
-        for i, stmt in enumerate(converted_statements):
-            if not stmt or not stmt.strip():
-                skipped_count += 1
-                continue
-                
-            try:
-                # Log the statement for debugging
-                logger.debug(f"Executing statement {i+1}/{len(converted_statements)}: {stmt[:100]}...")
-                
-                # For SQLite, wrap each statement in its own transaction
-                if current_engine == 'sqlite':
+        # Use transaction.atomic() to ensure all statements are committed
+        with transaction.atomic():
+            cursor = connection.cursor()
+            
+            # Log the number of statements to execute
+            logger.info(f"Executing {len(converted_statements)} SQL statements within a transaction")
+
+            # For SQLite, disable foreign keys for the entire import
+            if current_engine == 'sqlite':
+                cursor.execute('PRAGMA foreign_keys = OFF;')
+            
+            for table_name in insertion_order:
+                for i, stmt in enumerate(grouped_statements[table_name]):
+                    if not stmt or not stmt.strip():
+                        skipped_count += 1
+                        continue
+                        
                     try:
-                        cursor.execute('BEGIN')
+                        # Log the statement for debugging
+                        logger.debug(f"Executing statement for {table_name}: {stmt[:100]}...")
+                        
                         cursor.execute(stmt)
-                        cursor.execute('COMMIT')
                         success_count += 1
+                            
                     except Exception as e:
-                        cursor.execute('ROLLBACK')
-                        logger.error(f"SQLite transaction error: {str(e)}")
-                        raise e
-                else:
-                    # For other engines, just execute the statement
-                    cursor.execute(stmt)
-                    success_count += 1
-                    
-            except Exception as e:
-                error_count += 1
-                error_msg = f"Error executing statement {i+1}: {str(e)}\nStatement: {stmt[:200]}..."
-                logger.warning(error_msg)
-                error_messages.append(error_msg)
-                # Continue with next statement instead of failing completely
-                continue
+                        error_count += 1
+                        error_msg = f"Error executing statement for {table_name}: {str(e)}\nStatement: {stmt[:200]}..."
+                        logger.warning(error_msg)
+                        error_messages.append(error_msg)
+                        # Continue with next statement instead of failing completely
+                        continue
+
+            # For SQLite, re-enable foreign keys
+            if current_engine == 'sqlite':
+                cursor.execute('PRAGMA foreign_keys = ON;')
         
         # Log summary
-        logger.info(f"SQL import completed: {success_count} statements succeeded, {error_count} failed, {skipped_count} skipped")
+        logger.info(f"SQL import transaction completed: {success_count} statements succeeded, {error_count} failed, {skipped_count} skipped")
         
         if error_count > 0:
             # If there were some errors but also some successes, return partial success

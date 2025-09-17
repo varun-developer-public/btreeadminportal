@@ -156,26 +156,15 @@ def update_student(request, student_id):
         
         if form_valid and placement_form_valid:
             try:
-                # Debug information
-                print(f"Before save - Student ID: {student.student_id}, First name: {student.first_name}")
-                
                 updated_student = form.save(commit=False)
                 
-                # Debug information
-                print(f"After form.save(commit=False) - Student ID: {updated_student.student_id}, First name: {updated_student.first_name}")
-
-                # Get course_id from the form and assign it to the student
                 course = form.cleaned_data.get('course')
                 if course:
                     updated_student.course_id = course.id
 
-                # Auto-set end_date if not already set
                 if not updated_student.end_date:
                     updated_student.end_date = updated_student.enrollment_date + relativedelta(months=4)
 
-                # Debug information
-                print(f"Before final save - Student ID: {updated_student.student_id}, First name: {updated_student.first_name}")
-                
                 # Set current user for transaction logging
                 from settingsdb.signals import set_current_user
                 set_current_user(request.user)
@@ -548,31 +537,12 @@ def student_report(request, student_id):
     company_interview_data.sort(key=lambda x: x['earliest_interview_date'], reverse=True)
     
     # Get batch history for the student
-    from batchdb.models import Batch, BatchStudent, BatchTransaction
-    
-    # Get current batches (active batches)
-    current_batches = Batch.objects.filter(
-        batchstudent__student_id=student.id,
-        batch_status__in=['ACTIVE', 'SCHEDULED']
-    ).select_related('course', 'trainer')
-    
-    # Get previous batches (completed or inactive batches)
-    previous_batches = Batch.objects.filter(
-        batchstudent__student_id=student.id,
-        batch_status__in=['COMPLETED', 'CANCELLED']
-    ).select_related('course', 'trainer')
-    
-    # Get batch transactions for this student
-    transactions = BatchTransaction.objects.filter(
-        batch__batchstudent__student_id=student.id,
-        transaction_type__in=['ADD_STUDENT', 'REMOVE_STUDENT', 'TRANSFER_STUDENT']
-    ).select_related('batch', 'user').order_by('-timestamp')
+    from batchdb.models import BatchStudent
+    batch_history = BatchStudent.get_student_batch_history(student)
 
     context = {
         'student': student,
         'company_interview_data': company_interview_data,
-        'current_batches': current_batches,
-        'previous_batches': previous_batches,
-        'transactions': transactions,
+        'batch_history': batch_history,
     }
     return render(request, 'studentsdb/student_report.html', context)

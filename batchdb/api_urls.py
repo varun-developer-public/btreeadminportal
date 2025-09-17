@@ -17,4 +17,6 @@ urlpatterns = [
     path('available-batches-for-transfer/', views.available_batches_for_transfer, name='available-batches-for-transfer'),
     path('available-trainers-for-handover/', views.available_trainers_for_handover, name='available-trainers-for-handover'),
     path('available-batches-for-handover/', views.available_batches_for_handover, name='available-batches-for-handover'),
+    path('batches/<int:pk>/add_student/', views.BatchViewSet.as_view({'post': 'add_student'}), name='batch-add-student'),
+    path('batches/<int:pk>/remove_student/', views.BatchViewSet.as_view({'post': 'remove_student'}), name='batch-remove-student'),
 ]

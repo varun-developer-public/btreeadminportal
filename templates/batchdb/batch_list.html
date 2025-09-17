@@ -81,6 +81,32 @@
     </div>
 </div>
 
+ <!-- Add Student Modal -->
+<div class="modal fade" id="addStudentModal" tabindex="-1" aria-labelledby="addStudentModalLabel" aria-hidden="true">
+   <div class="modal-dialog">
+       <div class="modal-content">
+           <div class="modal-header">
+               <h5 class="modal-title" id="addStudentModalLabel">Add Students to Batch</h5>
+               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+           </div>
+           <form id="addStudentForm">
+               <div class="modal-body">
+                   <input type="hidden" id="addStudentBatchId">
+                   <div class="mb-3">
+                       <label for="studentsToAdd" class="form-label">Select Students</label>
+                       <select class="form-select modal-select2" id="studentsToAdd" multiple required></select>
+                   </div>
+               </div>
+               <div class="modal-footer">
+                   <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                   <button type="submit" class="btn btn-primary">Add Students</button>
+               </div>
+           </form>
+       </div>
+   </div>
+</div>
+
+
 <!-- Transaction History Modal -->
 <div class="modal fade" id="transactionModal" tabindex="-1" aria-labelledby="transactionTitle" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -280,6 +306,7 @@
                                     </li>
                                     <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewStudentList('{{ batch.pk }}')"><i class="fas fa-users me-1"></i>View Students</a></li>
                                     <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewBatchTransactions('{{ batch.pk }}')"><i class="fas fa-history me-1"></i>View Transactions</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#addStudentModal" data-batch-id="{{ batch.pk }}" data-course-id="{{ batch.course.pk }}"><i class="fas fa-user-plus me-1"></i>Add Student</a></li>
                                 </ul>
                             </div>
                         </div>
@@ -344,6 +371,76 @@ $(document).ready(function() {
     });
 });
 
+$('#addStudentModal').on('shown.bs.modal', function (e) {
+   let batchId = $(e.relatedTarget).data('batch-id');
+   let courseId = $(e.relatedTarget).data('course-id');
+   $('#addStudentBatchId').val(batchId);
+
+   $('#studentsToAdd').select2({
+       dropdownParent: $('#addStudentModal'),
+       placeholder: 'Select students',
+       ajax: {
+           url: "{% url 'batchdb:get_students_not_in_batch' %}",
+           dataType: 'json',
+           delay: 250,
+           data: function (params) {
+               return {
+                   q: params.term, // search term
+               };
+           },
+           processResults: function (data) {
+               return {
+                   results: $.map(data, function (item) {
+                       return {
+                           text: item.first_name + ' ' + item.last_name,
+                           id: item.id
+                       }
+                   })
+               };
+           },
+           cache: true
+       }
+   });
+});
+
+$('#addStudentForm').on('submit', function(e) {
+   e.preventDefault();
+   let batchId = $('#addStudentBatchId').val();
+   let studentIds = $('#studentsToAdd').val();
+   $.ajax({
+       url: `/api/batches/${batchId}/add_student/`,
+       type: 'POST',
+       contentType: 'application/json',
+       data: JSON.stringify({ student_ids: studentIds }),
+       headers: { "X-CSRFToken": csrftoken },
+       success: function(response) {
+           $('#addStudentModal').modal('hide');
+           location.reload();
+       },
+       error: function(xhr) {
+           alert("Error: " + xhr.responseText);
+       }
+   });
+});
+
+function removeStudent(batchId, studentId) {
+   if (confirm('Are you sure you want to remove this student from the batch?')) {
+       $.ajax({
+           url: `/api/batches/${batchId}/remove_student/`,
+           type: 'POST',
+           contentType: 'application/json',
+           data: JSON.stringify({ student_id: studentId }),
+           headers: { "X-CSRFToken": csrftoken },
+           success: function(response) {
+               location.reload();
+           },
+           error: function(xhr) {
+               alert("Error: " + xhr.responseText);
+           }
+       });
+   }
+}
+
 // Load Students
 function viewStudentList(batchId) {
     $('#studentListModal').modal('show');
@@ -354,7 +451,9 @@ function viewStudentList(batchId) {
                 if (s.is_active) {
                     list.append(`<tr>
                         <td>${s.name}</td><td>${s.email}</td><td>${s.phone}</td>
-                        <td><a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn-info btn-sm"><i class="fas fa-history"></i></a></td>
+                        <td><a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn-info btn-sm"><i class="fas fa-history"></i></a>
+                        <button class="btn-danger btn-sm" onclick="removeStudent(${batchId}, ${s.id})"><i class="fas fa-user-minus"></i></button>
+                        </td>
                     </tr>`);
                 }
             });

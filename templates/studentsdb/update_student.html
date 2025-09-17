@@ -336,50 +336,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        {% if request.user.role == 'placement' or request.user.is_superuser %}
-        <div class="form-section-card">
-            <div class="form-section-header">
-                <h5 style="color: white;"><i class="fas fa-id-card me-2" style="color: white;"></i>Placement Details</h5>
-            </div>
-            <div class="form-section-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ placement_form.resume_link.id_for_label }}">Resume Link</label>
-                            {{ placement_form.resume_link }}
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="{{ placement_form.is_active.id_for_label }}">Is Active</label>
-                            {{ placement_form.is_active }}
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label for="{{ placement_form.reason_for_inactive.id_for_label }}">Reason for Inactive</label>
-                            {{ placement_form.reason_for_inactive }}
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            {{ form.mock_interview_completed.label_tag }}
-                            {{ form.mock_interview_completed }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            {{ form.placement_session_completed.label_tag }}
-                            {{ form.placement_session_completed }}
-                        </div>
-                    </div>
+                 <div class="row">
                     <div class="col-md-4">
                         <div class="form-group">
                             {{ form.certificate_issued.label_tag }}
@@ -387,30 +344,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            {{ form.onboardingcalldone.label_tag }}
-                            {{ form.onboardingcalldone }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            {{ form.interviewquestion_shared.label_tag }}
-                            {{ form.interviewquestion_shared }}
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            {{ form.resume_template_shared.label_tag }}
-                            {{ form.resume_template_shared }}
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
-        {% endif %}
-
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Update Student</button>
             <a href="{% url 'student_list' %}" class="btn btn-secondary">Cancel</a>

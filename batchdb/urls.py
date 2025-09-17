@@ -28,4 +28,5 @@ urlpatterns = [
     path('ajax/get-trainers-by-course/', views.get_trainers_by_course, name='get_trainers_by_course'),
     path('ajax/get-students-by-course/', views.get_students_by_course, name='get_students_by_course'),
     path('ajax/get-students-for-batch/', views.get_students_for_batch, name='get_students_for_batch'),
+    path('ajax/get-students-not-in-batch/', views.get_students_not_in_batch, name='get_students_not_in_batch'),
 ]

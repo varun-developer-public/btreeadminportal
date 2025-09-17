@@ -153,18 +153,12 @@ class StudentUpdateForm(forms.ModelForm):
             'start_date', 'end_date',
             'pl_required', 'source_of_joining',
             'mode_of_class', 'week_type', 'consultant',
-            'mock_interview_completed', 'placement_session_completed', 'certificate_issued',
-            'onboardingcalldone', 'interviewquestion_shared', 'resume_template_shared'
+            'certificate_issued',
         ]
         widgets = {
             'start_date': forms.DateInput(attrs={'type': 'date'}),
             'end_date': forms.DateInput(attrs={'type': 'date'}),
-            'mock_interview_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'placement_session_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'certificate_issued': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'onboardingcalldone': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'interviewquestion_shared': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'resume_template_shared': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -194,8 +188,7 @@ class StudentUpdateForm(forms.ModelForm):
                 'ugdegree', 'ugbranch', 'ugpassout', 'ugpercentage',
                 'pgdegree', 'pgbranch', 'pgpassout', 'pgpercentage',
                 'pl_required', 'course_status', 'course_percentage', 'last_name', 'location', 'alternative_phone',
-                'mock_interview_completed', 'placement_session_completed', 'certificate_issued',
-                'onboardingcalldone', 'interviewquestion_shared', 'resume_template_shared'
+                'certificate_issued',
             ]
             for field_name, field in self.fields.items():
                 if field_name not in allowed_fields:
@@ -257,7 +250,6 @@ class StudentPlacementForm(forms.ModelForm):
         fields = [
             'mock_interview_completed',
             'placement_session_completed',
-            'certificate_issued',
             'onboardingcalldone',
             'interviewquestion_shared',
             'resume_template_shared',
@@ -265,7 +257,6 @@ class StudentPlacementForm(forms.ModelForm):
         widgets = {
             'mock_interview_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'placement_session_completed': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
-            'certificate_issued': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'onboardingcalldone': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'interviewquestion_shared': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'resume_template_shared': forms.CheckboxInput(attrs={'class': 'form-check-input'}),

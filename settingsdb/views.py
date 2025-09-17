@@ -24,12 +24,24 @@ from placementdb.models import Placement, CompanyInterview
 from placementdrive.models import Company
 from accounts.models import CustomUser
 import json
+from django.apps import apps
+from batchdb.models import Batch, BatchStudent, BatchTransaction, TrainerHandover, TransferRequest
+from consultantdb.models import Consultant, ConsultantProfile, Goal, Achievement
+from coursedb.models import Course, CourseCategory, CourseModule, Topic
+from paymentdb.models import Payment
+from placementdb.models import Placement, CompanyInterview
+from placementdrive.models import Company, Interview, InterviewStudent, ResumeSharedStatus
+from studentsdb.models import Student
+from trainersdb.models import Trainer
 
 import pyotp
 import qrcode
 import base64
 
 from .db_utils import get_current_db_engine, import_sql_backup
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @staff_member_required
@@ -368,6 +380,23 @@ def is_superuser(user):
 
 @user_passes_test(is_superuser)
 def import_db_backup(request):
+    # Define the models in the correct order for deletion (reverse dependency order)
+    models_to_truncate = [
+        # Level 4
+        InterviewStudent,
+        # Level 3
+        BatchStudent, BatchTransaction, TrainerHandover, TransferRequest,
+        CompanyInterview, Interview,
+        # Level 2
+        Batch, CourseModule, Topic, Payment, Placement,
+        ResumeSharedStatus, Student,
+        # Level 1
+        ConsultantProfile, Goal, Achievement, Course,
+        UserSettings, DBBackupImport, TransactionLog,
+        # Level 0
+        CustomUser, Consultant, CourseCategory, SourceOfJoining,
+        PaymentAccount, Company, Trainer
+    ]
     """
     View for importing database backup (SQL file).
     Only accessible to superusers.
@@ -393,14 +422,36 @@ def import_db_backup(request):
             db_import.status = 'PROCESSING'
             db_import.save()
             
+            # Clear all existing data before import
+            try:
+                logger.info("Clearing all existing data before database import...")
+                for model in models_to_truncate:
+                    model.objects.all().delete()
+                logger.info("All data cleared successfully.")
+            except Exception as e:
+                logger.error(f"Error clearing data before import: {str(e)}")
+                messages.error(request, f"Error clearing data before import: {str(e)}")
+                db_import.status = 'FAILED'
+                db_import.error_message = f"Failed to clear old data: {str(e)}"
+                db_import.save()
+                return redirect('import_db_backup')
+
             # Process the uploaded file
             try:
                 success, message, tables_affected = import_sql_backup(
-                    db_import.uploaded_file.path, 
+                    db_import.uploaded_file.path,
                     request.user
                 )
                 
                 # Update the import record
+                # Re-fetch the user object in case it was deleted and re-created during import
+                try:
+                    user = CustomUser.objects.get(id=request.user.id)
+                    db_import.imported_by = user
+                except CustomUser.DoesNotExist:
+                    # If the user was deleted and not restored, set the importer to null
+                    db_import.imported_by = None
+
                 db_import.processed_at = timezone.now()
                 db_import.status = 'COMPLETED' if success else 'FAILED'
                 db_import.error_message = None if success else message
@@ -411,7 +462,7 @@ def import_db_backup(request):
                 if success:
                     messages.success(request, f"Database backup imported successfully. Affected {len(tables_affected)} tables.")
                 else:
-                    messages.error(request, f"Error importing database backup: {message}")
+                    messages.error(request, f"Error importing database backup: {message}", extra_tags='danger')
                     
             except Exception as e:
                 # Handle any unexpected errors
