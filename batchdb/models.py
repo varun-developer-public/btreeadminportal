@@ -341,6 +341,7 @@ class TrainerHandover(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True)
     
     remarks = models.TextField(blank=True, null=True)
+    handover_date = models.DateField(null=True, blank=True)
     
     class Meta:
         ordering = ['-requested_at']

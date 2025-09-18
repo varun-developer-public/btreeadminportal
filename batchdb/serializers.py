@@ -219,17 +219,33 @@ class TrainerHandoverSerializer(serializers.ModelSerializer):
             'requested_by', 'requested_by_name', 'requested_at',
             'approved_by', 'approved_by_name', 'approved_at', 'remarks'
         ]
-        read_only_fields = ['requested_by','requested_at', 'approved_at', 'status', 'approved_by']
-    
+        read_only_fields = ['from_trainer', 'requested_by','requested_at', 'approved_at', 'status', 'approved_by']
+
     def create(self, validated_data):
         user = self.context['request'].user
-        validated_data['requested_by'] = user
+        batch = validated_data.get('batch')
         
-        # Ensure from_trainer is the current trainer of the batch
-        batch = validated_data['batch']
-        validated_data['from_trainer'] = batch.trainer
+        # Set the from_trainer to the batch's current trainer
+        from_trainer = batch.trainer
         
-        return TrainerHandover.objects.create(**validated_data)
+        # Get remarks and handover_date from the request data
+        remarks = self.context['request'].data.get('remarks')
+        handover_date = self.context['request'].data.get('handover_date')
+        
+        # Remove remarks, requested_by and handover_date from validated_data to avoid duplicate argument
+        validated_data.pop('remarks', None)
+        validated_data.pop('requested_by', None)
+        validated_data.pop('handover_date', None)
+        
+        # Create the handover instance
+        handover = TrainerHandover.objects.create(
+            from_trainer=from_trainer,
+            requested_by=user,
+            remarks=remarks,
+            handover_date=handover_date,
+            **validated_data
+        )
+        return handover
 
 
 class TrainerHandoverApprovalSerializer(serializers.Serializer):

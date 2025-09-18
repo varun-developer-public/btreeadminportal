@@ -223,7 +223,20 @@
   </div>
 </div>
 
-
+<!-- Handover Requests Modal -->
+<div class="modal fade" id="handoverRequestsModal" tabindex="-1" aria-labelledby="handoverRequestsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="handoverRequestsLabel">Handover Requests</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="handover-requests-body">
+        <p class="text-muted">Loading...</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="list-container">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -298,6 +311,7 @@
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#transferModal" data-batch-id="{{ batch.pk }}"><i class="fas fa-exchange-alt me-1"></i>Transfer Students</a></li>
                                     <li><a class="dropdown-item" data-bs-toggle="modal" data-bs-target="#handoverModal" data-batch-id="{{ batch.pk }}"><i class="fas fa-user-friends me-1"></i>Trainer Handover</a></li>
+                                    <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewHandoverRequests('{{ batch.pk }}')"><i class="fas fa-user-friends me-1"></i>View Handover Requests</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                     <a class="dropdown-item" href="javascript:void(0);" onclick="viewTransferRequests('{{ batch.pk }}')">
@@ -558,8 +572,8 @@ $('#handoverForm').on('submit', function(e) {
 
   let data = {
     batch: $('#handoverBatchId').val(),
-    new_trainer: $('#newTrainer').val(),
-    reason: $('#handoverReason').val(),
+    to_trainer: $('#newTrainer').val(),
+    remarks: $('#handoverReason').val(),
     handover_date: $('#handoverDate').val()
   };
 
@@ -698,6 +712,184 @@ $('#transfer-requests-body').on('click', '.reject-btn', function() {
     updateTransferStatus(requestId, 'rejected');
 });
 
+</script>
+
+<!-- Handover Request -->
+<script>
+function viewHandoverRequests(batchId) {
+    $("body").data("current-batch", batchId);
+    $("#handover-requests-body").html("<p class='text-muted'>Loading...</p>");
+    $("#handoverRequestsModal").modal("show");
+
+    $.ajax({
+        url: "/batches/api/trainer-handovers/?batch_id=" + batchId,
+        type: "GET",
+        success: function(data) {
+            if (data.length === 0) {
+                $("#handover-requests-body").html("<p class='text-muted'>No handover requests found.</p>");
+                return;
+            }
+
+            let html = `
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>From Trainer</th>
+                            <th>To Trainer</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(req => {
+                html += `
+                    <tr>
+                        <td>${req.from_trainer_name}</td>
+                        <td>${req.to_trainer_name}</td>
+                        <td>
+                            <span class="badge ${req.status === 'PENDING' ? 'bg-warning' : req.status === 'APPROVED' ? 'bg-success' : 'bg-danger'}">
+                                ${req.status}
+                            </span>
+                        </td>
+                        <td>
+                            ${req.status === "PENDING" ? `
+                                <button class="btn btn-success btn-sm" onclick="updateHandoverStatus(${req.id}, 'approve')">Approve</button>
+                                <button class="btn btn-danger btn-sm" onclick="updateHandoverStatus(${req.id}, 'reject')">Reject</button>
+                            ` : "-"}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+            $("#handover-requests-body").html(html);
+        },
+        error: function() {
+            $("#handover-requests-body").html("<p class='text-danger'>Failed to load requests.</p>");
+        }
+    });
+}
+
+function updateHandoverStatus(requestId, actionType) {
+    let url = `/batches/api/trainer-handovers/${requestId}/${actionType}/`;
+    let data = { remarks: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)}ed via modal` };
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(data),
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+        dataType: "json",
+        success: function(response) {
+            let currentBatch = $("body").data("current-batch");
+            viewHandoverRequests(currentBatch); // reload modal
+            const toastHtml = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+                ${response.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            $("body").prepend(toastHtml);
+        },
+        error: function(xhr) {
+            const msg = xhr.responseJSON?.message || JSON.stringify(xhr.responseJSON) || xhr.responseText;
+            const toastHtml = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ❌ ${msg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            $("body").prepend(toastHtml);
+        }
+    });
+}
+</script>
+<script>
+function viewHandoverRequests(batchId) {
+    $("body").data("current-batch", batchId);
+    $("#handover-requests-body").html("<p class='text-muted'>Loading...</p>");
+    $("#handoverRequestsModal").modal("show");
+
+    $.ajax({
+        url: "/batches/api/trainer-handovers/?batch_id=" + batchId,
+        type: "GET",
+        success: function(data) {
+            if (data.length === 0) {
+                $("#handover-requests-body").html("<p class='text-muted'>No handover requests found.</p>");
+                return;
+            }
+
+            let html = `
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>From Trainer</th>
+                            <th>To Trainer</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach(req => {
+                html += `
+                    <tr>
+                        <td>${req.from_trainer_name}</td>
+                        <td>${req.to_trainer_name}</td>
+                        <td>
+                            <span class="badge ${req.status === 'PENDING' ? 'bg-warning' : req.status === 'APPROVED' ? 'bg-success' : 'bg-danger'}">
+                                ${req.status}
+                            </span>
+                        </td>
+                        <td>
+                            ${req.status === "PENDING" ? `
+                                <button class="btn btn-success btn-sm" onclick="updateHandoverStatus(${req.id}, 'approve')">Approve</button>
+                                <button class="btn btn-danger btn-sm" onclick="updateHandoverStatus(${req.id}, 'reject')">Reject</button>
+                            ` : "-"}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += "</tbody></table>";
+            $("#handover-requests-body").html(html);
+        },
+        error: function() {
+            $("#handover-requests-body").html("<p class='text-danger'>Failed to load requests.</p>");
+        }
+    });
+}
+
+function updateHandoverStatus(requestId, actionType) {
+    let url = `/batches/api/trainer-handovers/${requestId}/${actionType}/`;
+    let data = { remarks: `${actionType.charAt(0).toUpperCase() + actionType.slice(1)}ed via modal` };
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(data),
+        headers: { "X-CSRFToken": "{{ csrf_token }}" },
+        dataType: "json",
+        success: function(response) {
+            let currentBatch = $("body").data("current-batch");
+            viewHandoverRequests(currentBatch); // reload modal
+            const toastHtml = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+                ${response.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            $("body").prepend(toastHtml);
+        },
+        error: function(xhr) {
+            const msg = xhr.responseJSON?.message || JSON.stringify(xhr.responseJSON) || xhr.responseText;
+            const toastHtml = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ❌ ${msg}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            $("body").prepend(toastHtml);
+        }
+    });
+}
 </script>
 
 {{ form.media.js }}

@@ -36,6 +36,36 @@
         </div>
     </div>
 
+    {% if handover_history %}
+    <div class="form-section-card">
+        <div class="form-section-header">
+            <h5 style="color: white;"><i class="fas fa-exchange-alt me-2"></i>Trainer Handover History</h5>
+        </div>
+        <div class="form-section-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>From Trainer</th>
+                            <th>To Trainer</th>
+                            <th>Handover Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for handover in handover_history %}
+                        <tr>
+                            <td>{{ handover.from_trainer.name }}</td>
+                            <td>{{ handover.to_trainer.name }}</td>
+                            <td>{{ handover.approved_at|date:"d-m-Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="form-section-card">
         <div class="form-section-header">
             <h5 style="color: white;"><i class="fas fa-user-graduate me-2"></i>Active Students ({{ active_students|length }})</h5>

@@ -16,6 +16,8 @@ urlpatterns = [
     path('error-report/', views.download_error_report_batch, name='download_error_report_batch'),
     path('<int:pk>/delete/', views.delete_batch, name='delete_batch'),
     path('batch/<int:pk>/report/', views.batch_report, name='batch_report'),
+    path('handover-requests/', views.view_handover_requests, name='view_handover_requests'),
+    path('handover-requests/<int:pk>/update/', views.update_handover_status, name='update_handover_status'),
     
     # Student history report
     path('student/history/', views.student_batch_history, name='student-batch-history'),

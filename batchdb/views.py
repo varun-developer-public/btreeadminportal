@@ -976,6 +976,9 @@ def batch_report(request, pk):
     # Get all transactions for the batch
     transactions = BatchTransaction.objects.filter(batch=batch).select_related('user').order_by('-timestamp')
     
+    # Get trainer handover history
+    handover_history = TrainerHandover.objects.filter(batch=batch, status='APPROVED').order_by('-approved_at')
+
     # Paginate transactions
     paginator = Paginator(transactions, 10)
     page = request.GET.get('page')
@@ -992,6 +995,21 @@ def batch_report(request, pk):
         'active_students': active_students,
         'inactive_students': inactive_students,
         'transactions': transactions_page,
+        'handover_history': handover_history,
     }
     
     return render(request, 'batchdb/batch_report.html', context)
+
+def view_handover_requests(request):
+    handover_requests = TrainerHandover.objects.filter(status='PENDING')
+    return render(request, 'batchdb/handover_requests.html', {'requests': handover_requests})
+
+def update_handover_status(request, pk):
+    handover = get_object_or_404(TrainerHandover, pk=pk)
+    if request.method == 'POST':
+        status = request.POST.get('status')
+        if status == 'approve':
+            handover.approve(request.user)
+        elif status == 'reject':
+            handover.reject(request.user)
+    return redirect('batchdb:view_handover_requests')
