@@ -392,7 +392,7 @@ $('#addStudentModal').on('shown.bs.modal', function (e) {
                return {
                    results: $.map(data, function (item) {
                        return {
-                           text: item.first_name + ' ' + item.last_name,
+                           text: item.student_id + ' - ' + item.first_name + ' ' + item.last_name,
                            id: item.id
                        }
                    })
@@ -518,7 +518,7 @@ $('#handoverModal').on('show.bs.modal', function (e) {
     $.get("{% url 'batchdb:batchdb_api:available-trainers-for-handover' %}", { batch_id: batchId }, function(data) {
         let select = $('#newTrainer').empty().append("<option value=''>Select a trainer</option>");
         if (data.length) {
-            data.forEach(t => select.append(`<option value="${t.id}">${t.name}</option>`));
+            data.forEach(t => select.append(`<option value="${t.id}">${t.trainer_id}-${t.name}</option>`));
         } else select.html("<option disabled>No trainers available</option>");
         select.select2({ placeholder: 'Select trainer', width: '100%' });
     });

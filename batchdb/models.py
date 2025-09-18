@@ -5,7 +5,7 @@ from django.db import transaction
 from trainersdb.models import Trainer
 from coursedb.models import Course, CourseCategory
 from studentsdb.models import Student
-
+from django.core.validators import MinValueValidator, MaxValueValidator
 import json
 from datetime import datetime
 import string
@@ -46,9 +46,18 @@ class Batch(models.Model):
     start_time = models.TimeField(null=True, blank=True)
     end_time = models.TimeField(null=True, blank=True)
     days = models.JSONField(default=list)
-    hours_per_day = models.PositiveIntegerField(default=2)
-    batch_percentage = models.PositiveIntegerField(default=0)
-
+    hours_per_day = models.DecimalField(
+        max_digits=4,        
+        decimal_places=2,   
+        default=2.00,
+        validators=[MinValueValidator(0.5), MaxValueValidator(24)] 
+    )
+    batch_percentage = models.DecimalField(
+        max_digits=5,      
+        decimal_places=2,    
+        default=0.00,
+        validators=[MinValueValidator(0), MaxValueValidator(100)]
+    )
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_batches', on_delete=models.SET_NULL, null=True, blank=True)

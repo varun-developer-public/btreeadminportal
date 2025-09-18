@@ -47,7 +47,7 @@ $(document).ready(function() {
                 data: { 'course_id': courseId },
                 success: function(data) {
                     trainer.prop('disabled', false);
-                    data.forEach(t => trainer.append(`<option value="${t.id}">${t.name}</option>`));
+                    data.forEach(t => trainer.append(`<option value="${t.id}">${t.trainer_id}- ${t.name}</option>`));
                     if (typeof batchData !== 'undefined' && batchData.trainerId) {
                         trainer.val(batchData.trainerId).trigger('change');
                     }
@@ -57,10 +57,10 @@ $(document).ready(function() {
             // Fetch Students
             $.ajax({
                 url: '/batches/ajax/get-students-for-course/',
-                data: { 'course_id': courseId },
+                data: { 'course_id': courseId, 'exclude_students_in_any_batch': true },
                 success: function(data) {
                     students.prop('disabled', false);
-                    data.forEach(s => students.append(`<option value="${s.id}">${s.first_name} ${s.last_name || ''}</option>`));
+                    data.forEach(s => students.append(`<option value="${s.id}">${s.student_id}- ${s.first_name} ${s.last_name || ''}</option>`));
                     if (typeof batchData !== 'undefined' && batchData.studentIds) {
                         students.val(batchData.studentIds).trigger('change');
                     }
@@ -81,7 +81,6 @@ $(document).ready(function() {
                     timeSlot.prop('disabled', false);
                     data.forEach(slot => timeSlot.append(`<option value="${slot.id}">${slot.name}</option>`));
                     if (typeof batchData !== 'undefined' && batchData.timeSlot) {
-                        // Use .val() for single select dropdowns
                         timeSlot.val(batchData.timeSlot).trigger('change');
                     }
                 }

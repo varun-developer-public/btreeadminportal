@@ -126,21 +126,6 @@ def update_batch(request, pk):
         if form.is_valid():
             batch = form.save(commit=False)
 
-            time_slot = form.cleaned_data.get('time_slot')
-            if time_slot:
-                batch.start_time, batch.end_time = time_slot
-
-            days = form.cleaned_data.get('days')
-
-            if not days:
-                if batch.batch_type == 'WD':
-                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-                elif batch.batch_type == 'WE':
-                    days = ['Saturday', 'Sunday']
-                elif batch.batch_type == 'WDWE':
-                    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-            batch.days = days
             batch.updated_by = request.user
             batch.save()
             form.save_m2m()
@@ -173,7 +158,7 @@ def get_courses_by_category(request):
 @login_required
 def get_trainers_for_course(request):
     course_id = request.GET.get('course_id')
-    trainers = Trainer.objects.filter(stack__id=course_id).values('id', 'name')
+    trainers = Trainer.objects.filter(stack__id=course_id).values('id','trainer_id','name')
     return JsonResponse(list(trainers), safe=False)
 
 @login_required
@@ -206,20 +191,29 @@ def get_trainer_slots(request):
 
 @login_required
 def get_students_for_course(request):
-   course_id = request.GET.get('course_id')
-   exclude_students_in_any_batch = request.GET.get('exclude_students_in_any_batch', 'false').lower() == 'true'
+    course_id = request.GET.get('course_id')
+    exclude_students_in_any_batch = request.GET.get('exclude_students_in_any_batch', 'false').lower() == 'true'
 
-   students = Student.objects.filter(
-       course_id=course_id,
-       course_status__in=['YTS', 'IP']
-   )
+    # Fetch all students for this course with status YTS or IP
+    students = Student.objects.filter(
+        course_id=course_id,
+        course_status__in=['YTS', 'IP']
+    )
 
-   if exclude_students_in_any_batch:
-       active_student_ids = BatchStudent.objects.filter(is_active=True).values_list('student_id', flat=True)
-       students = students.exclude(id__in=active_student_ids)
+    if exclude_students_in_any_batch:
+        # Get IDs of students already in active batches
+        active_student_ids = BatchStudent.objects.filter(
+            is_active=True
+        ).values_list('student_id', flat=True)
 
-   student_data = list(students.values('id', 'first_name', 'last_name'))
-   return JsonResponse(student_data, safe=False)
+        # Exclude them from the queryset
+        students = students.exclude(id__in=active_student_ids)
+
+    student_data = [
+        {'id': s.id, 'student_id':s.student_id ,'first_name': s.first_name, 'last_name': s.last_name or ''}
+        for s in students
+    ]
+    return JsonResponse(student_data, safe=False)
 
 # API ViewSets
 
@@ -758,10 +752,10 @@ def get_students_not_in_batch(request):
    
    if search_term:
        students = students.filter(
-           Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term)
+           Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term) | Q(student_id__icontains=search_term)
        )
        
-   student_data = list(students.values('id', 'first_name', 'last_name'))
+   student_data = list(students.values('id','student_id', 'first_name', 'last_name'))
    return JsonResponse(student_data, safe=False)
 
 @api_view(['GET'])

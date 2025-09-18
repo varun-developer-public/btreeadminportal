@@ -181,7 +181,6 @@ def update_student(request, student_id):
                     placement.is_active = True
                     placement.save()
             else:
-                # Only deactivate if currently active
                 Placement.objects.filter(student=updated_student).delete()
 
             messages.success(request, f"{updated_student.student_id} updated successfully.", extra_tags='student_message')
