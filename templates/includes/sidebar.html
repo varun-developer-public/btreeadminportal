@@ -75,6 +75,11 @@
                 <i class="fas fa-calendar-alt"></i><span>Batch</span>
             </a>
         </li>
+        <li>
+            <a href="{% url 'batchdb:requests_list' %}" class="nav-link {% if request.resolver_match.url_name == 'requests_list' %}active{% endif %}">
+                <i class="fas fa-exchange-alt"></i><span>Requests</span>
+            </a>
+        </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' %}
         <li>

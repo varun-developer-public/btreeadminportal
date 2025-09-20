@@ -8,12 +8,15 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.decorators.http import require_POST, require_GET
 from django.utils import timezone
 from datetime import datetime, timedelta
+from django.views.generic import ListView
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 # REST Framework imports
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.views.decorators.csrf import csrf_exempt
 
 # Model imports
 from .models import (
@@ -42,6 +45,152 @@ from coursedb.models import Course, CourseCategory
 from trainersdb.models import Trainer
 from studentsdb.models import Student
 from placementdb.models import Placement
+
+# Request Management API Endpoints
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def request_details(request, request_id):
+    """API endpoint to get details of a specific request"""
+    try:
+        # Try to find the request in TransferRequest model
+        transfer_request = get_object_or_404(TransferRequest, id=request_id)
+        
+        # Prepare response data based on request type
+        data = {
+            'id': transfer_request.id,
+            'type': 'Student Transfer',
+            'status': transfer_request.status.capitalize(),
+            'date': transfer_request.created_at.strftime('%Y-%m-%d'),
+            'requested_by': transfer_request.requested_by.username,
+            'student': transfer_request.student.get_full_name(),
+            'from_batch': transfer_request.from_batch.batch_id,
+            'to_batch': transfer_request.to_batch.batch_id,
+        }
+        
+        # Add rejection reason if rejected
+        if transfer_request.status == 'rejected' and transfer_request.rejection_reason:
+            data['rejection_reason'] = transfer_request.rejection_reason
+            
+        return Response(data)
+    except:
+        try:
+            # If not found in TransferRequest, try TrainerHandover
+            handover_request = get_object_or_404(TrainerHandover, id=request_id)
+            
+            data = {
+                'id': handover_request.id,
+                'type': 'Batch Transfer',
+                'status': handover_request.status.capitalize(),
+                'date': handover_request.created_at.strftime('%Y-%m-%d'),
+                'requested_by': handover_request.requested_by.username,
+                'batch': handover_request.batch.batch_id,
+                'from_teacher': handover_request.from_trainer.name,
+                'to_teacher': handover_request.to_trainer.name,
+            }
+            
+            # Add rejection reason if rejected
+            if handover_request.status == 'rejected' and handover_request.rejection_reason:
+                data['rejection_reason'] = handover_request.rejection_reason
+                
+            return Response(data)
+        except:
+            return Response({'error': 'Request not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def approve_request(request, request_id):
+    """API endpoint to approve a request"""
+    try:
+        # Try to find the request in TransferRequest model
+        transfer_request = TransferRequest.objects.filter(id=request_id).first()
+        
+        if transfer_request:
+            # Check if request is pending
+            if transfer_request.status != 'pending':
+                return Response({'error': 'Only pending requests can be approved'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Update request status
+            transfer_request.status = 'approved'
+            transfer_request.approved_by = request.user
+            transfer_request.approved_at = timezone.now()
+            transfer_request.save()
+            
+            # Process the transfer (you might want to add more logic here)
+            # For example, update the student's batch
+            
+            return Response({'message': 'Request approved successfully'})
+        else:
+            # If not found in TransferRequest, try TrainerHandover
+            handover_request = TrainerHandover.objects.filter(id=request_id).first()
+            
+            if handover_request:
+                # Check if request is pending
+                if handover_request.status != 'pending':
+                    return Response({'error': 'Only pending requests can be approved'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Update request status
+                handover_request.status = 'approved'
+                handover_request.approved_by = request.user
+                handover_request.approved_at = timezone.now()
+                handover_request.save()
+                
+                # Process the handover (you might want to add more logic here)
+                # For example, update the batch's trainer
+                
+                return Response({'message': 'Request approved successfully'})
+            else:
+                return Response({'error': 'Request not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reject_request(request, request_id):
+    """API endpoint to reject a request"""
+    try:
+        # Get rejection reason from request data
+        rejection_reason = request.data.get('rejection_reason')
+        
+        if not rejection_reason:
+            return Response({'error': 'Rejection reason is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Try to find the request in TransferRequest model
+        transfer_request = TransferRequest.objects.filter(id=request_id).first()
+        
+        if transfer_request:
+            # Check if request is pending
+            if transfer_request.status != 'pending':
+                return Response({'error': 'Only pending requests can be rejected'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Update request status
+            transfer_request.status = 'rejected'
+            transfer_request.rejected_by = request.user
+            transfer_request.rejected_at = timezone.now()
+            transfer_request.rejection_reason = rejection_reason
+            transfer_request.save()
+            
+            return Response({'message': 'Request rejected successfully'})
+        else:
+            # If not found in TransferRequest, try TrainerHandover
+            handover_request = TrainerHandover.objects.filter(id=request_id).first()
+            
+            if handover_request:
+                # Check if request is pending
+                if handover_request.status != 'pending':
+                    return Response({'error': 'Only pending requests can be rejected'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                # Update request status
+                handover_request.status = 'rejected'
+                handover_request.rejected_by = request.user
+                handover_request.rejected_at = timezone.now()
+                handover_request.rejection_reason = rejection_reason
+                handover_request.save()
+                
+                return Response({'message': 'Request rejected successfully'})
+            else:
+                return Response({'error': 'Request not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 def batch_list(request):
     batch_list = Batch.objects.all().order_by('-id')
@@ -1013,3 +1162,235 @@ def update_handover_status(request, pk):
         elif status == 'reject':
             handover.reject(request.user)
     return redirect('batchdb:view_handover_requests')
+
+class RequestListView(LoginRequiredMixin, ListView):
+    """
+    View for displaying and managing all transfer and handover requests in one place
+    """
+    template_name = 'batchdb/requests_list.html'
+    context_object_name = 'requests'
+    paginate_by = 10
+    
+    def get_queryset(self):
+        # Get filter parameters
+        request_type = self.request.GET.get('request_type', '')
+        status = self.request.GET.get('status', '')
+        from_date = self.request.GET.get('from_date', '')
+        to_date = self.request.GET.get('to_date', '')
+        search_query = self.request.GET.get('q', '')
+        
+        # Initialize empty querysets
+        transfer_requests = TransferRequest.objects.all()
+        handover_requests = TrainerHandover.objects.all()
+        
+        # Apply filters to both querysets
+        if status:
+            transfer_requests = transfer_requests.filter(status=status)
+            handover_requests = handover_requests.filter(status=status)
+            
+        if from_date:
+            from_date = datetime.strptime(from_date, '%Y-%m-%d')
+            transfer_requests = transfer_requests.filter(requested_at__gte=from_date)
+            handover_requests = handover_requests.filter(requested_at__gte=from_date)
+            
+        if to_date:
+            to_date = datetime.strptime(to_date, '%Y-%m-%d')
+            to_date = to_date.replace(hour=23, minute=59, second=59)
+            transfer_requests = transfer_requests.filter(requested_at__lte=to_date)
+            handover_requests = handover_requests.filter(requested_at__lte=to_date)
+            
+        if search_query:
+            # Search in transfer requests
+            transfer_requests = transfer_requests.filter(
+                Q(from_batch__batch_id__icontains=search_query) |
+                Q(to_batch__batch_id__icontains=search_query) |
+                Q(students__first_name__icontains=search_query) |
+                Q(students__last_name__icontains=search_query) |
+                Q(requested_by__username__icontains=search_query)
+            ).distinct()
+            
+            # Search in handover requests
+            handover_requests = handover_requests.filter(
+                Q(batch__batch_id__icontains=search_query) |
+                Q(from_trainer__name__icontains=search_query) |
+                Q(to_trainer__name__icontains=search_query) |
+                Q(requested_by__username__icontains=search_query)
+            ).distinct()
+        
+        # Filter by request type if specified
+        if request_type == 'transfer':
+            combined_requests = [self._prepare_transfer_request(req) for req in transfer_requests]
+        elif request_type == 'handover':
+            combined_requests = [self._prepare_handover_request(req) for req in handover_requests]
+        else:
+            # Combine both types of requests
+            combined_requests = []
+            combined_requests.extend([self._prepare_transfer_request(req) for req in transfer_requests])
+            combined_requests.extend([self._prepare_handover_request(req) for req in handover_requests])
+        
+        # Sort by requested_at (newest first)
+        combined_requests.sort(key=lambda x: x.requested_at, reverse=True)
+        
+        return combined_requests
+    
+    def _prepare_transfer_request(self, request):
+        # Add a request_type attribute to identify it as a transfer request
+        request.request_type = 'transfer'
+        return request
+    
+    def _prepare_handover_request(self, request):
+        # Add a request_type attribute to identify it as a handover request
+        request.request_type = 'handover'
+        return request
+        
+@login_required
+def request_details(request, request_id):
+    """API endpoint to get details of a request"""
+    # Try to find the request in transfer requests
+    try:
+        transfer_request = TransferRequest.objects.get(id=request_id)
+        data = {
+            'id': transfer_request.id,
+            'request_type': 'transfer',
+            'status': transfer_request.status,
+            'student_name': transfer_request.student.name if hasattr(transfer_request.student, 'name') else f"{transfer_request.student.first_name} {transfer_request.student.last_name}",
+            'from_batch': transfer_request.from_batch.batch_id,
+            'to_batch': transfer_request.to_batch.batch_id,
+            'requested_by': transfer_request.requested_by.username,
+            'created_at': transfer_request.requested_at.strftime('%d %b %Y'),
+        }
+        if transfer_request.status == 'approved':
+            data['approved_by'] = transfer_request.approved_by.username if transfer_request.approved_by else 'System'
+            data['approved_at'] = transfer_request.approved_at.strftime('%d %b %Y') if transfer_request.approved_at else ''
+        elif transfer_request.status == 'rejected':
+            data['rejected_by'] = transfer_request.rejected_by.username if transfer_request.rejected_by else 'System'
+            data['rejected_at'] = transfer_request.rejected_at.strftime('%d %b %Y') if transfer_request.rejected_at else ''
+            data['reject_reason'] = transfer_request.reject_reason or ''
+        return JsonResponse(data)
+    except TransferRequest.DoesNotExist:
+        pass
+    
+    # Try to find the request in handover requests
+    try:
+        handover_request = TrainerHandover.objects.get(id=request_id)
+        data = {
+            'id': handover_request.id,
+            'request_type': 'handover',
+            'status': handover_request.status,
+            'batch': handover_request.batch.batch_id,
+            'from_trainer': handover_request.from_trainer.name,
+            'to_trainer': handover_request.to_trainer.name,
+            'requested_by': handover_request.requested_by.username,
+            'created_at': handover_request.requested_at.strftime('%d %b %Y'),
+        }
+        if handover_request.status == 'approved':
+            data['approved_by'] = handover_request.approved_by.username if handover_request.approved_by else 'System'
+            data['approved_at'] = handover_request.approved_at.strftime('%d %b %Y') if handover_request.approved_at else ''
+        elif handover_request.status == 'rejected':
+            data['rejected_by'] = handover_request.rejected_by.username if handover_request.rejected_by else 'System'
+            data['rejected_at'] = handover_request.rejected_at.strftime('%d %b %Y') if handover_request.rejected_at else ''
+            data['reject_reason'] = handover_request.reject_reason or ''
+        return JsonResponse(data)
+    except TrainerHandover.DoesNotExist:
+        pass
+    
+    return JsonResponse({'error': 'Request not found'}, status=404)
+
+@login_required
+@require_POST
+def approve_request(request, request_id):
+    """API endpoint to approve a request"""
+    # Try to find the request in transfer requests
+    try:
+        transfer_request = TransferRequest.objects.get(id=request_id)
+        if transfer_request.status != 'pending':
+            return JsonResponse({'error': 'Request is not pending'}, status=400)
+        
+        transfer_request.status = 'approved'
+        transfer_request.approved_by = request.user
+        transfer_request.approved_at = timezone.now()
+        transfer_request.save()
+        
+        # Process the transfer (move student to new batch)
+        student = transfer_request.student
+        from_batch = transfer_request.from_batch
+        to_batch = transfer_request.to_batch
+        
+        # Remove student from old batch
+        from_batch.students.remove(student)
+        
+        # Add student to new batch
+        to_batch.students.add(student)
+        
+        messages.success(request, f"Transfer request for {student.name} has been approved")
+        return JsonResponse({'success': True})
+    except TransferRequest.DoesNotExist:
+        pass
+    
+    # Try to find the request in handover requests
+    try:
+        handover_request = TrainerHandover.objects.get(id=request_id)
+        if handover_request.status != 'pending':
+            return JsonResponse({'error': 'Request is not pending'}, status=400)
+        
+        handover_request.status = 'approved'
+        handover_request.approved_by = request.user
+        handover_request.approved_at = timezone.now()
+        handover_request.save()
+        
+        # Process the handover (change trainer for batch)
+        batch = handover_request.batch
+        to_trainer = handover_request.to_trainer
+        
+        # Update batch trainer
+        batch.trainer = to_trainer
+        batch.save()
+        
+        messages.success(request, f"Handover request for batch {batch.batch_id} has been approved")
+        return JsonResponse({'success': True})
+    except TrainerHandover.DoesNotExist:
+        pass
+    
+    return JsonResponse({'error': 'Request not found'}, status=404)
+
+@login_required
+@require_POST
+def reject_request(request, request_id):
+    """API endpoint to reject a request"""
+    reason = request.POST.get('reason', '')
+    
+    # Try to find the request in transfer requests
+    try:
+        transfer_request = TransferRequest.objects.get(id=request_id)
+        if transfer_request.status != 'pending':
+            return JsonResponse({'error': 'Request is not pending'}, status=400)
+        
+        transfer_request.status = 'rejected'
+        transfer_request.rejected_by = request.user
+        transfer_request.rejected_at = timezone.now()
+        transfer_request.reject_reason = reason
+        transfer_request.save()
+        
+        messages.success(request, f"Transfer request has been rejected")
+        return JsonResponse({'success': True})
+    except TransferRequest.DoesNotExist:
+        pass
+    
+    # Try to find the request in handover requests
+    try:
+        handover_request = TrainerHandover.objects.get(id=request_id)
+        if handover_request.status != 'pending':
+            return JsonResponse({'error': 'Request is not pending'}, status=400)
+        
+        handover_request.status = 'rejected'
+        handover_request.rejected_by = request.user
+        handover_request.rejected_at = timezone.now()
+        handover_request.reject_reason = reason
+        handover_request.save()
+        
+        messages.success(request, f"Handover request has been rejected")
+        return JsonResponse({'success': True})
+    except TrainerHandover.DoesNotExist:
+        pass
+    
+    return JsonResponse({'error': 'Request not found'}, status=404)

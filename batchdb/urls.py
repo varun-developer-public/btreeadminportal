@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/', include('batchdb.api_urls')),
     
     # Traditional views
+    path('requests/', views.RequestListView.as_view(), name='requests_list'),
     path('list/', views.batch_list, name='batch_list'),
     path('create/', views.create_batch, name='create_batch'),
     path('<int:pk>/update/', views.update_batch, name='update_batch'),
@@ -31,4 +32,9 @@ urlpatterns = [
     path('ajax/get-students-by-course/', views.get_students_by_course, name='get_students_by_course'),
     path('ajax/get-students-for-batch/', views.get_students_for_batch, name='get_students_for_batch'),
     path('ajax/get-students-not-in-batch/', views.get_students_not_in_batch, name='get_students_not_in_batch'),
+    
+    # Request management endpoints
+    path('requests/<int:request_id>/details/', views.request_details, name='request_details'),
+    path('requests/<int:request_id>/approve/', views.approve_request, name='approve_request'),
+    path('requests/<int:request_id>/reject/', views.reject_request, name='reject_request'),
 ]
