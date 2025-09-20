@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+{% load custom_filter %}
+
+{% block title %}Request List{% endblock %}
+
+{% block content %}
+<style>
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 600;
+    }
+    .status-pending { background-color: #ffc107; color: #333; }
+    .status-approved { background-color: #28a745; }
+    .status-rejected { background-color: #dc3545; }
+</style>
+
+<!-- Request Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-labelledby="detailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="detailsModalLabel">Request Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="detailsModalBody">
+        <!-- Details will be loaded here via AJAX -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Action Confirmation Modal -->
+<div class="modal fade" id="actionModal" tabindex="-1" aria-labelledby="actionModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="actionModalLabel">Confirm Action</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to <span id="actionType"></span> this request?</p>
+        <div id="reason-group" class="mb-3" style="display: none;">
+            <label for="rejectionReason" class="form-label">Reason for Rejection</label>
+            <textarea class="form-control" id="rejectionReason" rows="3"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="confirmActionBtn">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-tasks me-2"></i>Request List</h2>
+    </div>
+
+    <!-- Filters -->
+    <form method="get" class="filters mb-4">
+        <div class="filter-row">
+            <div class="filter-group">
+                <label for="id_request_type">Request Type</label>
+                <select name="request_type" id="id_request_type" class="form-select">
+                    <option value="">All</option>
+                    <option value="transfer" {% if request.GET.request_type == 'transfer' %}selected{% endif %}>Student Transfer</option>
+                    <option value="handover" {% if request.GET.request_type == 'handover' %}selected{% endif %}>Trainer Handover</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="id_status">Status</label>
+                <select name="status" id="id_status" class="form-select">
+                    <option value="">All</option>
+                    <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
+                    <option value="approved" {% if request.GET.status == 'approved' %}selected{% endif %}>Approved</option>
+                    <option value="rejected" {% if request.GET.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="id_from_date">From</label>
+                <input type="date" name="from_date" id="id_from_date" class="form-control" value="{{ request.GET.from_date }}">
+            </div>
+            <div class="filter-group">
+                <label for="id_to_date">To</label>
+                <input type="date" name="to_date" id="id_to_date" class="form-control" value="{{ request.GET.to_date }}">
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-group" style="flex: 2;">
+                <label for="id_q">Search</label>
+                <input type="text" name="q" id="id_q" class="form-control" placeholder="Search by batch, student, trainer..." value="{{ request.GET.q }}">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply</button>
+            <a href="{% url 'batchdb:requests_list' %}" class="btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    <!-- Request Table -->
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Request Type</th>
+                    <th>Details</th>
+                    <th>Requested By</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.request_type|title }}</td>
+                    <td>
+                        {% if req.request_type == 'transfer' %}
+                            <strong>Student:</strong> 
+                             {% for student in req.students.all %}
+                                    {{ student.first_name }} {{ student.last_name }}({{ student.student_id }}){% if not forloop.last %}, {% endif %}
+                                {% empty %}
+                                     No students assigned
+                            {% endfor %}
+                            <br>
+                            <strong>From:</strong> {{ req.from_batch.batch_id }}<br>
+                            <strong>To:</strong> {{ req.to_batch.batch_id }}
+                        {% elif req.request_type == 'handover' %}
+                            <strong>Batch:</strong> {{ req.batch.batch_id }}<br>
+                            <strong>From:</strong> {{ req.from_trainer.name }}<br>
+                            <strong>To:</strong> {{ req.to_trainer.name }}
+                        {% endif %}
+                    </td>
+                    <td>{{ req.requested_by.name }}</td>
+                    <td>{{ req.requested_at|date:"d-m-Y" }}</td>
+                    <td>
+                        <span class="status-badge status-{{ req.status|lower }}">{{ req.get_status_display }}</span>
+                    </td>
+                    <td>
+                        <button class="btn-primary btn-sm" onclick="showDetails('{{ req.id }}', '{{ req.request_type }}')"><i class="fas fa-eye"></i></button>
+                        {% if req.status == 'PENDING' %}
+                            <button class="btn-update btn-sm" onclick="showActionModal('{{ req.id }}', '{{ req.request_type }}', 'approve')"><i class="fas fa-check"></i></button>
+                            <button class="btn-danger btn-sm" onclick="showActionModal('{{ req.id }}', '{{ req.request_type }}', 'reject')"><i class="fas fa-times"></i></button>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted">No requests found</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page=1&{{ request.GET.urlencode }}">&laquo; first</a>
+            <a href="?page={{ page_obj.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
+        {% endif %}
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}&{{ request.GET.urlencode }}">last &raquo;</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken');
+
+function showDetails(requestId, requestType) {
+    $.ajax({
+        url: `/batches/requests/${requestId}/details/`,
+        success: function(data) {
+            let html = '<ul class="list-unstyled">';
+            for (const [key, value] of Object.entries(data)) {
+                html += `<li><strong>${key.replace('_', ' ').toUpperCase()}:</strong> ${value}</li>`;
+            }
+            html += '</ul>';
+            $('#detailsModalBody').html(html);
+            $('#detailsModal').modal('show');
+        }
+    });
+}
+
+function showActionModal(requestId, requestType, action) {
+    $('#actionType').text(action);
+    if (action === 'reject') {
+        $('#reason-group').show();
+    } else {
+        $('#reason-group').hide();
+    }
+    
+    $('#confirmActionBtn').off('click').on('click', function() {
+        handleAction(requestId, requestType, action);
+    });
+    
+    $('#actionModal').modal('show');
+}
+
+function handleAction(requestId, requestType, action) {
+    let url = `/batches/requests/${requestId}/${action}/`;
+    let data = {};
+    if (action === 'reject') {
+        data.reason = $('#rejectionReason').val();
+    }
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: data,
+        headers: { "X-CSRFToken": csrftoken },
+        success: function(response) {
+            $('#actionModal').modal('hide');
+            location.reload();
+        },
+        error: function(xhr) {
+            alert("Error: " + xhr.responseJSON.error);
+        }
+    });
+}
+</script>
+{% endblock %}
