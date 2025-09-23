@@ -69,17 +69,9 @@
 
 </style>
 
-{% if messages %}
-<div class="messages mb-4">
-    {% for message in messages %}
-    <div class="alert alert-{{ message.level_tag }} alert-dismissible fade show" role="alert">
-        <i class="fas {% if message.level_tag == 'success' %}fa-check-circle{% elif message.level_tag == 'error' %}fa-times-circle{% elif message.level_tag == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-    {% endfor %}
-</div>
-{% endif %}
+  {% with page_tag="batch_page" %}
+    {{ block.super }}   {# ensures only batch_page messages show #}
+  {% endwith %}
 
 <!-- Student List Modal -->
 <div class="modal fade" id="studentListModal" tabindex="-1" aria-labelledby="studentListTitle" aria-hidden="true">
@@ -286,7 +278,10 @@
         <h2><i class="fas fa-users me-2"></i>Batch List</h2>
         <div class="d-flex gap-2">
             <a href="{% url 'batchdb:create_batch' %}" class="btn-primary"><i class="fas fa-plus me-1"></i>Add Batch</a>
+            {% if user.role == 'admin' %}
             <a href="{% url 'batchdb:import_batches' %}" class="btn-secondary"><i class="fas fa-file-import me-1"></i>Import</a>
+            <a href="{% url 'batchdb:export_all_batches_data' %}" class="btn-secondary"><i class="fas fa-file-export me-1"></i>Export All</a>
+            {% endif %}
         </div>
     </div>
 
@@ -388,10 +383,13 @@
                                     <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewHandoverRequests('{{ batch.pk }}')"><i class="fas fa-user-friends me-1"></i>View Handover Requests</a></li>
                                     <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewStudentList('{{ batch.pk }}')"><i class="fas fa-users me-1"></i>View Students</a></li>
                                     <li><a class="dropdown-item" href="javascript:void(0);" onclick="viewBatchTransactions('{{ batch.pk }}')"><i class="fas fa-history me-1"></i>View Transactions</a></li>
+                                    <li><a class="dropdown-item" href="{% url 'batchdb:export_batch_data' batch.id %}"><i class="fas fa-file-export me-1"></i>Export Data</a></li>
                                 </ul>
                             </div>
                             <a href="{% url 'batchdb:update_batch' batch.pk %}" class="btn-update"><i class="fas fa-edit"></i></a>
+                            {% if user.role == 'admin' %}
                             <a href="{% url 'batchdb:delete_batch' batch.pk %}" class="btn-danger"><i class="fas fa-trash"></i></a>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -553,9 +551,11 @@ function viewStudentList(batchId) {
                             <a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn btn-info me-2" title="View History">
                                 <i class="fas fa-history fa-lg"></i>
                             </a>
+                            {% if user.role == 'admin' %}
                             <button class="btn btn-danger" onclick="removeStudent(${batchId}, ${s.id})" title="Remove Student">
                                 <i class="fas fa-user-minus fa-lg"></i>
                             </button>
+                            {% endif %}
                         </td>
                     </tr>`);
                 }

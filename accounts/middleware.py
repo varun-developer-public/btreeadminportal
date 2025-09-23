@@ -40,7 +40,19 @@ URL_ROLE_MAPPINGS = {
         'course_update',
         'category_create',
         'category_update',
-        'get_next_course_code','get_courses_by_category'
+        'get_next_course_code','get_courses_by_category','requests_list',
+        'get_students_not_in_batch','get_students_for_batch','get_students_by_course','get_trainers_by_course',
+        'get_students_for_course','get_trainer_slots','get_trainers_for_course','get_courses_by_category',
+        'export_batch_data','student-batch-history','request_details','approve_request',
+        'reject_request','available-students-for-transfer','available-batches-for-transfer',
+        'available-trainers-for-handover','available-batches-for-handover','batch-add-student','batch-remove-student',
+        'api_courses_by_category','get_course_duration','transfer-requests',
+        'batch-list','batch-detail',
+        'transferrequest-list','transferrequest-detail',
+        'trainerhandover-list','trainerhandover-detail',
+        'batchtransaction-list','batchtransaction-detail',
+        'studenthistory-list','studenthistory-detail','batch_report'
+
     ],
     'consultant': [
         'consultant_profile',

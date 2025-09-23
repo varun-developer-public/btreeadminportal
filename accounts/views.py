@@ -517,14 +517,36 @@ def placement_dashboard(request):
 @login_required
 @user_passes_test(is_batch_coordinator)
 def batch_coordination_dashboard(request):
-    total_students = Student.objects.count()
-    total_batches = Batch.objects.count()
-    total_trainers = Trainer.objects.count()
+    now = timezone.now()
+    
+    # Batches finishing this month for the donut chart
+    finishing_this_month = Batch.objects.filter(end_date__year=now.year, end_date__month=now.month)
+    
+    # Data for Donut Chart
+    finishing_labels = [b.course.course_name for b in finishing_this_month if b.course]
+    finishing_data = [b.students.count() for b in finishing_this_month]
 
+    # All batches for the calendar
+    all_batches = Batch.objects.all()
+    batch_events = []
+    for batch in all_batches:
+        batch_events.append({
+            'title': f'{batch.batch_id} - {batch.course.course_name if batch.course else ""}',
+            'start': batch.end_date.strftime('%Y-%m-%d'),
+            'allDay': True
+        })
+
+    import json
     context = {
-        'total_students': total_students,
-        'total_batches': total_batches,
-        'total_trainers': total_trainers,
+        'total_students': Student.objects.count(),
+        'total_batches': Batch.objects.count(),
+        'yts_batches': Batch.objects.filter(batch_status='YTS').count(),
+        'in_progress_batches': Batch.objects.filter(batch_status='IP').count(),
+        'completed_batches': Batch.objects.filter(batch_status='C').count(),
+        'total_trainers': Trainer.objects.count(),
+        'finishing_batches_labels': json.dumps(finishing_labels),
+        'finishing_batches_data': json.dumps(finishing_data),
+        'batch_events': json.dumps(batch_events),
     }
     return render(request, 'accounts/batch_coordination_dashboard.html', context)
 

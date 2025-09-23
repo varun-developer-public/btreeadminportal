@@ -40,6 +40,8 @@ from .forms import BatchCreationForm, BatchUpdateForm, BatchFilterForm
 
 import json
 import pandas as pd
+from io import BytesIO
+from openpyxl.styles import PatternFill
 
 from coursedb.models import Course, CourseCategory
 from trainersdb.models import Trainer
@@ -1228,3 +1230,118 @@ def reject_request(request, request_id):
         return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Pending request not found'}, status=404)
+
+@login_required
+def export_batch_data(request, batch_id):
+    try:
+        batch = Batch.objects.get(id=batch_id)
+    except Batch.DoesNotExist:
+        messages.error(request, "Batch not found.")
+        return redirect('batchdb:batch_list')
+
+    # Prepare data for export
+    data = {
+        'Batch ID': [batch.batch_id],
+        'Course': [batch.course.course_name if batch.course else 'N/A'],
+        'Trainer': [batch.trainer.name if batch.trainer else 'N/A'],
+        'Start Date': [batch.start_date.strftime('%d-%m-%Y')],
+        'End Date': [batch.end_date.strftime('%d-%m-%Y')],
+        'Slot Time': [batch.get_slottime],
+        'Status': [batch.get_batch_status_display()],
+        'Days': [', '.join(batch.days)],
+    }
+
+    # Student details
+    students = batch.students.all()
+    if students:
+        student_data = {
+            'Student ID': [s.student_id for s in students],
+            'Student Name': [f"{s.first_name} {s.last_name or ''}" for s in students],
+            'Email': [s.email for s in students],
+            'Phone': [s.phone for s in students],
+        }
+        max_len = max(len(v) for v in student_data.values())
+        for k, v in data.items():
+            v.extend([''] * (max_len - len(v)))
+        data.update(student_data)
+
+    # Create a DataFrame
+    df = pd.DataFrame(data)
+
+    # Create an Excel response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename="{batch.batch_id}_details.xlsx"'
+    df.to_excel(response, index=False)
+
+    return response
+
+@login_required
+def export_all_batches_data(request):
+    batches = Batch.objects.all().order_by('batch_id')
+    
+    if not batches.exists():
+        messages.error(request, "No batches to export.")
+        return redirect('batchdb:batch_list')
+
+    all_batches_data = []
+    batch_row_map = {}
+    current_row = 1
+
+    for batch in batches:
+        batch_info = {
+            'Batch ID': batch.batch_id,
+            'Course': batch.course.course_name if batch.course else 'N/A',
+            'Trainer': batch.trainer.name if batch.trainer else 'N/A',
+            'Start Date': batch.start_date.strftime('%d-%m-%Y'),
+            'End Date': batch.end_date.strftime('%d-%m-%Y'),
+            'Slot Time': batch.get_slottime,
+            'Status': batch.get_batch_status_display(),
+            'Days': ', '.join(batch.days),
+        }
+
+        students = batch.students.all()
+        start_row = current_row
+        
+        if students:
+            for student in students:
+                student_info = batch_info.copy()
+                student_info.update({
+                    'Student ID': student.student_id,
+                    'Student Name': f"{student.first_name} {student.last_name or ''}",
+                    'Email': student.email,
+                    'Phone': student.phone,
+                })
+                all_batches_data.append(student_info)
+                current_row += 1
+        else:
+            all_batches_data.append(batch_info)
+            current_row += 1
+            
+        batch_row_map[batch.id] = (start_row, current_row - 1)
+
+    df = pd.DataFrame(all_batches_data)
+    column_order = ['Batch ID', 'Course', 'Trainer', 'Start Date', 'End Date', 'Slot Time', 'Status', 'Days', 'Student ID', 'Student Name', 'Email', 'Phone']
+    df = df.reindex(columns=column_order)
+
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='All Batches')
+        workbook = writer.book
+        worksheet = writer.sheets['All Batches']
+
+        colors = ['FFFFCC', 'CCFFCC', 'CCFFFF', 'FFCCFF', 'CCE5FF', 'FFDDAA']
+        color_index = 0
+
+        for batch_id, (start_row, end_row) in batch_row_map.items():
+            fill_color = PatternFill(start_color=colors[color_index % len(colors)],
+                                     end_color=colors[color_index % len(colors)],
+                                     fill_type="solid")
+            for row in range(start_row + 1, end_row + 2):
+                for col in range(1, len(column_order) + 1):
+                    worksheet.cell(row=row, column=col).fill = fill_color
+            color_index += 1
+
+    output.seek(0)
+    response = HttpResponse(output, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = 'attachment; filename="all_batches_details.xlsx"'
+    return response
