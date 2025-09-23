@@ -42,7 +42,7 @@ class BatchSerializer(serializers.ModelSerializer):
             'id', 'batch_id', 'course', 'course_name', 'trainer', 'trainer_name',
             'start_date', 'end_date', 'batch_type', 'batch_type_display',
             'batch_status', 'batch_status_display', 'start_time', 'end_time',
-            'days', 'days_per_week', 'hours_per_day', 'batch_percentage',
+            'days', 'hours_per_day', 'batch_percentage',
             'slot_time', 'active_students_count', 'created_at', 'updated_at'
         ]
         read_only_fields = ['batch_id', 'created_at', 'updated_at']
