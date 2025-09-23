@@ -57,6 +57,9 @@ def batch_list(request):
         courses = form.cleaned_data.get('course')
         trainers = form.cleaned_data.get('trainer')
         statuses = form.cleaned_data.get('batch_status')
+        start_date = form.cleaned_data.get('start_date')
+        end_date = form.cleaned_data.get('end_date')
+        time_slot = form.cleaned_data.get('time_slot')
 
         if query:
             batch_list = batch_list.filter(
@@ -75,6 +78,18 @@ def batch_list(request):
 
         if statuses:
             batch_list = batch_list.filter(batch_status__in=statuses).distinct()
+
+        if start_date:
+            batch_list = batch_list.filter(start_date__gte=start_date)
+
+        if end_date:
+            batch_list = batch_list.filter(end_date__lte=end_date)
+
+        if time_slot:
+            start_time_str, end_time_str = time_slot.split('-')
+            start_time = datetime.strptime(start_time_str, '%H:%M').time()
+            end_time = datetime.strptime(end_time_str, '%H:%M').time()
+            batch_list = batch_list.filter(start_time=start_time, end_time=end_time)
 
     paginator = Paginator(batch_list, 10)
     page = request.GET.get('page')

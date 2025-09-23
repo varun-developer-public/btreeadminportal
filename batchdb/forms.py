@@ -128,7 +128,7 @@ class BatchCreationForm(forms.ModelForm):
 class BatchUpdateForm(forms.ModelForm):
     class Meta:
         model = Batch
-        fields = ['batch_status', 'batch_percentage']
+        fields = ['batch_status', 'batch_percentage', 'end_date']
         widgets = {
             'batch_status': forms.Select(attrs={'class': 'form-control'}),
             'batch_percentage': forms.NumberInput(attrs={
@@ -137,6 +137,7 @@ class BatchUpdateForm(forms.ModelForm):
                 'min': '0',
                 'max': '100'
             }),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
 from django_select2.forms import Select2MultipleWidget
@@ -144,7 +145,7 @@ from django_select2.forms import Select2MultipleWidget
 class BatchFilterForm(forms.Form):
     q = forms.CharField(
         required=False,
-        label="",
+        label="Search Input",
         widget=forms.TextInput(attrs={'placeholder': 'Search by Student, Batch ID...', 'class': 'form-control'})
     )
     
@@ -165,6 +166,43 @@ class BatchFilterForm(forms.Form):
     batch_status = forms.MultipleChoiceField(
         choices=Batch.STATUS_CHOICES,
         required=False,
-        widget=forms.Select(attrs={'class': 'form-control'}),
+        widget=Select2MultipleWidget(attrs={'class': 'form-control', 'data-placeholder': 'Select Statuses'}),
         label="Batch Status"
     )
+
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label="Start Date"
+    )
+
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label="End Date"
+    )
+
+    time_slot = forms.ChoiceField(
+        choices=[],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label="Time Slot"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Get all unique time slots from all trainers
+        all_slots = set()
+        trainers = Trainer.objects.all()
+        for trainer in trainers:
+            if isinstance(trainer.timing_slots, list):
+                for slot in trainer.timing_slots:
+                    if isinstance(slot, dict) and 'start_time' in slot and 'end_time' in slot:
+                        start_time = datetime.strptime(slot['start_time'], '%H:%M').strftime('%I:%M %p')
+                        end_time = datetime.strptime(slot['end_time'], '%H:%M').strftime('%I:%M %p')
+                        all_slots.add(f"{slot['start_time']}-{slot['end_time']}")
+
+        # Create choices for the time_slot field
+        slot_choices = [('', 'All Slots')] + [(slot, f"{datetime.strptime(slot.split('-')[0], '%H:%M').strftime('%I:%M %p')} - {datetime.strptime(slot.split('-')[1], '%H:%M').strftime('%I:%M %p')}") for slot in sorted(list(all_slots))]
+        self.fields['time_slot'].choices = slot_choices

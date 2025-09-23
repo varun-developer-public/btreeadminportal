@@ -293,13 +293,39 @@
     <!-- Filters -->
     <form method="get" class="filters mb-4">
         <div class="filter-row">
-            <div class="filter-group">{{ form.q.label_tag }} {{ form.q }}</div>
-            <div class="filter-group">{{ form.course.label_tag }} {{ form.course }}</div>
-            <div class="filter-group">{{ form.trainer.label_tag }} {{ form.trainer }}</div>
-            <div class="filter-group">{{ form.batch_status.label_tag }} {{ form.batch_status }}</div>
+            <div class="filter-group">
+                {{ form.course.label_tag }}
+                {{ form.course }}
+            </div>
+            <div class="filter-group">
+                {{ form.trainer.label_tag }}
+                {{ form.trainer }}
+            </div>
+            <div class="filter-group">
+                {{ form.batch_status.label_tag }}
+                {{ form.batch_status }}
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-group">
+                {{ form.q.label_tag }}
+                {{ form.q }}
+            </div>
+            <div class="filter-group">
+                {{ form.start_date.label_tag }}
+                {{ form.start_date }}
+            </div>
+            <div class="filter-group">
+                {{ form.end_date.label_tag }}
+                {{ form.end_date }}
+            </div>
+            <div class="filter-group">
+                {{ form.time_slot.label_tag }}
+                {{ form.time_slot }}
+            </div>
         </div>
         <div class="filter-actions">
-            <button type="submit" class="btn-primary">Apply</button>
+            <button type="submit" class="btn-primary">Apply Filters</button>
             <a href="{% url 'batchdb:batch_list' %}" class="btn-secondary">Reset</a>
         </div>
     </form>
@@ -378,15 +404,30 @@
 
     <!-- Pagination -->
     <div class="pagination">
-        {% if batches.has_previous %}
-            <a href="?page=1&{{ request.GET.urlencode }}">&laquo; first</a>
-            <a href="?page={{ batches.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
-        {% endif %}
-        <span>Page {{ batches.number }} of {{ batches.paginator.num_pages }}</span>
-        {% if batches.has_next %}
-            <a href="?page={{ batches.next_page_number }}&{{ request.GET.urlencode }}">next</a>
-            <a href="?page={{ batches.paginator.num_pages }}&{{ request.GET.urlencode }}">last &raquo;</a>
-        {% endif %}
+        <span class="step-links">
+            {% if batches.has_previous %}
+                <a href="?page=1&{{ request.GET.urlencode }}">&laquo; first</a>
+                <a href="?page={{ batches.previous_page_number }}&{{ request.GET.urlencode }}">previous</a>
+            {% endif %}
+    
+            <span class="current">
+                Page {{ batches.number }} of {{ batches.paginator.num_pages }}.
+            </span>
+    
+            {% if batches.has_next %}
+                <a href="?page={{ batches.next_page_number }}&{{ request.GET.urlencode }}">next</a>
+                <a href="?page={{ batches.paginator.num_pages }}&{{ request.GET.urlencode }}">last &raquo;</a>
+            {% endif %}
+        </span>
+        <form method="get" class="page-search">
+            <input type="number" name="page" min="1" max="{{ batches.paginator.num_pages }}" placeholder="Page">
+            {% for key, value in request.GET.items %}
+                {% if key != 'page' %}
+                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                {% endif %}
+            {% endfor %}
+            <button type="submit">Go</button>
+        </form>
     </div>
 </div>
 {% endblock %}

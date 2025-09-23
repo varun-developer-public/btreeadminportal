@@ -255,3 +255,45 @@ th {
     color: white;
     border-color: #007bff;
 }
+.pagination .page-search {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+.pagination .page-search input {
+    width: 60px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.pagination .page-search button {
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+}
+.filters {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.filter-group {
+    flex: 1 1 200px;
+}
+
+table {
+    font-size: 14px;
+}
+
+th, td {
+    padding: 12px 15px;
+}

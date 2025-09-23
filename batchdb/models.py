@@ -49,7 +49,7 @@ class Batch(models.Model):
     hours_per_day = models.DecimalField(
         max_digits=4,        
         decimal_places=2,   
-        default=2.00,
+        default=1.50,
         validators=[MinValueValidator(0.5), MaxValueValidator(24)] 
     )
     batch_percentage = models.DecimalField(

@@ -146,7 +146,7 @@ $(document).ready(function() {
 
     function toggleDaysOfWeek() {
         const selectedType = batchType.val();
-        if (['WD', 'WDWE', 'Hybrid'].includes(selectedType)) {
+        if (['WD', 'WE', 'WDWE', 'Hybrid'].includes(selectedType)) {
             daysOfWeekRow.show();
         } else {
             daysOfWeekRow.hide();
@@ -211,11 +211,29 @@ $(document).ready(function() {
             $('input[name="days"][value="Saturday"]').prop('checked', true);
             $('input[name="days"][value="Sunday"]').prop('checked', true);
         }
+        if (selectedType === 'WD') {
+            $('input[name="days"][value="Tuesday"]').prop('checked', true);
+            $('input[name="days"][value="Wednesday"]').prop('checked', true);
+            $('input[name="days"][value="Thursday"]').prop('checked', true);
+            $('input[name="days"][value="Friday"]').prop('checked', true);
+        }
         
         toggleDaysOfWeek();
         calculateEndDate();
     });
+    const selectedType = batchType.val();
+    daysCheckboxes.prop('checked', false);
 
+    if (selectedType === 'WE') {
+        $('input[name="days"][value="Saturday"]').prop('checked', true);
+        $('input[name="days"][value="Sunday"]').prop('checked', true);
+    }
+    if (selectedType === 'WD') {
+        $('input[name="days"][value="Tuesday"]').prop('checked', true);
+        $('input[name="days"][value="Wednesday"]').prop('checked', true);
+        $('input[name="days"][value="Thursday"]').prop('checked', true);
+        $('input[name="days"][value="Friday"]').prop('checked', true);
+    }
     $('#id_course, #id_start_date, #id_hours_per_day').change(calculateEndDate);
     daysCheckboxes.change(calculateEndDate);
 
