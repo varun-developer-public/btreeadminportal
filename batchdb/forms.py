@@ -4,6 +4,7 @@ from .models import Batch, BatchStudent
 from coursedb.models import Course, CourseCategory
 from trainersdb.models import Trainer
 from studentsdb.models import Student
+from django_select2.forms import Select2MultipleWidget
 import json
 
 class BatchCreationForm(forms.ModelForm):
@@ -133,15 +134,12 @@ class BatchUpdateForm(forms.ModelForm):
             'batch_status': forms.Select(attrs={'class': 'form-control'}),
             'batch_percentage': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'step': '0.01',   # decimal support
+                'step': '0.01', 
                 'min': '0',
                 'max': '100'
             }),
             'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
-
-from django_select2.forms import Select2MultipleWidget
-
 class BatchFilterForm(forms.Form):
     q = forms.CharField(
         required=False,

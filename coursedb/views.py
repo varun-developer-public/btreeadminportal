@@ -12,6 +12,7 @@ from .forms import CourseForm, CourseCategoryForm
 from django.db import transaction
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
+from decimal import Decimal
 
 @login_required
 def course_list(request):
@@ -57,8 +58,8 @@ def course_create(request):
                     module_hours = request.POST.getlist('module_hours')
                     print("Module names:", module_names)
                     print("Module hours:", module_hours)
-                    
-                    total_module_duration = sum(int(h) for h in module_hours if h)
+
+                    total_module_duration = sum(Decimal(h) for h in module_hours if h)
                     print(f"Calculated total module duration: {total_module_duration}")
                     print(f"Course total duration from form: {course.total_duration}")
 
@@ -141,7 +142,7 @@ def course_update(request, pk):
                     print("Module names:", module_names)
                     print("Module hours:", module_hours)
 
-                    total_module_duration = sum(int(h) for h in module_hours if h)
+                    total_module_duration = sum(Decimal(h) for h in module_hours if h)
                     print(f"Calculated total module duration: {total_module_duration}")
                     print(f"Course total duration from form: {course.total_duration}")
 

@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-5">
                         <div class="form-group">
                             <label>Module Hours<span class="required-indicator">*</span></label>
-                            <input type="number" name="module_hours" class="form-control module-hours-input" min="1" required>
+                            <input type="number" name="module_hours" class="form-control module-hours-input" min="0.5" step="0.01" required>
                         </div>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="col-md-5">
                         <div class="form-group">
                             <label>Topic Hours<span class="required-indicator">*</span></label>
-                            <input type="number" name="topic_hours_module_${currentModuleIndex}" class="form-control topic-hours-input" min="1" required>
+                            <input type="number" name="topic_hours_module_${currentModuleIndex}" class="form-control topic-hours-input" min="0.5" step="0.01" required>
                         </div>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">

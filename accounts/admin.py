@@ -53,14 +53,13 @@ class CustomUserCreationForm(forms.ModelForm):
 class CustomUserAdmin(UserAdmin):
     add_form = CustomUserCreationForm
     model = CustomUser
-    list_display = ('email', 'name', 'role', 'is_staff', 'is_superuser','totp_secret')
+    list_display = ('email', 'name', 'role', 'is_staff', 'is_superuser',)
     list_filter = ('role','is_staff', 'is_superuser')
     ordering = ('email',)
     search_fields = ('email', 'name')
-    readonly_fields = ('totp_secret',)
     
     fieldsets = (
-        (None, {'fields': ('email', 'name', 'password','totp_secret')}),
+        (None, {'fields': ('email', 'name', 'password',)}),
         ('Role Info', {'fields': ('role',)}),
         ('Permissions', {'fields': ('is_staff', 'is_superuser', 'groups', 'user_permissions')}),
     )

@@ -1,5 +1,5 @@
 from django.db import models
-from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _
 
 class CourseCategory(models.Model):
@@ -34,7 +34,13 @@ class Course(models.Model):
     code = models.CharField(max_length=10, unique=True, blank=True)
     course_type = models.CharField(max_length=10, choices=COURSE_TYPE_CHOICES, default='Course')
     category = models.ForeignKey(CourseCategory, on_delete=models.CASCADE, related_name='courses')
-    total_duration = models.IntegerField(help_text="Duration in hours")
+    total_duration = models.DecimalField(
+        max_digits=8,        
+        decimal_places=2,   
+        help_text="Duration in hours",
+        blank=False,
+        null=False
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -50,13 +56,18 @@ class Course(models.Model):
                 new_id = last_id + 1
             else:
                 new_id = 1
-            self.code = f"{category_code}{new_id:03d}"
+            self.code = f"{category_code}{new_id:03d}" 
         super().save(*args, **kwargs)
 
 class CourseModule(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='modules')
     name = models.CharField(max_length=255)
-    module_duration = models.IntegerField(help_text="Duration in hours")
+    module_duration = models.DecimalField(
+        max_digits=8,        
+        decimal_places=2,   
+        validators=[MinValueValidator(0.5)],
+        help_text="Duration in hours"
+    )
     has_topics = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -67,7 +78,12 @@ class CourseModule(models.Model):
 class Topic(models.Model):
     module = models.ForeignKey(CourseModule, on_delete=models.CASCADE, related_name='topics')
     name = models.CharField(max_length=255)
-    topic_duration = models.IntegerField(help_text="Duration in hours")
+    topic_duration = models.DecimalField(
+        max_digits=8,        
+        decimal_places=2,   
+        validators=[MinValueValidator(0.5)],
+        help_text="Duration in hours"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

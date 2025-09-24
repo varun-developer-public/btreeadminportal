@@ -19,7 +19,12 @@ class CourseForm(forms.ModelForm):
             'code': forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),
             'course_type': forms.Select(attrs={'class': 'form-control'}),
             'category': forms.Select(attrs={'class': 'form-control'}),
-            'total_duration': forms.NumberInput(attrs={'class': 'form-control'}),
+            'total_duration': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01', 
+                'min': '0',
+                'max': '100'
+            }),
         }
 
     def clean(self):
@@ -70,7 +75,12 @@ CourseModuleFormSet = forms.inlineformset_factory(
     can_delete=True,
     widgets={
         'name': forms.TextInput(attrs={'class': 'form-control'}),
-        'module_duration': forms.NumberInput(attrs={'class': 'form-control'}),
+        'module_duration': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01', 
+                'min': '0',
+                'max': '100'
+            }),
         'has_topics': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
     }
 )
@@ -108,6 +118,11 @@ TopicFormSet = forms.inlineformset_factory(
     can_delete=True,
     widgets={
         'name': forms.TextInput(attrs={'class': 'form-control'}),
-        'topic_duration': forms.NumberInput(attrs={'class': 'form-control'}),
+        'topic_duration': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01', 
+                'min': '0',
+                'max': '100'
+            }),
     }
 )
