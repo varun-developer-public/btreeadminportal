@@ -519,34 +519,120 @@ def placement_dashboard(request):
 def batch_coordination_dashboard(request):
     now = timezone.now()
     
-    # Batches finishing this month for the donut chart
-    finishing_this_month = Batch.objects.filter(end_date__year=now.year, end_date__month=now.month)
+    # Get all batches with related data
+    all_batches = Batch.objects.select_related('course', 'trainer').prefetch_related('students')
     
-    # Data for Donut Chart
-    finishing_labels = [b.course.course_name for b in finishing_this_month if b.course]
-    finishing_data = [b.students.count() for b in finishing_this_month]
-
-    # All batches for the calendar
-    all_batches = Batch.objects.all()
-    batch_events = []
+    # Prepare batches data for the dashboard
+    batches_data = []
     for batch in all_batches:
-        batch_events.append({
-            'title': f'{batch.batch_id} - {batch.course.course_name if batch.course else ""}',
-            'start': batch.end_date.strftime('%Y-%m-%d'),
-            'allDay': True
+        # Calculate progress based on start and end dates
+        if batch.start_date and batch.end_date:
+            total_days = (batch.end_date - batch.start_date).days
+            days_passed = (now.date() - batch.start_date).days
+            
+            if total_days > 0:
+                progress = min(100, max(0, int((days_passed / total_days) * 100)))
+            else:
+                progress = 0
+        else:
+            progress = 0
+            
+        # Format batch data
+        batch_data = {
+            'id': batch.batch_id,
+            'course': batch.course.course_name if batch.course else "N/A",
+            'trainer': {
+                'id': batch.trainer.id if batch.trainer else None,
+                'name': batch.trainer.name if batch.trainer else "N/A",
+                'initials': ''.join([name[0].upper() for name in batch.trainer.name.split()[:2]]) if batch.trainer else "NA"
+            },
+            'startDate': batch.start_date.isoformat() if batch.start_date else None,
+            'endDate': batch.end_date.isoformat() if batch.end_date else None,
+            'status': batch.batch_status.lower() if batch.batch_status else "unknown",
+            'progress': progress,
+            'batchType': batch.batch_type if batch.batch_type else "Regular",
+            'students': batch.students.count(),
+            'hoursPerDay': batch.hours_per_day if batch.hours_per_day else 0,
+            'days': batch.days.split(',') if batch.days and isinstance(batch.days, str) else (batch.days if isinstance(batch.days, list) else [])
+        }
+        batches_data.append(batch_data)
+    
+    # Get all trainers with availability data
+    trainers = Trainer.objects.all()
+    trainers_data = []
+    
+    for trainer in trainers:
+        # Get batches assigned to this trainer
+        trainer_batches = Batch.objects.filter(trainer=trainer)
+        
+        # Format trainer data
+        trainer_data = {
+            'id': trainer.id,
+            'name': trainer.name,
+            'email': trainer.email,
+            'availability': trainer.timing_slots if trainer.timing_slots else {},
+            'batches': [b.batch_id for b in trainer_batches]
+        }
+        trainers_data.append(trainer_data)
+    
+    # Create calendar events for all batches
+    calendar_events = []
+    for batch in all_batches:
+        if batch.start_date:
+            calendar_events.append({
+                'title': f'{batch.batch_id}: {batch.course.course_name if batch.course else ""} (Start)',
+                'start': batch.start_date.isoformat(),
+                'backgroundColor': '#34d3ff',
+                'borderColor': '#34d3ff'
+            })
+        
+        if batch.end_date:
+            calendar_events.append({
+                'title': f'{batch.batch_id}: {batch.course.course_name if batch.course else ""} (End)',
+                'start': batch.end_date.isoformat(),
+                'backgroundColor': '#8b5cf6',
+                'borderColor': '#8b5cf6'
+            })
+    
+    # Get trainer handovers for notifications
+    from batchdb.models import TrainerHandover
+    handovers = TrainerHandover.objects.select_related('batch', 'from_trainer', 'to_trainer').order_by('-requested_at')[:5]
+    
+    notifications_data = []
+    for handover in handovers:
+        notifications_data.append({
+            'id': handover.id,
+            'content': f"Batch {handover.batch.batch_id} transferred from {handover.from_trainer.name} to {handover.to_trainer.name}",
+            'time': f"{(now - handover.requested_at).days} days ago" if (now - handover.requested_at).days > 0 else "Today",
+            'read': False
         })
-
+    
+    # Add notifications for batches nearing completion (>80%)
+    for batch in all_batches:
+        if batch.batch_status == 'IP' and batch.batch_percentage and batch.batch_percentage >= 80:
+            notifications_data.append({
+                'id': f"batch_{batch.id}",
+                'content': f"Batch {batch.batch_id} is {batch.batch_percentage}% complete",
+                'time': "Recently updated",
+                'read': False
+            })
+    
     import json
+    from django.core.serializers.json import DjangoJSONEncoder
+    
     context = {
         'total_students': Student.objects.count(),
-        'total_batches': Batch.objects.count(),
-        'yts_batches': Batch.objects.filter(batch_status='YTS').count(),
-        'in_progress_batches': Batch.objects.filter(batch_status='IP').count(),
-        'completed_batches': Batch.objects.filter(batch_status='C').count(),
-        'total_trainers': Trainer.objects.count(),
-        'finishing_batches_labels': json.dumps(finishing_labels),
-        'finishing_batches_data': json.dumps(finishing_data),
-        'batch_events': json.dumps(batch_events),
+        'total_batches': all_batches.count(),
+        'yts_batches': all_batches.filter(batch_status='YTS').count(),
+        'in_progress_batches': all_batches.filter(batch_status='IP').count(),
+        'completed_batches': all_batches.filter(batch_status='C').count(),
+        'total_trainers': trainers.count(),
+        'handovers': handovers.count(),
+        'trainers': trainers,
+        'batches_data': json.dumps(batches_data, cls=DjangoJSONEncoder),
+        'trainers_data': json.dumps(trainers_data, cls=DjangoJSONEncoder),
+        'notifications_data': json.dumps(notifications_data, cls=DjangoJSONEncoder),
+        'calendar_events': json.dumps(calendar_events, cls=DjangoJSONEncoder),
     }
     return render(request, 'accounts/batch_coordination_dashboard.html', context)
 

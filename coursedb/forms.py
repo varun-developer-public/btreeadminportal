@@ -23,7 +23,6 @@ class CourseForm(forms.ModelForm):
                 'class': 'form-control',
                 'step': '0.01', 
                 'min': '0',
-                'max': '100'
             }),
         }
 
@@ -79,7 +78,6 @@ CourseModuleFormSet = forms.inlineformset_factory(
                 'class': 'form-control',
                 'step': '0.01', 
                 'min': '0',
-                'max': '100'
             }),
         'has_topics': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
     }
@@ -122,7 +120,6 @@ TopicFormSet = forms.inlineformset_factory(
                 'class': 'form-control',
                 'step': '0.01', 
                 'min': '0',
-                'max': '100'
             }),
     }
 )
