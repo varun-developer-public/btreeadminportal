@@ -168,20 +168,25 @@ def update_student(request, student_id):
                 set_current_user(request.user)
                 
                 updated_student.save()
-                placement_form.save()
+                if any(field in request.POST for field in placement_form.fields):
+                    placement_form.save()
+                # === Placement Sync Logic (Only if pl_required changed) ===
+                if "pl_required" in form.changed_data:
+                    if updated_student.pl_required:
+                        placement, created = Placement.objects.get_or_create(student=updated_student)
+                        if not created and not placement.is_active:
+                            placement.is_active = True
+                            placement.save()
+                    else:
+                        # Instead of delete, just deactivate to preserve history
+                        placement = Placement.objects.filter(student=updated_student).first()
+                        if placement and placement.is_active:
+                            placement.is_active = False
+                            placement.save()
             except Exception as e:
                 # Debug information
                 print(f"Error saving student: {str(e)}")
                 messages.error(request, f"Error saving student: {str(e)}", extra_tags='student_message')
-            # === Placement Sync Logic ===
-            if updated_student.pl_required:
-                # Activate placement if exists or create new
-                placement, created = Placement.objects.get_or_create(student=updated_student)
-                if not created and not placement.is_active:
-                    placement.is_active = True
-                    placement.save()
-            else:
-                Placement.objects.filter(student=updated_student).delete()
 
             messages.success(request, f"{updated_student.student_id} updated successfully.", extra_tags='student_message')
             return redirect('student_list')

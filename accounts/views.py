@@ -557,7 +557,7 @@ def batch_coordination_dashboard(request):
         }
         batches_data.append(batch_data)
     
-    # Get all trainers with availability data
+    # Get all trainers with detailed availability data
     trainers = Trainer.objects.all()
     trainers_data = []
     
@@ -565,12 +565,55 @@ def batch_coordination_dashboard(request):
         # Get batches assigned to this trainer
         trainer_batches = Batch.objects.filter(trainer=trainer)
         
-        # Format trainer data
+        # Get YTS and In Progress batches
+        active_batches = trainer_batches.filter(batch_status__in=['YTS', 'IP'])
+        
+        # Generate detailed time slots for the next 14 days
+        time_slots = []
+        today = now.date()
+        
+        for i in range(14):
+            slot_date = today + timedelta(days=i)
+            day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][slot_date.weekday()]
+            
+            # Check if trainer has batches on this day
+            morning_occupied = False
+            afternoon_occupied = False
+            morning_batch = None
+            afternoon_batch = None
+            
+            for batch in active_batches:
+                if batch.days:
+                    batch_days = batch.days.split(',') if isinstance(batch.days, str) else batch.days
+                    if day_name in batch_days:
+                        # Determine if morning or afternoon based on hours_per_day or other logic
+                        if batch.hours_per_day and batch.hours_per_day <= 3:
+                            morning_occupied = True
+                            morning_batch = batch.batch_id
+                        else:
+                            afternoon_occupied = True
+                            afternoon_batch = batch.batch_id
+            
+            time_slots.append({
+                'date': slot_date.isoformat(),
+                'day': day_name,
+                'morning': {
+                    'available': not morning_occupied,
+                    'batch': morning_batch
+                },
+                'afternoon': {
+                    'available': not afternoon_occupied,
+                    'batch': afternoon_batch
+                }
+            })
+        
+        # Format trainer data with detailed availability
         trainer_data = {
             'id': trainer.id,
             'name': trainer.name,
             'email': trainer.email,
             'availability': trainer.timing_slots if trainer.timing_slots else {},
+            'time_slots': time_slots,
             'batches': [b.batch_id for b in trainer_batches]
         }
         trainers_data.append(trainer_data)
