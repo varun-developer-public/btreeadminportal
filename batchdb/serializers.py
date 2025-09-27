@@ -100,9 +100,10 @@ class TransferRequestSerializer(serializers.ModelSerializer):
             'id', 'from_batch', 'from_batch_id','from_batch_code', 'to_batch', 'to_batch_id','to_batch_code',
             'status', 'status_display', 'requested_by', 'requested_by_name',
             'requested_at', 'approved_by', 'approved_by_name', 'approved_at',
-            'remarks', 'student_count', 'students_data'
+            'remarks', 'student_count', 'students_data', 'students'
         ]
         read_only_fields = ['requested_by','requested_at', 'approved_at', 'status', 'approved_by']
+        extra_kwargs = {'students': {'write_only': True}}
     
     def get_student_count(self, obj):
         return obj.students.count()
@@ -114,13 +115,10 @@ class TransferRequestSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         validated_data['requested_by'] = user
         
-        students = self.context['request'].data.get('students', [])
-        
+        students_data = validated_data.pop('students', [])
         transfer_request = TransferRequest.objects.create(**validated_data)
-        
-        # Add students to the transfer request
-        if students:
-            transfer_request.students.set(students)
+        if students_data:
+            transfer_request.students.set(students_data)
         
         return transfer_request
 

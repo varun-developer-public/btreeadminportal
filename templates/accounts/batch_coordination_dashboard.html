@@ -323,30 +323,30 @@
         </ul>
     </div>
 
-    <!-- Transfer Request Modal -->
-    <div class="bcd-modal" id="transferModal">
+    <!-- Student Transfer Modal -->
+    <div class="bcd-modal" id="studentTransferModal">
         <div class="bcd-modal-content">
             <div class="bcd-modal-header">
-                <h3 class="bcd-modal-title">Transfer Batch</h3>
-                <button class="bcd-modal-close" id="closeTransferModal">&times;</button>
+                <h3 class="bcd-modal-title">Transfer Students</h3>
+                <button class="bcd-modal-close" id="closeStudentTransferModal">&times;</button>
             </div>
             <div class="bcd-modal-body">
                 {% csrf_token %}
+                <input type="hidden" id="fromBatchId">
                 <div class="bcd-mb-2">
-                    <label for="transferBatchId" class="bcd-mb-1">Batch</label>
-                    <input type="text" id="transferBatchId" class="bcd-search" readonly>
+                    <label for="fromBatch" class="bcd-mb-1">From Batch</label>
+                    <input type="text" id="fromBatch" class="bcd-search" readonly>
                 </div>
                 <div class="bcd-mb-2">
-                    <label for="transferFromTrainer" class="bcd-mb-1">Current Trainer</label>
-                    <input type="text" id="transferFromTrainer" class="bcd-search" readonly>
+                    <label for="studentsToTransfer" class="bcd-mb-1">Students to Transfer</label>
+                    <select id="studentsToTransfer" class="bcd-trainer-select" multiple>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
                 </div>
                 <div class="bcd-mb-2">
-                    <label for="transferToTrainer" class="bcd-mb-1">New Trainer</label>
-                    <select id="transferToTrainer" class="bcd-trainer-select">
-                        <option value="">Select Trainer</option>
-                        {% for trainer in trainers %}
-                        <option value="{{ trainer.id }}">{{ trainer.name }}</option>
-                        {% endfor %}
+                    <label for="toBatch" class="bcd-mb-1">To Batch</label>
+                    <select id="toBatch" class="bcd-trainer-select">
+                        <!-- Options will be populated by JavaScript -->
                     </select>
                 </div>
                 <div class="bcd-mb-2">
@@ -355,8 +355,8 @@
                 </div>
             </div>
             <div class="bcd-modal-footer">
-                <button class="bcd-btn bcd-btn-secondary" id="cancelTransfer">Cancel</button>
-                <button class="bcd-btn bcd-btn-primary" id="confirmTransfer">Submit Request</button>
+                <button class="bcd-btn bcd-btn-secondary" id="cancelStudentTransfer">Cancel</button>
+                <button class="bcd-btn bcd-btn-primary" id="confirmStudentTransfer">Submit Request</button>
             </div>
         </div>
     </div>
@@ -395,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             row.innerHTML = `
-                <td>${batch.batch_id}</td>
+                <td><a href="/batches/batch/${batch.id}/report/" class="view-link">${batch.batch_id}</a></td>
                 <td>${batch.course}</td>
                 <td>
                     <div class="bcd-trainer-info">
@@ -795,74 +795,92 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initialize Transfer Modal
-    function initTransferModal() {
+    // Initialize Student Transfer Modal
+    function initStudentTransferModal() {
         const transferBtn = document.getElementById('transferBtn');
-        const transferModal = document.getElementById('transferModal');
-        const closeTransferModal = document.getElementById('closeTransferModal');
-        const cancelTransfer = document.getElementById('cancelTransfer');
-        const confirmTransfer = document.getElementById('confirmTransfer');
-        
+        const transferModal = document.getElementById('studentTransferModal');
+        const closeModal = document.getElementById('closeStudentTransferModal');
+        const cancelBtn = document.getElementById('cancelStudentTransfer');
+        const confirmBtn = document.getElementById('confirmStudentTransfer');
+
         transferBtn.addEventListener('click', function() {
             const selectedRow = document.querySelector('#batchesTable tbody tr.selected');
-            if (!selectedRow) return;
-            
-            const batchId = selectedRow.dataset.batchId;
-            const batch = batchesData.find(b => b.batch_id === batchId);
-            if (!batch) return;
-            
-            document.getElementById('transferBatchId').value = batch.batch_id;
-            document.getElementById('transferFromTrainer').value = batch.trainer.name;
-            
-            transferModal.classList.add('active');
-        });
-        
-        closeTransferModal.addEventListener('click', function() {
-            transferModal.classList.remove('active');
-        });
-        
-        cancelTransfer.addEventListener('click', function() {
-            transferModal.classList.remove('active');
-        });
-        
-        confirmTransfer.addEventListener('click', function() {
-            const batchId = document.getElementById('transferBatchId').value;
-            const toTrainerId = document.getElementById('transferToTrainer').value;
-            const reason = document.getElementById('transferReason').value;
-            
-            if (!batchId || !toTrainerId || !reason) {
-                alert('Please fill in all fields');
+            if (!selectedRow) {
+                alert('Please select a batch first.');
                 return;
             }
+            const batchId = selectedRow.dataset.pk;
+            const batch = batchesData.find(b => b.id == batchId);
             
-            // Send AJAX request to server
-            fetch('/batches/transfer-request/', {
+            document.getElementById('fromBatchId').value = batch.id;
+            document.getElementById('fromBatch').value = batch.batch_id;
+            // Fetch students for the selected batch
+                $.get("{% url 'batchdb:get_students_for_batch' %}", { batch_id: batchId }, function(data) {
+                    let select = $('#studentsToTransfer').empty();
+                    if (data.students.length) {
+                        data.students.forEach(s => {
+                            if (s.is_active) {
+                                select.append(`<option value="${s.id}">${s.student_id} - ${s.name}</option>`);
+                            }
+                        });
+                    } else {
+                        select.html("<option disabled>No active students to transfer</option>");
+                    }
+                    select.select2({ placeholder: 'Select students', width: '100%' });
+                });
+
+            // Fetch available batches for transfer
+            $.get("{% url 'batchdb:batchdb_api:available-batches-for-transfer' %}", { from_batch_id: batchId }, function(data) {
+                    let select = $('#toBatch').empty().append("<option value=''>Select a batch</option>");
+                    if (data.length) {
+                        data.forEach(b => select.append(`<option value="${b.id}">${b.batch_id} - ${b.course_name}</option>`));
+                    } else {
+                        select.html("<option disabled>No compatible batches available</option>");
+                    }
+                    select.select2({ placeholder: 'Select target batch', width: '100%' });
+                });
+
+            transferModal.classList.add('active');
+        });
+
+        closeModal.addEventListener('click', () => transferModal.classList.remove('active'));
+        cancelBtn.addEventListener('click', () => transferModal.classList.remove('active'));
+
+        confirmBtn.addEventListener('click', function() {
+            const fromBatchId = document.getElementById('fromBatchId').value;
+            const toBatchId = document.getElementById('toBatch').value;
+            const studentIds =Array.from(document.getElementById('studentsToTransfer').selectedOptions).map(opt => opt.value);
+            const reason = document.getElementById('transferReason').value;
+
+            if (!toBatchId || studentIds.length === 0 || !reason) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            fetch("{% url 'batchdb:batchdb_api:transferrequest-list' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    "X-CSRFToken": "{{ csrf_token }}" ,
                 },
                 body: JSON.stringify({
-                    batch_id: batchId,
-                    to_trainer_id: toTrainerId,
-                    reason: reason
-                })
+                    from_batch: fromBatchId,
+                    to_batch: toBatchId,
+                    students: studentIds,
+                    remarks: reason,
+                }),
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    alert('Transfer request submitted successfully');
+                if (data.id) {
+                    alert('Transfer request submitted successfully!');
                     transferModal.classList.remove('active');
-                    // Refresh notifications
-                    window.location.reload();
+                    location.reload();
                 } else {
-                    alert('Error: ' + data.error);
+                    alert('Error submitting transfer request: ' + JSON.stringify(data));
                 }
             })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while submitting the transfer request');
-            });
+            .catch(error => console.error('Error:', error));
         });
     }
 
@@ -910,7 +928,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initCalendar();
     initTrainerAvailability();
     initNotifications();
-    initTransferModal();
+    initStudentTransferModal();
 
     // Search functionality
     const searchInput = document.querySelector('.bcd-search-input');

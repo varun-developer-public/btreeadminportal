@@ -16,6 +16,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from core.permissions import IsBatchCoordinator
 from django.views.decorators.csrf import csrf_exempt
 
 # Model imports
@@ -242,7 +243,7 @@ def get_students_for_course(request):
 class BatchViewSet(viewsets.ModelViewSet):
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsBatchCoordinator]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['batch_id', 'course__name', 'trainer__name']
     ordering_fields = ['start_date', 'end_date', 'created_at', 'batch_id']
@@ -408,7 +409,7 @@ class BatchViewSet(viewsets.ModelViewSet):
 class TransferRequestViewSet(viewsets.ModelViewSet):
     queryset = TransferRequest.objects.all()
     serializer_class = TransferRequestSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsBatchCoordinator]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['from_batch__batch_id', 'to_batch__batch_id']
     ordering_fields = ['requested_at', 'status']
