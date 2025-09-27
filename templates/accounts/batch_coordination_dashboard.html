@@ -250,7 +250,7 @@
                         </div>
                     </div>
                     <div class="bcd-time-row">
-                        <div class="bcd-time-label">3:00 am - 4:30 am</div>
+                        <div class="bcd-time-label">3:00 pm - 4:30 pm</div>
                         <div class="bcd-time-slots">
                             <div class="bcd-time-slot"></div>
                             <div class="bcd-time-slot"></div>
@@ -263,7 +263,7 @@
                     </div>
                     <div id="calendar" style="display: none;"></div>
                     <div class="bcd-time-row">
-                        <div class="bcd-time-label">4:30 am - 6:00 am</div>
+                        <div class="bcd-time-label">4:30 pm - 6:00 pm</div>
                         <div class="bcd-time-slots">
                             <div class="bcd-time-slot"></div>
                             <div class="bcd-time-slot"></div>
@@ -456,8 +456,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Utility: Normalize date (avoid timezone shift issue)
     function parseDate(dateStr) {
-        const d = new Date(dateStr);
-        return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+        if (!dateStr) return null;
+        const parts = dateStr.split('-');
+        // new Date(year, monthIndex, day)
+        return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
     }
 
     // Utility: map startTime to row index
@@ -552,15 +554,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 const batchEndDate = parseDate(batch.endDate);
 
                 // Batch Start
-                const startDayDiff = Math.floor((batchStartDate - firstDay) / (24 * 60 * 60 * 1000));
-                if (startDayDiff >= 0 && startDayDiff < 7) {
-                    addBatchEvent(startDayDiff, batch, 'start');
+                const daysBetween = (date1, date2) => {
+                    const d1 = new Date(Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate()));
+                    const d2 = new Date(Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate()));
+                    return Math.round((d1 - d2) / (1000 * 60 * 60 * 24));
+                };
+
+                // Batch Start
+                if (batchStartDate) {
+                    const startDayDiff = daysBetween(batchStartDate, firstDay);
+                    if (startDayDiff >= 0 && startDayDiff < 7) {
+                        addBatchEvent(startDayDiff, batch, 'start');
+                    }
                 }
 
                 // Batch End
-                const endDayDiff = Math.floor((batchEndDate - firstDay) / (24 * 60 * 60 * 1000));
-                if (endDayDiff >= 0 && endDayDiff < 7) {
-                    addBatchEvent(endDayDiff, batch, 'end');
+                if (batchEndDate) {
+                    const endDayDiff = daysBetween(batchEndDate, firstDay);
+                    if (endDayDiff >= 0 && endDayDiff < 7) {
+                        addBatchEvent(endDayDiff, batch, 'end');
+                    }
                 }
             });
 
@@ -571,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let targetSlot = null;
 
             // Determine batch time based on event type
-            const batchTime = eventType === 'start' ? batch.startTime : batch.endTime;
+            const batchTime = batch.startTime; // Both start and end events should use the start time
             if (!batchTime) return; // no time, skip
 
             const [batchHour, batchMinute] = batchTime.split(':').map(Number);
@@ -581,11 +594,25 @@ document.addEventListener('DOMContentLoaded', function() {
             for (let i = 0; i < timeRows.length; i++) {
                 const timeLabel = timeRows[i].querySelector('.bcd-time-label').textContent;
                 const [startTime, endTime] = timeLabel.split(' - ').map(t => t.trim());
-                const [startHour, startMinute] = startTime.split(':').map(Number);
-                const [endHour, endMinute] = endTime.split(':').map(Number);
 
-                const startTotalMinutes = startHour * 60 + startMinute;
-                const endTotalMinutes = endHour * 60 + endMinute;
+                const parseTime = (timeStr) => {
+                    const parts = timeStr.match(/(\d+):(\d+)\s*(am|pm)/i);
+                    if (!parts) return 0;
+                    let hours = parseInt(parts[1], 10);
+                    const minutes = parseInt(parts[2], 10);
+                    const modifier = parts[3].toLowerCase();
+
+                    if (modifier === 'pm' && hours < 12) {
+                        hours += 12;
+                    }
+                    if (modifier === 'am' && hours === 12) {
+                        hours = 0; // Midnight case
+                    }
+                    return hours * 60 + minutes;
+                };
+
+                const startTotalMinutes = parseTime(startTime);
+                const endTotalMinutes = parseTime(endTime);
 
                 if (batchTotalMinutes >= startTotalMinutes && batchTotalMinutes < endTotalMinutes) {
                     targetSlot = timeRows[i].querySelectorAll('.bcd-time-slot')[dayIndex];
