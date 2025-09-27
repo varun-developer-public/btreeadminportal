@@ -180,8 +180,8 @@
             </div> -->
             <div class="bcd-week-calendar">
                 <div class="bcd-week-header">
-                    <button class="bcd-week-nav-btn" id="prev-week"><i class="fas fa-chevron-left"></i></button>
                     <div class="bcd-day-column bcd-time-column"></div>
+                    <button class="bcd-week-nav-btn" id="prev-week"><i class="fas fa-chevron-left"></i></button>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Mon</div>
                         <div class="bcd-day-number">22</div>
@@ -454,55 +454,36 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('progressFill').style.width = `${batch.progress}%`;
     }
 
-    // Initialize Calendar
+    // Utility: Normalize date (avoid timezone shift issue)
+    function parseDate(dateStr) {
+        const d = new Date(dateStr);
+        return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    }
+
+    // Utility: map startTime to row index
+    function getTimeRowIndex(startTime) {
+        const slots = [
+            "09:00", // 9:00 - 10:30
+            "10:30", // 10:30 - 12:00
+            "12:00", // 12:00 - 1:30
+            "15:00", // 3:00 - 4:30
+            "16:30"  // 4:30 - 6:00
+        ];
+        return slots.findIndex(slot => startTime.startsWith(slot));
+    }
+
+    // Initialize Calendar (Week View Only)
     function initCalendar() {
-        const calendarEl = document.getElementById('calendar');
         const weekCalendar = document.querySelector('.bcd-week-calendar');
-        const weekViewBtn = document.getElementById('week-view');
-        const monthViewBtn = document.getElementById('month-view');
 
-        let calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            events: JSON.parse('{{ calendar_events|escapejs }}'),
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,timeGridDay'
-            }
-        });
-
-        function showWeekView() {
-            weekCalendar.style.display = 'block';
-            calendarEl.style.display = 'none';
-            weekViewBtn.classList.add('btn-primary');
-            weekViewBtn.classList.remove('btn-outline-primary');
-            monthViewBtn.classList.add('btn-outline-primary');
-            monthViewBtn.classList.remove('btn-primary');
-            updateWeekCalendar();
-        }
-
-        function showMonthView() {
-            weekCalendar.style.display = 'none';
-            calendarEl.style.display = 'block';
-            weekViewBtn.classList.remove('btn-primary');
-            weekViewBtn.classList.add('btn-outline-primary');
-            monthViewBtn.classList.remove('btn-outline-primary');
-            monthViewBtn.classList.add('btn-primary');
-            calendar.render();
-        }
-
-        weekViewBtn.addEventListener('click', showWeekView);
-        monthViewBtn.addEventListener('click', showMonthView);
-
-        // Week calendar navigation
+        // Header
         const currentMonthEl = document.getElementById('current-month');
         const prevMonthBtn = document.getElementById('prev-month');
         const nextMonthBtn = document.getElementById('next-month');
-        
-        // Current date for navigation
+
         let currentDate = new Date();
         updateCalendarHeader();
-        
+
         // Navigation buttons
         const prevWeekBtn = document.getElementById('prev-week');
         const nextWeekBtn = document.getElementById('next-week');
@@ -512,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCalendarHeader();
             updateWeekCalendar();
         });
-        
+
         nextMonthBtn.addEventListener('click', function() {
             currentDate.setMonth(currentDate.getMonth() + 1);
             updateCalendarHeader();
@@ -521,27 +502,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
         prevWeekBtn.addEventListener('click', function() {
             currentDate.setDate(currentDate.getDate() - 7);
+            updateCalendarHeader();   // ✅ also refresh header
             updateWeekCalendar();
         });
 
         nextWeekBtn.addEventListener('click', function() {
             currentDate.setDate(currentDate.getDate() + 7);
+            updateCalendarHeader();   // ✅ also refresh header
             updateWeekCalendar();
         });
-        
+
         function updateCalendarHeader() {
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const monthNames = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
             currentMonthEl.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
         }
-        
+
         function updateWeekCalendar() {
-            // Get the first day of the week (Monday)
+            // Get Monday of current week
             const firstDay = new Date(currentDate);
             const day = firstDay.getDay();
             const diff = firstDay.getDate() - day + (day === 0 ? -6 : 1);
             firstDay.setDate(diff);
-            
-            // Update day numbers in header
+
+            // Update day headers
             const dayColumns = document.querySelectorAll('.bcd-day-number');
             const dayNames = document.querySelectorAll('.bcd-day-name');
             const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -551,84 +537,90 @@ document.addEventListener('DOMContentLoaded', function() {
                 dayColumns[i].textContent = date.getDate();
                 dayNames[i].textContent = days[i];
             }
-            
-            // Clear existing events
+
+            // Clear events
             document.querySelectorAll('.bcd-event').forEach(event => {
-                if (!event.classList.contains('bcd-event-team-sync') && !event.classList.contains('bcd-event-onboarding')) {
+                if (!event.classList.contains('bcd-event-team-sync') &&
+                    !event.classList.contains('bcd-event-onboarding')) {
                     event.remove();
                 }
             });
-            
-            // Add batch events from data
+
+            // 🔹 Add batch events (start and end separate)
             batchesData.forEach(batch => {
-                const batchStartDate = new Date(batch.startDate);
-                const batchEndDate = new Date(batch.endDate);
-                
-                // Check if batch starts or ends in this week
+                const batchStartDate = parseDate(batch.startDate);
+                const batchEndDate = parseDate(batch.endDate);
+
+                // Batch Start
                 const startDayDiff = Math.floor((batchStartDate - firstDay) / (24 * 60 * 60 * 1000));
+                if (startDayDiff >= 0 && startDayDiff < 7) {
+                    addBatchEvent(startDayDiff, batch, 'start');
+                }
+
+                // Batch End
                 const endDayDiff = Math.floor((batchEndDate - firstDay) / (24 * 60 * 60 * 1000));
-                
-                if ((startDayDiff >= 0 && startDayDiff < 7) || (endDayDiff >= 0 && endDayDiff < 7)) {
-                    // Add batch to calendar
-                    if (startDayDiff >= 0 && startDayDiff < 7) {
-                        addBatchEvent(startDayDiff, batch, 'start');
-                    }
-                    
-                    if (endDayDiff >= 0 && endDayDiff < 7) {
-                        addBatchEvent(endDayDiff, batch, 'end');
-                    }
+                if (endDayDiff >= 0 && endDayDiff < 7) {
+                    addBatchEvent(endDayDiff, batch, 'end');
                 }
             });
+
         }
-        
+
         function addBatchEvent(dayIndex, batch, eventType) {
             const timeRows = document.querySelectorAll('.bcd-time-row');
             let targetSlot = null;
 
+            // Determine batch time based on event type
+            const batchTime = eventType === 'start' ? batch.startTime : batch.endTime;
+            if (!batchTime) return; // no time, skip
+
+            const [batchHour, batchMinute] = batchTime.split(':').map(Number);
+            const batchTotalMinutes = batchHour * 60 + batchMinute;
+
+            // Loop through all time rows
             for (let i = 0; i < timeRows.length; i++) {
                 const timeLabel = timeRows[i].querySelector('.bcd-time-label').textContent;
                 const [startTime, endTime] = timeLabel.split(' - ').map(t => t.trim());
-                
-                const batchTime = eventType === 'start' ? batch.startTime : batch.endTime;
+                const [startHour, startMinute] = startTime.split(':').map(Number);
+                const [endHour, endMinute] = endTime.split(':').map(Number);
 
-                if (batchTime) {
-                    const batchHour = parseInt(batchTime.split(':')[0]);
-                    const startHour = parseInt(startTime.split(':')[0]);
-                    const endHour = parseInt(endTime.split(':')[0]);
+                const startTotalMinutes = startHour * 60 + startMinute;
+                const endTotalMinutes = endHour * 60 + endMinute;
 
-                    if (batchHour >= startHour && batchHour < endHour) {
-                        targetSlot = timeRows[i].querySelectorAll('.bcd-time-slot')[dayIndex];
-                        break;
-                    }
+                if (batchTotalMinutes >= startTotalMinutes && batchTotalMinutes < endTotalMinutes) {
+                    targetSlot = timeRows[i].querySelectorAll('.bcd-time-slot')[dayIndex];
+                    break;
                 }
             }
 
+            // Fallback to first row if no slot matched
             if (!targetSlot) {
-                // Fallback to the first slot if no match is found
                 targetSlot = timeRows[0].querySelectorAll('.bcd-time-slot')[dayIndex];
             }
-            
+
+            // Create and append the event
             if (targetSlot) {
                 const batchEvent = document.createElement('div');
-                batchEvent.className = `bcd-event bcd-event-${eventType === 'start' ? 'start' : 'ending'}`;
+                batchEvent.className = `bcd-event ${eventType === 'start' ? 'bcd-event-start' : 'bcd-event-end'}`;
                 batchEvent.innerHTML = `
                     <div class="bcd-event-title">${batch.id}: ${batch.course}</div>
-                    <div class="bcd-event-description">${eventType === 'start' ? 'Batch Starting' : 'Batch Ending'}</div>
+                    <div class="bcd-event-description">${eventType === 'start' ? '🚀 Batch Starting' : '✅ Batch Ending'}</div>
                     <div class="bcd-event-attendees">
                         <div class="bcd-attendee-avatar">${batch.trainer.name}</div>
                     </div>
                 `;
-                
                 targetSlot.appendChild(batchEvent);
-                
-                // Add click event to show batch details
-                batchEvent.addEventListener('click', () => {
-                    viewBatchDetails(batch.id);
-                });
+
+                // Click to view details
+                batchEvent.addEventListener('click', () => viewBatchDetails(batch.id));
             }
         }
-        showWeekView();
+
+        // 🚀 Always load Week View
+        weekCalendar.style.display = 'block';
+        updateWeekCalendar();
     }
+
 
     // Initialize Trainer Availability
     function initTrainerAvailability() {
