@@ -85,7 +85,7 @@
     <div class="bcd-content">
         <!-- Left Column: Batches Table -->
         <div class="bcd-card">
-            <h2 class="bcd-batch-title bcd-mb-2">Active Batches</h2>
+            <h2 class="bcd-batch-title bcd-mb-2">Batches Nearing Completion</h2>
             <div class="bcd-table-container">
                 <table class="bcd-batches-table" id="batchesTable">
                     <thead>
@@ -93,10 +93,9 @@
                             <th>Batch ID</th>
                             <th>Course</th>
                             <th>Trainer</th>
-                            <th>Start Date</th>
+                            <th>End Date</th>
                             <th>Status</th>
                             <th>Progress</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -111,8 +110,8 @@
             <div class="bcd-batch-header">
                 <h3 class="bcd-batch-title">Batch Details</h3>
                 <div class="bcd-batch-actions">
+                    <button class="bcd-btn bcd-btn-secondary" id="editBtn">Edit</button>
                     <button class="bcd-btn bcd-btn-primary" id="transferBtn">Transfer</button>
-                    <button class="bcd-btn bcd-btn-secondary">Edit</button>
                 </div>
             </div>
             <div class="bcd-batch-info">
@@ -145,8 +144,8 @@
                     <span class="bcd-info-value" id="detailStudents">-</span>
                 </div>
                 <div class="bcd-info-item">
-                    <span class="bcd-info-label">Hours per Day</span>
-                    <span class="bcd-info-value" id="detailHours">-</span>
+                    <span class="bcd-info-label">Time Slot</span>
+                    <span class="bcd-info-value" id="detailTimeSlot">-</span>
                 </div>
             </div>
             <div class="bcd-progress">
@@ -162,53 +161,47 @@
     </div>
 
     <!-- Calendar Section -->
-    <div class="bcd-card">
+    <div class="bcd-card bcd-calendar-card">
         <h2 class="bcd-batch-title bcd-mb-2">Calendar</h2>
         
             <div class="bcd-calendar-header">
                 <div class="bcd-month-navigation">
                     <button class="bcd-month-nav-btn" id="prev-month"><i class="fas fa-chevron-left"></i></button>
-                    <div class="bcd-current-month" id="current-month">September 2024</div>
+                    <div class="bcd-current-month" id="current-month">-</div>
                     <button class="bcd-month-nav-btn" id="next-month"><i class="fas fa-chevron-right"></i></button>
                 </div>
             </div>
-            <!-- <div class="d-flex justify-content-end mb-2">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-primary btn-sm" id="week-view">Week</button>
-                    <button type="button" class="btn btn-outline-primary btn-sm" id="month-view">Month</button>
-                </div>
-            </div> -->
             <div class="bcd-week-calendar">
                 <div class="bcd-week-header">
                     <div class="bcd-day-column bcd-time-column"></div>
                     <button class="bcd-week-nav-btn" id="prev-week"><i class="fas fa-chevron-left"></i></button>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Mon</div>
-                        <div class="bcd-day-number">22</div>
+                        <div class="bcd-day-number">-</div>
                     </div>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Tue</div>
-                        <div class="bcd-day-number">23</div>
+                        <div class="bcd-day-number">-</div>
                     </div>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Wed</div>
-                        <div class="bcd-day-number">24</div>
+                        <div class="bcd-day-number">-</div>
                     </div>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Thu</div>
-                        <div class="bcd-day-number">25</div>
+                        <div class="bcd-day-number">-</div>
                     </div>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Fri</div>
-                        <div class="bcd-day-number">26</div>
+                        <div class="bcd-day-number">-</div>
                     </div>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Sat</div>
-                        <div class="bcd-day-number">27</div>
+                        <div class="bcd-day-number">-</div>
                     </div>
                     <div class="bcd-day-column">
                         <div class="bcd-day-name">Sun</div>
-                        <div class="bcd-day-number">28</div>
+                        <div class="bcd-day-number">-</div>
                     </div>
                     <button class="bcd-week-nav-btn" id="next-week"><i class="fas fa-chevron-right"></i></button>
                 </div>
@@ -338,6 +331,7 @@
                 <button class="bcd-modal-close" id="closeTransferModal">&times;</button>
             </div>
             <div class="bcd-modal-body">
+                {% csrf_token %}
                 <div class="bcd-mb-2">
                     <label for="transferBatchId" class="bcd-mb-1">Batch</label>
                     <input type="text" id="transferBatchId" class="bcd-search" readonly>
@@ -386,9 +380,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const tableBody = document.querySelector('#batchesTable tbody');
         tableBody.innerHTML = '';
 
-        batchesData.forEach(batch => {
+        batchesData.slice(0,5).forEach(batch => {
             const row = document.createElement('tr');
-            row.dataset.batchId = batch.id;
+            row.dataset.batchId = batch.batch_id;
+            row.dataset.pk = batch.id;
             
             // Add click event to show batch details
             row.addEventListener('click', () => {
@@ -396,11 +391,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     tr.classList.remove('selected');
                 });
                 row.classList.add('selected');
-                showBatchDetails(batch.id);
+                showBatchDetails(batch.batch_id);
             });
 
             row.innerHTML = `
-                <td>${batch.id}</td>
+                <td>${batch.batch_id}</td>
                 <td>${batch.course}</td>
                 <td>
                     <div class="bcd-trainer-info">
@@ -408,19 +403,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         ${batch.trainer.name}
                     </div>
                 </td>
-                <td>${formatDate(batch.startDate)}</td>
+                <td>${formatDate(batch.endDate)}</td>
                 <td><span class="bcd-status-badge bcd-status-${batch.status}">${formatStatus(batch.status)}</span></td>
                 <td>
                     <div class="bcd-progress-bar">
                         <div class="bcd-progress-fill" style="width: ${batch.progress}%"></div>
                     </div>
-                </td>
-                <td>
-                    <button class="bcd-action-btn" onclick="event.stopPropagation(); viewBatchDetails('${batch.id}')">
-                        <svg class="bcd-icon bcd-icon-sm" viewBox="0 0 24 24">
-                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
-                        </svg>
-                    </button>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -431,14 +419,14 @@ document.addEventListener('DOMContentLoaded', function() {
             const firstRow = tableBody.querySelector('tr');
             if (firstRow) {
                 firstRow.classList.add('selected');
-                showBatchDetails(batchesData[0].id);
+                showBatchDetails(batchesData[0].batch_id);
             }
         }
     }
 
     // Show Batch Details
     function showBatchDetails(batchId) {
-        const batch = batchesData.find(b => b.id === batchId);
+        const batch = batchesData.find(b => b.batch_id === batchId);
         if (!batch) return;
 
         document.getElementById('detailCourse').textContent = batch.course;
@@ -448,12 +436,20 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('detailType').textContent = batch.batchType;
         document.getElementById('detailStatus').textContent = formatStatus(batch.status);
         document.getElementById('detailStudents').textContent = batch.students;
-        document.getElementById('detailHours').textContent = `${batch.hoursPerDay} hrs (${batch.days.join(', ')})`;
+        document.getElementById('detailTimeSlot').textContent = `${formatTo12Hour(batch.startTime)} - ${formatTo12Hour(batch.endTime)}`;
         
         document.getElementById('progressPercentage').textContent = `${batch.progress}%`;
         document.getElementById('progressFill').style.width = `${batch.progress}%`;
     }
 
+    // Utility: Format Time to 12-hour
+    function formatTo12Hour(time24) {
+        if (!time24) return '';
+        let [hour, minute] = time24.split(':').map(Number);
+        let ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12 || 12; 
+        return `${hour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+    }
     // Utility: Normalize date (avoid timezone shift issue)
     function parseDate(dateStr) {
         if (!dateStr) return null;
@@ -630,7 +626,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const batchEvent = document.createElement('div');
                 batchEvent.className = `bcd-event ${eventType === 'start' ? 'bcd-event-start' : 'bcd-event-end'}`;
                 batchEvent.innerHTML = `
-                    <div class="bcd-event-title">${batch.id}: ${batch.course}</div>
+                    <div class="bcd-event-title">${batch.batch_id}: ${batch.course}</div>
                     <div class="bcd-event-description">${eventType === 'start' ? '🚀 Batch Starting' : '✅ Batch Ending'}</div>
                     <div class="bcd-event-attendees">
                         <div class="bcd-attendee-avatar">${batch.trainer.name}</div>
@@ -639,7 +635,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 targetSlot.appendChild(batchEvent);
 
                 // Click to view details
-                batchEvent.addEventListener('click', () => viewBatchDetails(batch.id));
+                batchEvent.addEventListener('click', () => viewBatchDetails(batch.batch_id));
             }
         }
 
@@ -812,10 +808,10 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!selectedRow) return;
             
             const batchId = selectedRow.dataset.batchId;
-            const batch = batchesData.find(b => b.id === batchId);
+            const batch = batchesData.find(b => b.batch_id === batchId);
             if (!batch) return;
             
-            document.getElementById('transferBatchId').value = batch.id;
+            document.getElementById('transferBatchId').value = batch.batch_id;
             document.getElementById('transferFromTrainer').value = batch.trainer.name;
             
             transferModal.classList.add('active');
@@ -878,11 +874,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatStatus(status) {
         switch (status) {
-            case 'upcoming':
-                return 'Upcoming';
-            case 'in_progress':
+            case 'ip':
                 return 'In Progress';
-            case 'completed':
+            case 'yts':
+                return 'Yet to Start';
+            case 'c':
                 return 'Completed';
             default:
                 return status;
@@ -898,6 +894,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     };
+
+    document.getElementById('editBtn').addEventListener('click', function() {
+        const selectedRow = document.querySelector('#batchesTable tbody tr.selected');
+        if (selectedRow) {
+            const pk = selectedRow.dataset.pk;
+            window.location.href = `/batches/${pk}/update/`;
+        } else {
+            alert('Please select a batch to edit.');
+        }
+    });
 
     // Initialize all components
     initBatchesTable();

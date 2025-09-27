@@ -34,10 +34,12 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
   transition: all 0.3s ease;
 }
 
+.bcd-calendar-card{
+  margin-bottom: 1.5rem;
+}
 .bcd-card:hover {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
@@ -1052,4 +1054,26 @@ body {
     display: flex;
     align-items: baseline;
     gap: 20px;
+}
+#transferBtn, #editBtn {
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease; 
+}
+#transferBtn {
+  background-color: #074383;
+  color: #fff;
+}
+#editBtn {
+  background-color: #fff;
+  color: #074383;
+}
+#editBtn:hover ~ #transferBtn {
+  background-color: #fff;
+  color: #074383;
+}
+#editBtn:hover {
+  background-color: #074383;
+  color: #fff;
 }

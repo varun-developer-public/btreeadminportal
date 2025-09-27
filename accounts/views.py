@@ -520,11 +520,12 @@ def batch_coordination_dashboard(request):
     now = timezone.now()
     
     # Get all batches with related data
-    all_batches = Batch.objects.select_related('course', 'trainer').prefetch_related('students')
+    all_batches_for_stats = Batch.objects.all()
+    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS']).select_related('course', 'trainer').prefetch_related('students').order_by('end_date')
     
     # Prepare batches data for the dashboard
     batches_data = []
-    for batch in all_batches:
+    for batch in active_batches:
         # Calculate progress based on start and end dates
         if batch.start_date and batch.end_date:
             total_days = (batch.end_date - batch.start_date).days
@@ -539,7 +540,8 @@ def batch_coordination_dashboard(request):
             
         # Format batch data
         batch_data = {
-            'id': batch.batch_id,
+            'id': batch.id,
+            'batch_id': batch.batch_id,
             'course': batch.course.course_name if batch.course else "N/A",
             'trainer': {
                 'id': batch.trainer.id if batch.trainer else None,
@@ -549,9 +551,9 @@ def batch_coordination_dashboard(request):
             'startDate': batch.start_date.isoformat() if batch.start_date else None,
             'endDate': batch.end_date.isoformat() if batch.end_date else None,
             'status': batch.batch_status.lower() if batch.batch_status else "unknown",
-            'progress': progress,
+            'progress': batch.batch_percentage if batch.batch_percentage is not None else progress,
             'batchType': batch.batch_type if batch.batch_type else "Regular",
-            'students': batch.students.count(),
+            'students': batch.batchstudent_set.filter(is_active=True).count(),
             'hoursPerDay': batch.hours_per_day if batch.hours_per_day else 0,
             'days': batch.days.split(',') if batch.days and isinstance(batch.days, str) else (batch.days if isinstance(batch.days, list) else []),
             'startTime': batch.start_time.strftime('%H:%M') if batch.start_time else None,
@@ -622,7 +624,7 @@ def batch_coordination_dashboard(request):
     
     # Create calendar events for all batches
     calendar_events = []
-    for batch in all_batches:
+    for batch in active_batches:
         if batch.start_date:
             calendar_events.append({
                 'title': f'{batch.batch_id}: {batch.course.course_name if batch.course else ""} (Start)',
@@ -653,7 +655,7 @@ def batch_coordination_dashboard(request):
         })
     
     # Add notifications for batches nearing completion (>80%)
-    for batch in all_batches:
+    for batch in active_batches:
         if batch.batch_status == 'IP' and batch.batch_percentage and batch.batch_percentage >= 80:
             notifications_data.append({
                 'id': f"batch_{batch.id}",
@@ -667,10 +669,10 @@ def batch_coordination_dashboard(request):
     
     context = {
         'total_students': Student.objects.count(),
-        'total_batches': all_batches.count(),
-        'yts_batches': all_batches.filter(batch_status='YTS').count(),
-        'in_progress_batches': all_batches.filter(batch_status='IP').count(),
-        'completed_batches': all_batches.filter(batch_status='C').count(),
+        'total_batches': all_batches_for_stats.count(),
+        'yts_batches': all_batches_for_stats.filter(batch_status='YTS').count(),
+        'in_progress_batches': all_batches_for_stats.filter(batch_status='IP').count(),
+        'completed_batches': all_batches_for_stats.filter(batch_status='C').count(),
         'total_trainers': trainers.count(),
         'handovers': handovers.count(),
         'trainers': trainers,
