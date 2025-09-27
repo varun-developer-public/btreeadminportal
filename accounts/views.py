@@ -553,7 +553,9 @@ def batch_coordination_dashboard(request):
             'batchType': batch.batch_type if batch.batch_type else "Regular",
             'students': batch.students.count(),
             'hoursPerDay': batch.hours_per_day if batch.hours_per_day else 0,
-            'days': batch.days.split(',') if batch.days and isinstance(batch.days, str) else (batch.days if isinstance(batch.days, list) else [])
+            'days': batch.days.split(',') if batch.days and isinstance(batch.days, str) else (batch.days if isinstance(batch.days, list) else []),
+            'startTime': batch.start_time.strftime('%H:%M') if batch.start_time else None,
+            'endTime': batch.end_time.strftime('%H:%M') if batch.end_time else None
         }
         batches_data.append(batch_data)
     
