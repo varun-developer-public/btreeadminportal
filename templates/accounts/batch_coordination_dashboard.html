@@ -275,6 +275,8 @@
             <div class="bcd-search-dropdown" id="trainer-search-dropdown"></div>
         </div>
         </div>
+        <div class="bcd-trainer-stats-container" id="trainerStatsContainer" style="display: none;">
+            </div>
         <div class="bcd-availability-container">
             <div class="bcd-availability-grid" id="availabilityGrid">
                 <table class="bcd-batches-table">
@@ -921,8 +923,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 tableBody.innerHTML = '';
-                if (data.length > 0) {
-                    data.forEach(item => {
+                const statsContainer = document.getElementById('trainerStatsContainer');
+                
+                if (data.availability && data.availability.length > 0) {
+                    data.availability.forEach(item => {
                         const row = document.createElement('tr');
                         row.innerHTML = `
                             <td>${item.slot_time}</td>
@@ -933,12 +937,26 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td>${item.availability}</td>
                             <td>${item.mode}</td>
                             <td>${item.percentage}</td>
-                            <td>${item.status}</td>
+                            <td><span class="status-${item.status.toLowerCase()}">${item.status}</span></td>
                         `;
                         tableBody.appendChild(row);
                     });
                 } else {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="bcd-text-secondary" style="text-align: center;">No availability data for this trainer.</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="9" class="bcd-text-secondary" style="text-align: center;">No availability data for this trainer.</td></tr>';
+                }
+
+                if (data.stats) {
+                    statsContainer.innerHTML = `
+                        <div class="stat-item">Total Batches: <span class="count">${data.stats.total_batches}</span></div>
+                        <div class="stat-item">Completed: <span class="count completed">${data.stats.completed_batches}</span></div>
+                        <div class="stat-item">Ongoing: <span class="count ongoing">${data.stats.ongoing_batches}</span></div>
+                        <div class="stat-item">Yet to Start: <span class="count yts">${data.stats.yts_batches}</span></div>
+                        <div class="stat-item occupied">Occupied: <span class="count">${data.stats.occupied_count}</span></div>
+                        <div class="stat-item available">Available: <span class="count">${data.stats.available_count}</span></div>
+                    `;
+                    statsContainer.style.display = 'flex';
+                } else {
+                    statsContainer.style.display = 'none';
                 }
             });
     }

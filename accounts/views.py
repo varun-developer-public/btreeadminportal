@@ -946,24 +946,30 @@ def trainer_availability_api(request):
     trainer_id = request.GET.get('trainer_id')
     try:
         trainer = Trainer.objects.get(id=trainer_id)
-        active_batches = Batch.objects.filter(
-            trainer=trainer, 
-            batch_status__in=['IP', 'YTS']
-        )
+        
+        # Get all batches for statistics
+        all_batches = Batch.objects.filter(trainer=trainer)
+        
+        # Calculate batch counts
+        total_batches = all_batches.count()
+        completed_batches = all_batches.filter(batch_status='C').count()
+        ongoing_batches = all_batches.filter(batch_status='IP').count()
+        yts_batches = all_batches.filter(batch_status='YTS').count()
+
+        # Filter for active batches for slot checking
+        active_batches = all_batches.filter(batch_status__in=['IP', 'YTS'])
 
         availability_data = []
+        occupied_count = 0
 
-        for slot in trainer.timing_slots:  # trainer JSON field
+        for slot in trainer.timing_slots:
             slot_start = datetime.strptime(slot['start_time'], "%H:%M").time()
             slot_end = datetime.strptime(slot['end_time'], "%H:%M").time()
 
-            # Match if batch exists exactly in this slot
-            batch = active_batches.filter(
-                start_time=slot_start,
-                end_time=slot_end
-            ).first()
+            batch = active_batches.filter(start_time=slot_start, end_time=slot_end).first()
 
             if batch:
+                occupied_count += 1
                 availability_data.append({
                     'slot_time': f"{batch.start_time.strftime('%I:%M %p')} - {batch.end_time.strftime('%I:%M %p')}",
                     'course_name': batch.course.course_name if batch.course else "N/A",
@@ -987,7 +993,21 @@ def trainer_availability_api(request):
                     'mode': slot.get('mode', 'N/A'),
                     'percentage': 0,
                 })
+        
+        available_count = len(trainer.timing_slots) - occupied_count
 
-        return JsonResponse(availability_data, safe=False)
+        response_data = {
+            'availability': availability_data,
+            'stats': {
+                'total_batches': total_batches,
+                'completed_batches': completed_batches,
+                'ongoing_batches': ongoing_batches,
+                'yts_batches': yts_batches,
+                'occupied_count': occupied_count,
+                'available_count': available_count,
+            }
+        }
+        return JsonResponse(response_data, safe=False)
+        
     except Trainer.DoesNotExist:
-        return JsonResponse([], safe=False)
+        return JsonResponse({'availability': [], 'stats': {}}, safe=False)

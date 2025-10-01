@@ -17,3 +17,9 @@ class PlacementAdmin(admin.ModelAdmin):
                 obj.std_professional_photo.delete(save=False)
             obj.delete()
 
+
+@admin.register(CompanyInterview)
+class CompanyInterviewAdmin(admin.ModelAdmin):
+    list_display = ('placement', 'company', 'interview_round', 'interview_date', 'attended', 'selected')
+    search_fields = ('placement__student__student_id', 'company__company_name')
+    list_filter = ('interview_round', 'attended', 'selected', 'interview_date')

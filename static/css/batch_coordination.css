@@ -1172,3 +1172,69 @@ body {
     border-top-right-radius: 8px;
     border-bottom-right-radius: 8px;
 }
+
+/* Trainer Stats Container */
+.bcd-trainer-stats-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    justify-content: space-around;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #495057;
+}
+
+.stat-item .count {
+    font-size: 1.25rem;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.25rem;
+    min-width: 30px;
+    text-align: center;
+}
+
+.stat-item .count.completed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.stat-item .count.ongoing {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.stat-item .count.yts {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.stat-item.occupied .count {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.stat-item.available .count {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Status in Table */
+.status-occupied {
+    color: #721c24;
+    font-weight: bold;
+}
+
+.status-available {
+    color: #155724;
+    font-weight: bold;
+}
