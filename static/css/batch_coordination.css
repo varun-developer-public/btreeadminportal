@@ -534,9 +534,6 @@ body {
 }
 
 .bcd-availability-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
   margin-top: 15px;
   max-height: 400px;
   overflow-y: auto;
@@ -1076,4 +1073,102 @@ body {
 #editBtn:hover {
   background-color: #074383;
   color: #fff;
+}
+
+
+/* Trainer Search Dropdown */
+.bcd-search-dropdown {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    width: 100%;
+    max-width: 400px;
+    top: 75%;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+}
+
+.bcd-search-dropdown a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.bcd-search-dropdown a:last-child {
+    border-bottom: none;
+}
+
+.bcd-search-dropdown a:hover {
+    background-color: #f1f1f1;
+}
+
+/* Trainer Availability Table */
+.bcd-availability-grid .bcd-batches-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.bcd-availability-grid .bcd-batches-table th,
+.bcd-availability-grid .bcd-batches-table td {
+    padding: 16px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+.bcd-availability-grid .bcd-batches-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.bcd-availability-grid .bcd-batches-table th:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.bcd-availability-grid .bcd-batches-table th:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.bcd-availability-grid .bcd-batches-table tbody tr {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+.bcd-availability-grid .bcd-batches-table tbody tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.bcd-availability-grid .bcd-batches-table td {
+    border-top: 1px solid #f1f1f1;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.bcd-availability-grid .bcd-batches-table td:first-child {
+    border-left: 1px solid #f1f1f1;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+.bcd-availability-grid .bcd-batches-table td:last-child {
+    border-right: 1px solid #f1f1f1;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
 }

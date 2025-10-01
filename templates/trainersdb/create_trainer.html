@@ -226,6 +226,7 @@ $(document).ready(function() {
                         <select class="form-control availability">
                             <option value="WE" ${slot.availability === 'WE' ? 'selected' : ''}>Weekend</option>
                             <option value="WD" ${slot.availability === 'WD' ? 'selected' : ''}>Weekday</option>
+                            <option value="WE/WD" ${slot.availability === 'WE/WD' ? 'selected' : ''}>Weekend/Weekday</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -233,6 +234,7 @@ $(document).ready(function() {
                         <select class="form-control mode">
                             <option value="Online" ${slot.mode === 'Online' ? 'selected' : ''}>Online</option>
                             <option value="Offline" ${slot.mode === 'Offline' ? 'selected' : ''}>Offline</option>
+                            <option value="Online/Offline" ${slot.mode === 'Online/Offline' ? 'selected' : ''}>Online/Offline</option>
                         </select>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
@@ -246,7 +248,7 @@ $(document).ready(function() {
     }
 
     $('#add-slot-btn').click(function() {
-        slots.push({ start_time: '', end_time: '', availability: 'WE', mode: 'Online' });
+        slots.push({ start_time: '', end_time: '', availability: 'WD', mode: 'Offline' });
         renderSlots();
     });
 

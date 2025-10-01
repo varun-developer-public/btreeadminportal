@@ -52,6 +52,7 @@ class Trainer(models.Model):
     AVAILABILITY_CHOICES = [
         ('Online', 'Online'),
         ('Offline', 'Offline'),
+        ('Online/Offline', 'Online/Offline'),
     ]
 
     trainer_id = models.CharField(max_length=10, unique=True, blank=True)

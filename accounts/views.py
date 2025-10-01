@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+import pyotp
+from .forms import TwoFactorForm
 
 from consultantdb.models import Achievement, Goal
 from .models import CustomUser
@@ -560,46 +562,6 @@ def batch_coordination_dashboard(request):
             'endTime': batch.end_time.strftime('%H:%M') if batch.end_time else None
         }
         batches_data.append(batch_data)
-    
-    # Get all trainers with detailed availability data
-    trainers = Trainer.objects.all()
-    trainers_data = []
-    
-    # New logic for trainer availability table
-    trainer_availability_data = []
-    for trainer in trainers:
-        if trainer.timing_slots:
-            for slot in trainer.timing_slots:
-                slot_time = f"{slot.get('start', 'N/A')} - {slot.get('end', 'N/A')}"
-                
-                # Find a batch that matches the trainer, and roughly the time
-                # Correctly find active or upcoming batches for the trainer
-                batch = Batch.objects.filter(
-                    trainer=trainer,
-                    batch_status__in=['IP', 'YTS']
-                ).first()
-
-                if batch:
-                    trainer_availability_data.append({
-                        'trainer_id': trainer.id,
-                        'trainer_name': trainer.name,
-                        'slot_time': slot_time,
-                        'course_name': batch.course.course_name if batch.course else 'N/A',
-                        'batch_id': batch.batch_id,
-                        'current_module': 'N/A',  # Placeholder
-                        'end_date': batch.end_date.strftime('%b %d %Y') if batch.end_date else 'N/A',
-                    })
-                else:
-                    trainer_availability_data.append({
-                        'trainer_id': trainer.id,
-                        'trainer_name': trainer.name,
-                        'slot_time': slot_time,
-                        'course_name': 'Available',
-                        'batch_id': '',
-                        'current_module': '',
-                        'end_date': '',
-                    })
-    
     # Create calendar events for all batches
     calendar_events = []
     for batch in active_batches:
@@ -645,6 +607,9 @@ def batch_coordination_dashboard(request):
     import json
     from django.core.serializers.json import DjangoJSONEncoder
     
+    trainers = Trainer.objects.all()
+    trainers_data = [{'id': t.id, 'name': t.name} for t in trainers]
+    
     context = {
         'total_students': Student.objects.count(),
         'total_batches': all_batches_for_stats.count(),
@@ -656,7 +621,6 @@ def batch_coordination_dashboard(request):
         'trainers': trainers,
         'batches_data': json.dumps(batches_data, cls=DjangoJSONEncoder),
         'trainers_data': json.dumps(trainers_data, cls=DjangoJSONEncoder),
-        'trainer_availability_data': trainer_availability_data,
         'notifications_data': json.dumps(notifications_data, cls=DjangoJSONEncoder),
         'calendar_events': json.dumps(calendar_events, cls=DjangoJSONEncoder),
     }
@@ -926,9 +890,6 @@ def password_reset_new_password(request):
 
     return render(request, 'accounts/password_reset_new_password.html', {'form': form})
 
-import pyotp
-from .forms import TwoFactorForm
-
 def verify_2fa(request):
     user_id = request.session.get('2fa_user_id')
     if not user_id:
@@ -965,7 +926,7 @@ def verify_2fa(request):
     return render(request, 'accounts/verify_2fa.html', {'form': form})
 from django.http import JsonResponse
 
-def trainers_list(request):
+def trainers_availabity(request):
     trainers = Trainer.objects.all()
     
     trainers_data = []
@@ -977,3 +938,56 @@ def trainers_list(request):
         })
     
     return JsonResponse(trainers_data, safe=False)
+
+from django.http import JsonResponse
+from datetime import datetime
+
+def trainer_availability_api(request):
+    trainer_id = request.GET.get('trainer_id')
+    try:
+        trainer = Trainer.objects.get(id=trainer_id)
+        active_batches = Batch.objects.filter(
+            trainer=trainer, 
+            batch_status__in=['IP', 'YTS']
+        )
+
+        availability_data = []
+
+        for slot in trainer.timing_slots:  # trainer JSON field
+            slot_start = datetime.strptime(slot['start_time'], "%H:%M").time()
+            slot_end = datetime.strptime(slot['end_time'], "%H:%M").time()
+
+            # Match if batch exists exactly in this slot
+            batch = active_batches.filter(
+                start_time=slot_start,
+                end_time=slot_end
+            ).first()
+
+            if batch:
+                availability_data.append({
+                    'slot_time': f"{batch.start_time.strftime('%I:%M %p')} - {batch.end_time.strftime('%I:%M %p')}",
+                    'course_name': batch.course.course_name if batch.course else "N/A",
+                    'batch_id': batch.batch_id,
+                    'current_module': "Not specified",
+                    'end_date': batch.end_date.strftime('%d %b %Y') if batch.end_date else "N/A",
+                    'status': 'Occupied',
+                    'availability': slot.get('availability', 'N/A'),
+                    'mode': slot.get('mode', 'N/A'),
+                    'percentage': batch.batch_percentage if batch.batch_percentage is not None else 0,
+                })
+            else:
+                availability_data.append({
+                    'slot_time': f"{slot_start.strftime('%I:%M %p')} - {slot_end.strftime('%I:%M %p')}",
+                    'course_name': "-",
+                    'batch_id': "-",
+                    'current_module': "-",
+                    'end_date': "-",
+                    'status': 'Available',
+                    'availability': slot.get('availability', 'N/A'),
+                    'mode': slot.get('mode', 'N/A'),
+                    'percentage': 0,
+                })
+
+        return JsonResponse(availability_data, safe=False)
+    except Trainer.DoesNotExist:
+        return JsonResponse([], safe=False)

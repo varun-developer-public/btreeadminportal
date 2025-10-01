@@ -18,5 +18,6 @@ urlpatterns = [
     path('password_reset/otp/', password_reset_otp, name='password_reset_otp'),
     path('password_reset/new_password/', password_reset_new_password, name='password_reset_new_password'),
     path('verify-2fa/', verify_2fa, name='verify_2fa'),
-    path('trainers/', trainers_list, name='trainers_list'),
+    path('trainers/availability/', trainers_availabity, name='trainers_availability'),
+    path('api/trainer_availability/', trainer_availability_api, name='trainer_availability_api'),
 ]

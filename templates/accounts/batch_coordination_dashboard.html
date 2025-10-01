@@ -285,18 +285,14 @@
                             <th>Batch ID</th>
                             <th>Current Module</th>
                             <th>End Date</th>
+                            <th>Availability</th>
+                            <th>Mode</th>
+                            <th>Progress (%)</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for item in trainer_availability_data %}
-                        <tr data-trainer-id="898">
-                            <td>{{ item.slot_time }}</td>
-                            <td>{{ item.course_name }}</td>
-                            <td>{{ item.batch_id }}</td>
-                            <td>{{ item.current_module }}</td>
-                            <td>{{ item.end_date }}</td>
-                        </tr>
-                        {% endfor %}
+                        <!-- Trainer availability data will be populated by JavaScript -->
                     </tbody>
                 </table>
             </div>
@@ -645,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const availabilityGrid = document.getElementById('availabilityGrid');
         const tableBody = availabilityGrid.querySelector('tbody');
         if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="5" class="bcd-text-secondary" style="text-align: center;">Search for a trainer to view their availability.</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="100%" class="bcd-text-secondary" style="text-align: center;">Search for a trainer to view their availability.</td></tr>';
         }
     }
 
@@ -869,14 +865,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const trainerSearchInput = document.getElementById('trainer-search-input');
     const trainerSearchDropdown = document.getElementById('trainer-search-dropdown');
     let trainersDataList = [];
-    fetch("{% url 'trainers_list' %}")
+    fetch("{% url 'trainers_availability' %}")
         .then(response => response.json())
         .then(data => {
             trainersDataList = data;
         });
 
     trainerSearchInput.addEventListener('input', function() {
-        console.log(trainersDataList);
         
         const searchTerm = this.value.toLowerCase();
         trainerSearchDropdown.innerHTML = '';
@@ -887,7 +882,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         const filteredTrainers = trainersDataList.filter(trainer =>
-            trainer.name.toLowerCase().includes(searchTerm)
+            trainer.name.toLowerCase().includes(searchTerm)||
+            trainer.trainer_id.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
         if (filteredTrainers.length > 0) {
@@ -919,28 +915,32 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayTrainerAvailability(trainerId) {
         const availabilityTable = document.querySelector('.bcd-availability-grid table');
         const tableBody = availabilityTable.querySelector('tbody');
-        const rows = tableBody.querySelectorAll('tr');
-        console.log(trainerId);
-        
-        // Clear initial message if it exists
-        const initialMessageRow = tableBody.querySelector('td.bcd-text-secondary');
-        if (initialMessageRow) {
-            initialMessageRow.parentElement.remove();
-        }
+        tableBody.innerHTML = '<tr><td colspan="100%" class="bcd-text-secondary" style="text-align: center;">Loading...</td></tr>';
 
-        let found = false;
-        rows.forEach(row => {
-            if (row.dataset.trainerId == trainerId) {
-                row.style.display = '';
-                found = true;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-
-        if (!found) {
-            tableBody.innerHTML = '<tr><td colspan="5" class="bcd-text-secondary" style="text-align: center;">No availability data for this trainer.</td></tr>';
-        }
+        fetch(`{% url 'trainer_availability_api' %}?trainer_id=${trainerId}`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = '';
+                if (data.length > 0) {
+                    data.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.slot_time}</td>
+                            <td>${item.course_name}</td>
+                            <td>${item.batch_id}</td>
+                            <td>${item.current_module}</td>
+                            <td>${item.end_date}</td>
+                            <td>${item.availability}</td>
+                            <td>${item.mode}</td>
+                            <td>${item.percentage}</td>
+                            <td>${item.status}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="bcd-text-secondary" style="text-align: center;">No availability data for this trainer.</td></tr>';
+                }
+            });
     }
 });
 </script>
