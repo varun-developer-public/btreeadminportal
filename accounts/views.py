@@ -565,62 +565,40 @@ def batch_coordination_dashboard(request):
     trainers = Trainer.objects.all()
     trainers_data = []
     
+    # New logic for trainer availability table
+    trainer_availability_data = []
     for trainer in trainers:
-        # Get batches assigned to this trainer
-        trainer_batches = Batch.objects.filter(trainer=trainer)
-        
-        # Get YTS and In Progress batches
-        active_batches = trainer_batches.filter(batch_status__in=['YTS', 'IP'])
-        
-        # Generate detailed time slots for the next 14 days
-        time_slots = []
-        today = now.date()
-        
-        for i in range(14):
-            slot_date = today + timedelta(days=i)
-            day_name = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][slot_date.weekday()]
-            
-            # Check if trainer has batches on this day
-            morning_occupied = False
-            afternoon_occupied = False
-            morning_batch = None
-            afternoon_batch = None
-            
-            for batch in active_batches:
-                if batch.days:
-                    batch_days = batch.days.split(',') if isinstance(batch.days, str) else batch.days
-                    if day_name in batch_days:
-                        # Determine if morning or afternoon based on hours_per_day or other logic
-                        if batch.hours_per_day and batch.hours_per_day <= 3:
-                            morning_occupied = True
-                            morning_batch = batch.batch_id
-                        else:
-                            afternoon_occupied = True
-                            afternoon_batch = batch.batch_id
-            
-            time_slots.append({
-                'date': slot_date.isoformat(),
-                'day': day_name,
-                'morning': {
-                    'available': not morning_occupied,
-                    'batch': morning_batch
-                },
-                'afternoon': {
-                    'available': not afternoon_occupied,
-                    'batch': afternoon_batch
-                }
-            })
-        
-        # Format trainer data with detailed availability
-        trainer_data = {
-            'id': trainer.id,
-            'name': trainer.name,
-            'email': trainer.email,
-            'availability': trainer.timing_slots if trainer.timing_slots else {},
-            'time_slots': time_slots,
-            'batches': [b.batch_id for b in trainer_batches]
-        }
-        trainers_data.append(trainer_data)
+        if trainer.timing_slots:
+            for slot in trainer.timing_slots:
+                slot_time = f"{slot.get('start', 'N/A')} - {slot.get('end', 'N/A')}"
+                
+                # Find a batch that matches the trainer, and roughly the time
+                # Correctly find active or upcoming batches for the trainer
+                batch = Batch.objects.filter(
+                    trainer=trainer,
+                    batch_status__in=['IP', 'YTS']
+                ).first()
+
+                if batch:
+                    trainer_availability_data.append({
+                        'trainer_id': trainer.id,
+                        'trainer_name': trainer.name,
+                        'slot_time': slot_time,
+                        'course_name': batch.course.course_name if batch.course else 'N/A',
+                        'batch_id': batch.batch_id,
+                        'current_module': 'N/A',  # Placeholder
+                        'end_date': batch.end_date.strftime('%b %d %Y') if batch.end_date else 'N/A',
+                    })
+                else:
+                    trainer_availability_data.append({
+                        'trainer_id': trainer.id,
+                        'trainer_name': trainer.name,
+                        'slot_time': slot_time,
+                        'course_name': 'Available',
+                        'batch_id': '',
+                        'current_module': '',
+                        'end_date': '',
+                    })
     
     # Create calendar events for all batches
     calendar_events = []
@@ -678,6 +656,7 @@ def batch_coordination_dashboard(request):
         'trainers': trainers,
         'batches_data': json.dumps(batches_data, cls=DjangoJSONEncoder),
         'trainers_data': json.dumps(trainers_data, cls=DjangoJSONEncoder),
+        'trainer_availability_data': trainer_availability_data,
         'notifications_data': json.dumps(notifications_data, cls=DjangoJSONEncoder),
         'calendar_events': json.dumps(calendar_events, cls=DjangoJSONEncoder),
     }
@@ -984,3 +963,17 @@ def verify_2fa(request):
         form = TwoFactorForm()
 
     return render(request, 'accounts/verify_2fa.html', {'form': form})
+from django.http import JsonResponse
+
+def trainers_list(request):
+    trainers = Trainer.objects.all()
+    
+    trainers_data = []
+    for trainer in trainers:
+        trainers_data.append({
+            'id': trainer.id,
+            'name': trainer.name,
+            'trainer_id': trainer.trainer_id,
+        })
+    
+    return JsonResponse(trainers_data, safe=False)

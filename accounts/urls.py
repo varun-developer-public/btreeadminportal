@@ -1,12 +1,5 @@
 from django.urls import path
-from .views import (
-    user_list, create_user, update_user, delete_user,
-    admin_dashboard, staff_dashboard, consultant_dashboard,
-    logout_view, login_view, password_change,
-    placement_dashboard, batch_coordination_dashboard,
-    password_reset_request, password_reset_otp, password_reset_new_password,
-    verify_2fa
-)
+from .views import *
 
 urlpatterns = [
     path('login/', login_view, name='login'),
@@ -25,4 +18,5 @@ urlpatterns = [
     path('password_reset/otp/', password_reset_otp, name='password_reset_otp'),
     path('password_reset/new_password/', password_reset_new_password, name='password_reset_new_password'),
     path('verify-2fa/', verify_2fa, name='verify_2fa'),
+    path('trainers/', trainers_list, name='trainers_list'),
 ]

@@ -24,15 +24,8 @@
         <input type="text" class="bcd-search-input" id="bcd-search-input" placeholder="Search batches...">
     </div>
 
-    <!-- Right: Trainer select + notifications -->
+    <!-- Right: notifications -->
     <div class="bcd-top-right">
-        <select class="bcd-trainer-select">
-            <option value="">All Trainers</option>
-            {% for trainer in trainers %}
-            <option value="{{ trainer.id }}">{{ trainer.name }}</option>
-            {% endfor %}
-        </select>
-
         <div class="bcd-notifications">
             <i class="fas fa-bell fa-lg"></i>
             <span class="bcd-notification-count"></span>
@@ -276,34 +269,36 @@
     <div class="bcd-card">
         <div class="bcd-availability-header">
             <h2 class="bcd-batch-title">Trainer Availability</h2>
-            <select class="bcd-trainer-select" id="availabilityTrainerSelect">
-                <option value="">Select Trainer</option>
-                {% for trainer in trainers %}
-                <option value="{{ trainer.id }}">{{ trainer.name }}</option>
-                {% endfor %}
-            </select>
+            <div class="bcd-search-container" style="margin-right: 1rem;">
+                <i class="fas fa-search bcd-search-icon"></i>
+                <input type="text" class="bcd-search-input" id="trainer-search-input" placeholder="Search trainers...">
+            <div class="bcd-search-dropdown" id="trainer-search-dropdown"></div>
+        </div>
         </div>
         <div class="bcd-availability-container">
-            <div class="bcd-availability-legend">
-                <div class="bcd-legend-item">
-                    <div class="bcd-legend-color bcd-available"></div>
-                    <span>Available</span>
-                </div>
-                <div class="bcd-legend-item">
-                    <div class="bcd-legend-color bcd-occupied"></div>
-                    <span>Occupied</span>
-                </div>
-                <div class="bcd-legend-item">
-                    <div class="bcd-legend-color bcd-tentative"></div>
-                    <span>Tentative</span>
-                </div>
-                <div class="bcd-legend-item">
-                    <div class="bcd-legend-color bcd-ending"></div>
-                    <span>Ending Soon</span>
-                </div>
-            </div>
             <div class="bcd-availability-grid" id="availabilityGrid">
-                <!-- Availability slots will be populated by JavaScript -->
+                <table class="bcd-batches-table">
+                    <thead>
+                        <tr>
+                            <th>Time Slots of Trainer</th>
+                            <th>Course Name</th>
+                            <th>Batch ID</th>
+                            <th>Current Module</th>
+                            <th>End Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in trainer_availability_data %}
+                        <tr data-trainer-id="898">
+                            <td>{{ item.slot_time }}</td>
+                            <td>{{ item.course_name }}</td>
+                            <td>{{ item.batch_id }}</td>
+                            <td>{{ item.current_module }}</td>
+                            <td>{{ item.end_date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -647,87 +642,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize Trainer Availability
     function initTrainerAvailability() {
-        const trainerSelect = document.getElementById('availabilityTrainerSelect');
         const availabilityGrid = document.getElementById('availabilityGrid');
-
-        trainerSelect.addEventListener('change', function() {
-            const trainerId = parseInt(this.value);
-            if (!trainerId) {
-                availabilityGrid.innerHTML = '<p class="bcd-text-secondary">Please select a trainer to view availability.</p>';
-                return;
-            }
-
-            const trainer = trainersData.find(t => t.id === trainerId);
-            if (!trainer) return;
-
-            availabilityGrid.innerHTML = '';
-            
-            // Create a more visual calendar-like display
-            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const timeSlots = ['9:00-11:00', '11:00-13:00', '14:00-16:00', '16:00-18:00'];
-            
-            // Create header row with days
-            const headerRow = document.createElement('div');
-            headerRow.className = 'bcd-availability-row';
-            
-            // Add empty cell for time column
-            const emptyCell = document.createElement('div');
-            emptyCell.className = 'bcd-availability-header-cell';
-            headerRow.appendChild(emptyCell);
-            
-            // Add day headers
-            days.forEach(day => {
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'bcd-availability-header-cell';
-                dayHeader.textContent = day;
-                dayHeader.style.fontWeight = 'bold';
-                headerRow.appendChild(dayHeader);
-            });
-            
-            availabilityGrid.appendChild(headerRow);
-            
-            // Add time slots with availability
-            timeSlots.forEach(timeSlot => {
-                const row = document.createElement('div');
-                row.className = 'bcd-availability-row';
-                
-                // Add time label
-                const timeLabel = document.createElement('div');
-                timeLabel.className = 'bcd-availability-time-cell';
-                timeLabel.textContent = timeSlot;
-                row.appendChild(timeLabel);
-                
-                // Add availability slots for each day
-                days.forEach(day => {
-                    const slot = document.createElement('div');
-                    slot.className = 'bcd-availability-slot';
-                    
-                    // Check if trainer is available at this time
-                    if (trainer.availability[day] && trainer.availability[day].includes(timeSlot)) {
-                        // Check if trainer has a batch at this time
-                        const hasBatch = trainer.batches.some(batchId => {
-                            const batch = batchesData.find(b => b.id === batchId);
-                            return batch && batch.days.includes(day) && batch.status !== 'completed';
-                        });
-                        
-                        if (hasBatch) {
-                            slot.className += ' bcd-slot-occupied';
-                            slot.textContent = 'Occupied';
-                        } else {
-                            slot.className += ' bcd-slot-available';
-                            slot.textContent = 'Available';
-                        }
-                    } else {
-                        slot.className += ' bcd-slot-tentative';
-                        slot.textContent = 'Unavailable';
-                    }
-                    
-                    row.appendChild(slot);
-                });
-                
-                availabilityGrid.appendChild(row);
-            });
-        });
+        const tableBody = availabilityGrid.querySelector('tbody');
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="bcd-text-secondary" style="text-align: center;">Search for a trainer to view their availability.</td></tr>';
+        }
     }
 
     // Initialize Notifications
@@ -946,28 +865,83 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Trainer filter
-    const trainerSelect = document.querySelector('.bcd-trainer-select');
-    trainerSelect.addEventListener('change', function() {
-        const trainerId = parseInt(this.value);
-        const rows = document.querySelectorAll('#batchesTable tbody tr');
+    // Trainer search functionality
+    const trainerSearchInput = document.getElementById('trainer-search-input');
+    const trainerSearchDropdown = document.getElementById('trainer-search-dropdown');
+    let trainersDataList = [];
+    fetch("{% url 'trainers_list' %}")
+        .then(response => response.json())
+        .then(data => {
+            trainersDataList = data;
+        });
+
+    trainerSearchInput.addEventListener('input', function() {
+        console.log(trainersDataList);
         
-        if (!trainerId) {
-            rows.forEach(row => row.style.display = '');
+        const searchTerm = this.value.toLowerCase();
+        trainerSearchDropdown.innerHTML = '';
+
+        if (searchTerm.length === 0) {
+            trainerSearchDropdown.style.display = 'none';
             return;
         }
+
+        const filteredTrainers = trainersDataList.filter(trainer =>
+            trainer.name.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredTrainers.length > 0) {
+            filteredTrainers.forEach(trainer => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.textContent = `${trainer.name} (${trainer.trainer_id})`;
+                item.dataset.trainerId = trainer.id;
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    trainerSearchInput.value = trainer.name;
+                    trainerSearchDropdown.style.display = 'none';
+                    displayTrainerAvailability(trainer.id);
+                });
+                trainerSearchDropdown.appendChild(item);
+            });
+            trainerSearchDropdown.style.display = 'block';
+        } else {
+            trainerSearchDropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!trainerSearchInput.contains(e.target)) {
+            trainerSearchDropdown.style.display = 'none';
+        }
+    });
+
+    function displayTrainerAvailability(trainerId) {
+        const availabilityTable = document.querySelector('.bcd-availability-grid table');
+        const tableBody = availabilityTable.querySelector('tbody');
+        const rows = tableBody.querySelectorAll('tr');
+        console.log(trainerId);
         
+        // Clear initial message if it exists
+        const initialMessageRow = tableBody.querySelector('td.bcd-text-secondary');
+        if (initialMessageRow) {
+            initialMessageRow.parentElement.remove();
+        }
+
+        let found = false;
         rows.forEach(row => {
-            const batchId = row.dataset.batchId;
-            const batch = batchesData.find(b => b.id === batchId);
-            
-            if (batch && batch.trainer.id === trainerId) {
+            if (row.dataset.trainerId == trainerId) {
                 row.style.display = '';
+                found = true;
             } else {
                 row.style.display = 'none';
             }
         });
-    });
+
+        if (!found) {
+            tableBody.innerHTML = '<tr><td colspan="5" class="bcd-text-secondary" style="text-align: center;">No availability data for this trainer.</td></tr>';
+        }
+    }
 });
 </script>
 {% endblock %}
