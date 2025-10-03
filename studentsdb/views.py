@@ -143,15 +143,28 @@ def student_list(request):
 @login_required
 def update_student(request, student_id):
     student = get_object_or_404(Student.objects.prefetch_related('interview_statuses__interview__company'), student_id=student_id)
-    placement, created = Placement.objects.get_or_create(student=student)
+    try:
+        placement = Placement.objects.get(student=student)
+    except Placement.DoesNotExist:
+        placement = None
 
     if request.method == 'POST':
         form = StudentUpdateForm(request.POST, instance=student, user=request.user)
-        placement_form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
+        # Only instantiate placement_form if placement is not None or if pl_required is True
+        if placement or form.data.get('pl_required') == 'on':
+            if not placement:
+                # This is the case where pl_required is newly checked.
+                # Create a new placement instance to pass to the form.
+                placement = Placement(student=student)
+            placement_form = PlacementUpdateForm(request.POST, request.FILES, instance=placement)
+        else:
+            # If placement is not required and doesn't exist, use a dummy form that won't be saved.
+            placement_form = None
 
         # Debug form validation
         form_valid = form.is_valid()
-        placement_form_valid = placement_form.is_valid()
+        placement_form_valid = placement_form.is_valid() if placement_form else True
+
         if form_valid and placement_form_valid:
             try:
                 updated_student = form.save(commit=False)
@@ -168,7 +181,7 @@ def update_student(request, student_id):
                 set_current_user(request.user)
                 
                 updated_student.save()
-                if any(field in request.POST for field in placement_form.fields):
+                if placement_form and any(field in request.POST for field in placement_form.fields):
                     placement_form.save()
                 # === Placement Sync Logic (Only if pl_required changed) ===
                 if "pl_required" in form.changed_data:
@@ -199,14 +212,18 @@ def update_student(request, student_id):
                     # Check if the field has a label before trying to access it
                     label = form.fields[field].label if field in form.fields else field.capitalize()
                     messages.error(request, f"{label}: {error}", extra_tags='student_message')
-            for field, errors in placement_form.errors.items():
-                print(f"Placement field {field}: {errors}")
-                for error in errors:
-                    label = placement_form.fields[field].label if field in placement_form.fields else field.capitalize()
-                    messages.error(request, f"{label}: {error}", extra_tags='student_message')
+            if placement_form:
+                for field, errors in placement_form.errors.items():
+                    print(f"Placement field {field}: {errors}")
+                    for error in errors:
+                        label = placement_form.fields[field].label if field in placement_form.fields else field.capitalize()
+                        messages.error(request, f"{label}: {error}", extra_tags='student_message')
     else:
         form = StudentUpdateForm(instance=student, user=request.user)
-        placement_form = PlacementUpdateForm(instance=placement)
+        if placement:
+            placement_form = PlacementUpdateForm(instance=placement)
+        else:
+            placement_form = PlacementUpdateForm()
 
     return render(request, 'studentsdb/update_student.html', {
         'form': form,
