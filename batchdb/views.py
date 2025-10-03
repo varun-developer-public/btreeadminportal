@@ -220,7 +220,7 @@ def get_students_for_course(request):
     # Fetch all students for this course with status YTS or IP
     students = Student.objects.filter(
         course_id=course_id,
-        course_status__in=['YTS', 'IP']
+        # course_status__in=['YTS', 'IP']
     )
 
     if exclude_students_in_any_batch:
