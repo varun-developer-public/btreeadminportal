@@ -222,3 +222,12 @@ def update_interview(request, pk):
     else:
         form = CompanyInterviewForm(instance=interview)
     return render(request, 'placementdb/update_interview.html', {'form': form})
+
+@login_required
+def delete_placement(request, pk):
+    placement = get_object_or_404(Placement, pk=pk)
+    if request.method == 'POST':
+        placement.delete()
+        messages.success(request, "Placement deleted successfully.")
+        return redirect('placementdb:placement_list')
+    return render(request, 'placementdb/placement_confirm_delete.html', {'placement': placement})

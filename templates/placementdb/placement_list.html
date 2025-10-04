@@ -159,7 +159,7 @@
                     <td>{{ placement.interview_count }}</td>
                     <td>
                         {% for batch in placement.student.batches.all %}
-                            <span class="badge bg-info">{{ batch.batch_id }}</span>
+                            <a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-info">{{ batch.batch_id }}</span></a>
                         {% empty %}
                             -
                         {% endfor %}
@@ -205,7 +205,8 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'placementdb:update_placement' placement.pk %}" class="btn btn-primary"><i class="fas fa-edit"></i> Edit</a>
+                        <a href="{% url 'placementdb:update_placement' placement.pk %}" class="btn btn-primary"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'placementdb:delete_placement' placement.pk %}" class="btn btn-danger btn-delete"><i class="fas fa-trash"></i></a>
                     </td>
                 </tr>
                 {% if not placement.is_active %}
@@ -340,6 +341,7 @@
     }
     .btn-secondary { background-color: #6c757d; }
     .btn-update { background-color: #28a745; font-size: 0.9em; padding: 5px 10px;}
+    .btn-danger { background-color: #dc3545;padding: 7px 14px; }
 
     .table-wrapper {
         overflow-x: scroll;
