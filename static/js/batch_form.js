@@ -57,8 +57,7 @@ $(document).ready(function() {
             // Fetch Students
             $.ajax({
                 url: '/batches/ajax/get-students-for-course/',
-                // data: { 'course_id': courseId, 'exclude_students_in_any_batch': true },
-                data: { 'course_id': courseId, },
+                data: { 'course_id': courseId, 'exclude_students_in_any_batch': true },
                 success: function(data) {
                     students.prop('disabled', false);
                     data.forEach(s => students.append(`<option value="${s.id}">${s.student_id}- ${s.first_name} ${s.last_name || ''}</option>`));

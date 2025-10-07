@@ -20,4 +20,5 @@ urlpatterns = [
     path('verify-2fa/', verify_2fa, name='verify_2fa'),
     path('trainers/availability/', trainers_availabity, name='trainers_availability'),
     path('api/trainer_availability/', trainer_availability_api, name='trainer_availability_api'),
+    path('api/trainers_by_course/', trainers_by_course, name='trainers_by_course'),
 ]

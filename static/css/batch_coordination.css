@@ -1238,3 +1238,100 @@ body {
     color: #155724;
     font-weight: bold;
 }
+
+/* Course Search Dropdown */
+#course-search-dropdown {
+    display: none;
+    position: absolute;
+    background-color: #fff;
+    width: 100%;
+    max-width: 400px;
+    top: 75%;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 999;
+    border-radius: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+}
+
+#course-search-dropdown a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+#course-search-dropdown a:last-child {
+    border-bottom: none;
+}
+
+#course-search-dropdown a:hover {
+    background-color: #f1f1f1;
+}
+
+/* Trainers by Course Table */
+#trainersByCourseGrid .bcd-batches-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    background: transparent;
+    box-shadow: none;
+}
+
+#trainersByCourseGrid .bcd-batches-table th,
+#trainersByCourseGrid .bcd-batches-table td {
+    padding: 16px;
+    text-align: left;
+    vertical-align: middle;
+}
+
+#trainersByCourseGrid .bcd-batches-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    border-top: 1px solid #dee2e6;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#trainersByCourseGrid .bcd-batches-table th:first-child {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+#trainersByCourseGrid .bcd-batches-table th:last-child {
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+#trainersByCourseGrid .bcd-batches-table tbody tr {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+}
+
+#trainersByCourseGrid .bcd-batches-table tbody tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+#trainersByCourseGrid .bcd-batches-table td {
+    border-top: 1px solid #f1f1f1;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+#trainersByCourseGrid .bcd-batches-table td:first-child {
+    border-left: 1px solid #f1f1f1;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+#trainersByCourseGrid .bcd-batches-table td:last-child {
+    border-right: 1px solid #f1f1f1;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}

@@ -1011,3 +1011,39 @@ def trainer_availability_api(request):
         
     except Trainer.DoesNotExist:
         return JsonResponse({'availability': [], 'stats': {}}, safe=False)
+
+from coursedb.models import Course
+
+def trainers_by_course(request):
+    course_name = request.GET.get('course_name')
+    if not course_name:
+        return JsonResponse({'trainers': []})
+
+    try:
+        course = Course.objects.get(course_name__iexact=course_name)
+        trainers = Trainer.objects.filter(stack=course, is_active=True)
+        
+        trainers_data = []
+        for trainer in trainers:
+            active_batches = Batch.objects.filter(trainer=trainer, batch_status__in=['IP', 'YTS'])
+            occupied_slots = 0
+            if trainer.timing_slots:
+                for slot in trainer.timing_slots:
+                    slot_start = datetime.strptime(slot['start_time'], "%H:%M").time()
+                    slot_end = datetime.strptime(slot['end_time'], "%H:%M").time()
+                    if active_batches.filter(start_time=slot_start, end_time=slot_end).exists():
+                        occupied_slots += 1
+                available_slots_count = len(trainer.timing_slots) - occupied_slots
+            else:
+                available_slots_count = 0
+            
+            trainers_data.append({
+                'id': trainer.id,
+                'name': trainer.name,
+                'trainer_id': trainer.trainer_id,
+                'timing_slots_count': available_slots_count,
+            })
+        
+        return JsonResponse({'trainers': trainers_data})
+    except Course.DoesNotExist:
+        return JsonResponse({'trainers': []})

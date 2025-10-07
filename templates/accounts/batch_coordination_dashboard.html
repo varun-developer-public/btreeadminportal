@@ -265,6 +265,35 @@
         
     </div>
 
+    <!-- Trainers by Course Section -->
+    <div class="bcd-card" style="margin-bottom: 1.5rem;">
+        <div class="bcd-availability-header">
+            <h2 class="bcd-batch-title">Trainers by Course</h2>
+            <div class="bcd-search-container" style="margin-right: 1rem;">
+                <i class="fas fa-search bcd-search-icon"></i>
+                <input type="text" class="bcd-search-input" id="course-search-input" placeholder="Search courses...">
+                <div class="bcd-search-dropdown" id="course-search-dropdown"></div>
+            </div>
+        </div>
+        <div class="bcd-availability-container">
+            <div class="bcd-availability-grid" id="trainersByCourseGrid">
+                <table class="bcd-batches-table">
+                    <thead>
+                        <tr>
+                            <th>Trainer ID</th>
+                            <th>Trainer Name</th>
+                            <th>Available Time Slots</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Trainer data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Trainer Availability Section -->
     <div class="bcd-card">
         <div class="bcd-availability-header">
@@ -915,7 +944,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function displayTrainerAvailability(trainerId) {
-        const availabilityTable = document.querySelector('.bcd-availability-grid table');
+        const availabilityTable = document.querySelector('#availabilityGrid table');
         const tableBody = availabilityTable.querySelector('tbody');
         tableBody.innerHTML = '<tr><td colspan="100%" class="bcd-text-secondary" style="text-align: center;">Loading...</td></tr>';
 
@@ -957,6 +986,80 @@ document.addEventListener('DOMContentLoaded', function() {
                     statsContainer.style.display = 'flex';
                 } else {
                     statsContainer.style.display = 'none';
+                }
+            });
+    }
+
+    // Course search functionality
+    const courseSearchInput = document.getElementById('course-search-input');
+    const courseSearchDropdown = document.getElementById('course-search-dropdown');
+    let coursesDataList = [];
+    fetch("{% url 'coursedb:course_list_api' %}")
+        .then(response => response.json())
+        .then(data => {
+            coursesDataList = data;
+        });
+
+    courseSearchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        courseSearchDropdown.innerHTML = '';
+
+        if (searchTerm.length === 0) {
+            courseSearchDropdown.style.display = 'none';
+            return;
+        }
+
+        const filteredCourses = coursesDataList.filter(course =>
+            course.course_name.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredCourses.length > 0) {
+            filteredCourses.forEach(course => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.textContent = course.course_name;
+                item.dataset.courseName = course.course_name;
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    courseSearchInput.value = course.course_name;
+                    courseSearchDropdown.style.display = 'none';
+                    displayTrainersByCourse(course.course_name);
+                });
+                courseSearchDropdown.appendChild(item);
+            });
+            courseSearchDropdown.style.display = 'block';
+        } else {
+            courseSearchDropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!courseSearchInput.contains(e.target)) {
+            courseSearchDropdown.style.display = 'none';
+        }
+    });
+
+    function displayTrainersByCourse(courseName) {
+        const trainersTable = document.querySelector('#trainersByCourseGrid table');
+        const tableBody = trainersTable.querySelector('tbody');
+        tableBody.innerHTML = '<tr><td colspan="3" class="bcd-text-secondary" style="text-align: center;">Loading...</td></tr>';
+
+        fetch(`{% url 'trainers_by_course' %}?course_name=${courseName}`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = '';
+                if (data.trainers && data.trainers.length > 0) {
+                    data.trainers.forEach(trainer => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${trainer.trainer_id}</td>
+                            <td>${trainer.name}</td>
+                            <td>${trainer.timing_slots_count}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="3" class="bcd-text-secondary" style="text-align: center;">No active trainers found for this course.</td></tr>';
                 }
             });
     }

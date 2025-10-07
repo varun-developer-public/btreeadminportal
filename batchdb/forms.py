@@ -48,7 +48,7 @@ class BatchCreationForm(forms.ModelForm):
             'trainer': forms.Select(attrs={'class': 'form-control'}),
             'students': forms.SelectMultiple(attrs={'class': 'form-control', 'size': '10'}),
             'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date', 'readonly':True}),
             'batch_type': forms.Select(attrs={'class': 'form-control'}),
             'hours_per_day': forms.NumberInput(attrs={'class': 'form-control'}),
         }
