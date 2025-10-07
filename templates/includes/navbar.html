@@ -7,17 +7,21 @@
     </a>
     <div class="navbar-right">
         {% if user.is_authenticated %}
-            {% if user.is_superuser %}
+            {% if user.is_superuser or user.role == 'staff' %}
             <div class="dropdown">
                 <button class="profile-button" type="button" id="dashboardDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="me-2">Dashboards</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dashboardDropdown">
-                    <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
-                    <li><a class="dropdown-item" href="{% url 'batch_coordination_dashboard' %}">Batch Coordination Dashboard</a></li>
-                    <li><a class="dropdown-item" href="{% url 'consultant_dashboard' %}">Consultant Dashboard</a></li>
-                    <li><a class="dropdown-item" href="{% url 'placement_dashboard' %}">Placement Dashboard</a></li>
-                    <li><a class="dropdown-item" href="{% url 'staff_dashboard' %}">Staff Dashboard</a></li>
+                    {% if user.is_superuser %}
+                        <li><a class="dropdown-item" href="{% url 'admin_dashboard' %}">Admin Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{% url 'batch_coordination_dashboard' %}">Batch Coordination Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{% url 'consultant_dashboard' %}">Consultant Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{% url 'placement_dashboard' %}">Placement Dashboard</a></li>
+                        <li><a class="dropdown-item" href="{% url 'staff_dashboard' %}">Staff Dashboard</a></li>
+                    {% elif user.role == 'staff' %}
+                        <li><a class="dropdown-item" href="{% url 'consultant_dashboard' %}">Consultant Dashboard</a></li>
+                    {% endif %}
                 </ul>
             </div>
             {% endif %}

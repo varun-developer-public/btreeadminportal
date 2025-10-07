@@ -13,7 +13,7 @@ URL_ROLE_MAPPINGS = {
         'settings_dashboard', 'source_list', 'payment_account_list', 'remove_source', 'remove_payment_account',
         'user_list', 'create_user', 'update_user',
         'get_courses', 'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
-        'ajax_load_students'
+        'ajax_load_students','consultant_dashboard'
     ],
     'placement': [
         'placement_dashboard',
@@ -52,8 +52,8 @@ URL_ROLE_MAPPINGS = {
         'transferrequest-list','transferrequest-detail',
         'trainerhandover-list','trainerhandover-detail',
         'batchtransaction-list','batchtransaction-detail',
-        'studenthistory-list','studenthistory-detail','batch_report'
-
+        'studenthistory-list','studenthistory-detail','batch_report',
+        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course'
     ],
     'consultant': [
         'consultant_profile',
@@ -61,7 +61,7 @@ URL_ROLE_MAPPINGS = {
         'payment_list', 'payment_update',
         'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list',
         'category_list','get_courses_by_category','get_trainers_for_course','get_trainer_slots','get_students_for_course',
-        'get_next_course_code','get_course_duration'
+        'get_next_course_code','get_course_duration','batch_report','course_list_api','trainer_availability_api','trainers_availability','trainers_by_course'
     ]
 }
 
