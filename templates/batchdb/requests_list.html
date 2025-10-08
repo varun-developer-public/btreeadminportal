@@ -14,6 +14,7 @@
     .status-pending { background-color: #ffc107; color: #333; }
     .status-approved { background-color: #28a745; }
     .status-rejected { background-color: #dc3545; }
+   .status-expired { background-color: #6c757d; }
 </style>
 
 <!-- Request Details Modal -->
@@ -138,6 +139,9 @@
                     <td>{{ req.requested_at|date:"d-m-Y" }}</td>
                     <td>
                         <span class="status-badge status-{{ req.status|lower }}">{{ req.get_status_display }}</span>
+                        {% if req.status == 'PENDING' and req.expires_at %}
+                            <div class="text-muted small" data-expires-at="{{ req.expires_at.isoformat }}"></div>
+                        {% endif %}
                     </td>
                     <td>
                         <button class="btn-primary btn-sm" onclick="showDetails('{{ req.id }}', '{{ req.request_type }}')"><i class="fas fa-eye"></i></button>
@@ -238,5 +242,27 @@ function handleAction(requestId, requestType, action) {
         }
     });
 }
+
+function updateExpirationTimers() {
+    const timers = document.querySelectorAll('[data-expires-at]');
+    timers.forEach(timer => {
+        const expiresAt = new Date(timer.dataset.expiresAt);
+        const now = new Date();
+        const diff = expiresAt - now;
+
+        if (diff > 0) {
+            const minutes = Math.floor((diff / 1000) / 60);
+            const seconds = Math.floor((diff / 1000) % 60);
+            timer.textContent = `Expires in: ${minutes}m ${seconds}s`;
+        } else {
+            timer.textContent = 'Expired';
+            // Optionally, reload the page or update the status via AJAX
+            // location.reload();
+        }
+    });
+}
+
+setInterval(updateExpirationTimers, 1000);
+updateExpirationTimers(); // Initial call
 </script>
 {% endblock %}

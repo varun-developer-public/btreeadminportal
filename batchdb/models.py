@@ -365,9 +365,8 @@ class TrainerHandover(models.Model):
             raise ValueError("Only pending handover requests can be approved.")
         
         if self.expires_at < timezone.now():
-            self.status = 'EXPIRED'
-            self.save()
-            raise ValueError("This handover request has expired.")
+            self.reject(approved_by, remarks="Request expired and was automatically rejected.")
+            raise ValueError("This handover request has expired and has been rejected.")
 
         # Update handover record
         self.status = 'APPROVED'
@@ -420,6 +419,14 @@ class TrainerHandover(models.Model):
         
         self.save()
 
+    @classmethod
+    def expire_pending_requests(cls):
+        """Expires pending requests that have passed their expiration time."""
+        cls.objects.filter(
+            status='PENDING',
+            expires_at__lte=timezone.now()
+        ).update(status='EXPIRED')
+
 
 class TransferRequest(models.Model):
     """Model for student transfer requests between batches"""
@@ -455,8 +462,16 @@ class TransferRequest(models.Model):
     
     def save(self, *args, **kwargs):
         if not self.pk:  # If the object is being created
-            self.expires_at = timezone.now() + timezone.timedelta(hours=3)
+            self.expires_at = timezone.now() + timezone.timedelta(hours=24)
         super().save(*args, **kwargs)
+
+    @classmethod
+    def expire_pending_requests(cls):
+        """Expires pending requests that have passed their expiration time."""
+        cls.objects.filter(
+            status='PENDING',
+            expires_at__lte=timezone.now()
+        ).update(status='EXPIRED')
 
     @transaction.atomic
     def approve(self, approved_by, approved_students=None, remarks=None):
@@ -465,9 +480,8 @@ class TransferRequest(models.Model):
             raise ValueError("Only pending transfer requests can be approved.")
         
         if self.expires_at < timezone.now():
-            self.status = 'EXPIRED'
-            self.save()
-            raise ValueError("This transfer request has expired.")
+            self.reject(approved_by, remarks="Request expired and was automatically rejected.")
+            raise ValueError("This transfer request has expired and has been rejected.")
 
         self.status = 'APPROVED'
         self.approved_by = approved_by

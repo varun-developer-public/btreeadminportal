@@ -1035,6 +1035,10 @@ class RequestListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
+        # Automatically expire requests before filtering
+        TransferRequest.expire_pending_requests()
+        TrainerHandover.expire_pending_requests()
+
         # Get filter parameters
         request_type = self.request.GET.get('request_type', '')
         status = self.request.GET.get('status', '')
@@ -1054,11 +1058,6 @@ class RequestListView(LoginRequiredMixin, ListView):
         if status:
             transfer_requests = transfer_requests.filter(status=status)
             handover_requests = handover_requests.filter(status=status)
-        else:
-            # Exclude expired requests by default
-            transfer_requests = transfer_requests.exclude(status='EXPIRED')
-            handover_requests = handover_requests.exclude(status='EXPIRED')
-
         if from_date:
             try:
                 from_date = datetime.strptime(from_date, '%Y-%m-%d')
