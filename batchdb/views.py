@@ -16,7 +16,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from core.permissions import IsBatchCoordinator
+from core.permissions import IsBatchCoordinator, IsStaff
 from django.views.decorators.csrf import csrf_exempt
 
 # Model imports
@@ -243,7 +243,7 @@ def get_students_for_course(request):
 class BatchViewSet(viewsets.ModelViewSet):
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
-    permission_classes = [IsBatchCoordinator]
+    permission_classes = [IsBatchCoordinator | IsStaff]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['batch_id', 'course__name', 'trainer__name']
     ordering_fields = ['start_date', 'end_date', 'created_at', 'batch_id']
@@ -409,7 +409,7 @@ class BatchViewSet(viewsets.ModelViewSet):
 class TransferRequestViewSet(viewsets.ModelViewSet):
     queryset = TransferRequest.objects.all()
     serializer_class = TransferRequestSerializer
-    permission_classes = [IsBatchCoordinator]
+    permission_classes = [IsBatchCoordinator | IsStaff]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['from_batch__batch_id', 'to_batch__batch_id']
     ordering_fields = ['requested_at', 'status']
@@ -1054,6 +1054,10 @@ class RequestListView(LoginRequiredMixin, ListView):
         if status:
             transfer_requests = transfer_requests.filter(status=status)
             handover_requests = handover_requests.filter(status=status)
+        else:
+            # Exclude expired requests by default
+            transfer_requests = transfer_requests.exclude(status='EXPIRED')
+            handover_requests = handover_requests.exclude(status='EXPIRED')
 
         if from_date:
             try:
@@ -1175,12 +1179,25 @@ def approve_request(request, request_id):
     try:
         data = json.loads(request.body)
         remarks = data.get('remarks')
+        approved_student_ids = data.get('approved_students')
     except json.JSONDecodeError:
         remarks = None
+        approved_student_ids = None
+
+    approved_students = None
+    if approved_student_ids:
+        try:
+            approved_students = Student.objects.filter(id__in=approved_student_ids)
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Invalid student IDs provided.'}, status=400)
 
     try:
         transfer_request = TransferRequest.objects.get(id=request_id, status='PENDING')
-        transfer_request.approve(approved_by=request.user, remarks=remarks)
+        transfer_request.approve(
+            approved_by=request.user,
+            remarks=remarks,
+            approved_students=approved_students
+        )
         messages.success(request, "Transfer request approved successfully.")
         return JsonResponse({'success': True, 'message': 'Transfer request approved successfully.'})
     except TransferRequest.DoesNotExist:

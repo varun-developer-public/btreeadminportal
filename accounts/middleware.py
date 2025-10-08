@@ -13,7 +13,16 @@ URL_ROLE_MAPPINGS = {
         'settings_dashboard', 'source_list', 'payment_account_list', 'remove_source', 'remove_payment_account',
         'user_list', 'create_user', 'update_user',
         'get_courses', 'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
-        'ajax_load_students','consultant_dashboard'
+        'ajax_load_students','consultant_dashboard','request_details','approve_request',
+        'reject_request','available-students-for-transfer','available-batches-for-transfer',
+        'available-trainers-for-handover','available-batches-for-handover','batch-add-student','batch-remove-student',
+        'api_courses_by_category','get_course_duration','transfer-requests',
+        'batch-list','batch-detail',
+        'transferrequest-list','transferrequest-detail',
+        'trainerhandover-list','trainerhandover-detail',
+        'batchtransaction-list','batchtransaction-detail',
+        'studenthistory-list','studenthistory-detail','batch_report',
+        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','requests_list',
     ],
     'placement': [
         'placement_dashboard',
@@ -78,10 +87,12 @@ class RolePermissionsMiddleware:
     def __call__(self, request):
         if request.user.is_authenticated:
             # Bypass for media files
-            if request.path.startswith('/media/'):
+            if request.path.startswith('/media/') or request.path.startswith('/batches/api/'):
                 return self.get_response(request)
 
             current_url_name = resolve(request.path_info).url_name
+            
+            print("DEBUG URL NAME:", current_url_name, request.path)
 
             # Bypass for public URLs and admin users
             if current_url_name in PUBLIC_URLS or request.user.role in ['admin', 'staff']:

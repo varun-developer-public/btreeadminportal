@@ -326,6 +326,7 @@ class TrainerHandover(models.Model):
         ('PENDING', 'Pending'),
         ('APPROVED', 'Approved'),
         ('REJECTED', 'Rejected'),
+        ('EXPIRED', 'Expired'),
     ]
     
     batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='trainer_handovers')
@@ -336,6 +337,7 @@ class TrainerHandover(models.Model):
     requested_at = models.DateTimeField(default=timezone.now)
     
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    expires_at = models.DateTimeField(null=True, blank=True)
     
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_handovers')
     approved_at = models.DateTimeField(null=True, blank=True)
@@ -351,12 +353,22 @@ class TrainerHandover(models.Model):
     def __str__(self):
         return f"Handover from {self.from_trainer} to {self.to_trainer} - {self.get_status_display()}"
     
+    def save(self, *args, **kwargs):
+        if not self.pk:  # If the object is being created
+            self.expires_at = timezone.now() + timezone.timedelta(minutes=2)
+        super().save(*args, **kwargs)
+
     @transaction.atomic
     def approve(self, approved_by, remarks=None):
         """Approve the trainer handover"""
         if self.status != 'PENDING':
             raise ValueError("Only pending handover requests can be approved.")
         
+        if self.expires_at < timezone.now():
+            self.status = 'EXPIRED'
+            self.save()
+            raise ValueError("This handover request has expired.")
+
         # Update handover record
         self.status = 'APPROVED'
         self.approved_by = approved_by
@@ -394,6 +406,11 @@ class TrainerHandover(models.Model):
         if self.status != 'PENDING':
             raise ValueError("Only pending handover requests can be rejected.")
         
+        if self.expires_at < timezone.now():
+            self.status = 'EXPIRED'
+            self.save()
+            raise ValueError("This handover request has expired and cannot be rejected.")
+
         self.status = 'REJECTED'
         self.approved_by = rejected_by  # Using the same field for rejection tracking
         self.approved_at = timezone.now()
@@ -410,6 +427,7 @@ class TransferRequest(models.Model):
         ('PENDING', 'Pending'),
         ('APPROVED', 'Approved'),
         ('REJECTED', 'Rejected'),
+        ('EXPIRED', 'Expired'),
     ]
     
     from_batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='transfer_requests_from')
@@ -420,6 +438,7 @@ class TransferRequest(models.Model):
     requested_at = models.DateTimeField(default=timezone.now)
     
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='PENDING')
+    expires_at = models.DateTimeField(null=True, blank=True)
     
     approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_transfers')
     approved_at = models.DateTimeField(null=True, blank=True)
@@ -434,12 +453,22 @@ class TransferRequest(models.Model):
     def __str__(self):
         return f"Transfer from {self.from_batch} to {self.to_batch} - {self.get_status_display()}"
     
+    def save(self, *args, **kwargs):
+        if not self.pk:  # If the object is being created
+            self.expires_at = timezone.now() + timezone.timedelta(hours=3)
+        super().save(*args, **kwargs)
+
     @transaction.atomic
     def approve(self, approved_by, approved_students=None, remarks=None):
         """Approve the transfer request for all or specific students"""
         if self.status != 'PENDING':
             raise ValueError("Only pending transfer requests can be approved.")
         
+        if self.expires_at < timezone.now():
+            self.status = 'EXPIRED'
+            self.save()
+            raise ValueError("This transfer request has expired.")
+
         self.status = 'APPROVED'
         self.approved_by = approved_by
         self.approved_at = timezone.now()
@@ -510,6 +539,11 @@ class TransferRequest(models.Model):
         if self.status != 'PENDING':
             raise ValueError("Only pending transfer requests can be rejected.")
         
+        if self.expires_at < timezone.now():
+            self.status = 'EXPIRED'
+            self.save()
+            raise ValueError("This transfer request has expired and cannot be rejected.")
+
         self.status = 'REJECTED'
         self.approved_by = rejected_by  # Using the same field for rejection tracking
         self.approved_at = timezone.now()
