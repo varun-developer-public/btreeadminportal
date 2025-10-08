@@ -15,3 +15,10 @@ def with_prefix(formset, prefix):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+
+@register.filter
+def multiply_with(value, arg):
+    try:
+        return float(value) * float(arg)
+    except:
+        return 0

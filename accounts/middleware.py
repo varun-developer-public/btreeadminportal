@@ -22,7 +22,7 @@ URL_ROLE_MAPPINGS = {
         'trainerhandover-list','trainerhandover-detail',
         'batchtransaction-list','batchtransaction-detail',
         'studenthistory-list','studenthistory-detail','batch_report',
-        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','requests_list',
+        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','requests_list','student_report'
     ],
     'placement': [
         'placement_dashboard',
@@ -62,7 +62,7 @@ URL_ROLE_MAPPINGS = {
         'trainerhandover-list','trainerhandover-detail',
         'batchtransaction-list','batchtransaction-detail',
         'studenthistory-list','studenthistory-detail','batch_report',
-        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course'
+        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report'
     ],
     'consultant': [
         'consultant_profile',
@@ -70,7 +70,7 @@ URL_ROLE_MAPPINGS = {
         'payment_list', 'payment_update',
         'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list',
         'category_list','get_courses_by_category','get_trainers_for_course','get_trainer_slots','get_students_for_course',
-        'get_next_course_code','get_course_duration','batch_report','course_list_api','trainer_availability_api','trainers_availability','trainers_by_course'
+        'get_next_course_code','get_course_duration','batch_report','course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report'
     ]
 }
 

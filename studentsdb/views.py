@@ -562,9 +562,23 @@ def student_report(request, student_id):
     from batchdb.models import BatchStudent
     batch_history = BatchStudent.get_student_batch_history(student)
 
+    # Get payment details for the student
+    try:
+        payment = Payment.objects.get(student=student)
+    except Payment.DoesNotExist:
+        payment = None
+
+    # Get placement details for the student
+    try:
+        placement = Placement.objects.get(student=student)
+    except Placement.DoesNotExist:
+        placement = None
+
     context = {
         'student': student,
         'company_interview_data': company_interview_data,
         'batch_history': batch_history,
+        'payment': payment,
+        'placement': placement,
     }
     return render(request, 'studentsdb/student_report.html', context)

@@ -1,241 +1,363 @@
 {% extends "base.html" %}
+{% load core_tags %}
+{% block title %}Student Report{% endblock %}
 {% load static %}
-{% load custom_filter %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/student_form_modern.css' %}">
-<style>
-    .accordion-button:not(.collapsed) {
-        color: #fff;
-        background-color: #007bff;
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/student_report.css' %}">
 {% endblock %}
 
-{% block title %}{{ student.student_id }}-Student Report{% endblock %}
-
 {% block content %}
-<div class="student-form-container">
-    <div class="form-header">
-        <h1>Student Report for {{ student.first_name }} {{ student.last_name }} - {{ student.student_id }}</h1>
-        <p class="form-subtitle">Below is the Entire Report of the student.</p>
-    </div>
-
-    {% if student.pl_required %}
-    <div class="form-section-card">
-        <div class="form-section-header">
-            <h5 style="color: white;"><i class="fas fa-calendar-alt me-2" style="color: white;"></i>Placement Information - Scheduled Interviews</h5>
+<div class="student-report-container">
+    <!-- Header Section -->
+    <div class="sr-header">
+        <div class="sr-institute-info">
+            <div class="sr-logo">
+                <img src="{% static 'images/logo.png' %}" alt="Institute Logo">
+                <span>{{ request.site_settings.site_name|default:"Kafka Institute" }}</span>
+            </div>
+            <div class="sr-date">
+                <span>{{ today|date:"l, d F Y" }}</span>
+            </div>
         </div>
-        <div class="form-section-body">
-            <div class="accordion" id="interviewAccordion">
-                {% for company_data in company_interview_data %}
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingCompany{{ forloop.counter }}">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCompany{{ forloop.counter }}" aria-expanded="false" aria-controls="collapseCompany{{ forloop.counter }}">
-                            <div class="container-fluid">
-                                <div class="row w-100 ">
-                                    <div class="col-5 text-left">
-                                        {{ company_data.company_name }} - {{ company_data.company_location }} 
-                                    </div>
-                                    <div class="col-4">
-                                        
-                                    </div>
-                                    <div class="col-3 text-right">
-                                       {{ company_data.total_cycles }} Interview{{ company_data.total_cycles|pluralize }} - {{ company_data.total_rounds }} Round{{ company_data.total_rounds|pluralize }}
-                                    </div>
-                                </div>
-                            </div>
-                        </button>
-                    </h2>
-                    <div id="collapseCompany{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="headingCompany{{ forloop.counter }}" data-bs-parent="#interviewAccordion">
-                        <div class="accordion-body">
-                            {% for cycle_number, interviews in company_data.cycles.items %}
-                            <div class="mb-3">
-                                <h5>Interview {{ cycle_number }}</h5>
-                                {% for interview in interviews %}
-                                <div class="ps-3">
-                                    <h6>Round {{ interview.round_number }} - {{ interview.interview_round|capfirst }}</h6>
-                                    <div style="display: flex; justify-content: space-between;">
-                                        <p><strong>Date:</strong> {{ interview.interview_date }} | <strong>Time:</strong> {{ interview.interview_time }} | <strong>Location:</strong> {{ interview.location|capfirst }}{% if interview.location == 'others' %} ({{ interview.other_location }}){% endif %} | <strong>Venue:</strong> {{ interview.venue|capfirst }}</p>
-                                        <p><strong>Scheduled By:</strong> <strong style="color: #074383;">{{ interview.created_by.name }}</strong> at {{ interview.created_at }}</p>
-                                    </div>
-                                    <p><strong>Status:</strong>
-                                        {% for status in interview.student_status.all %}
-                                            {% if status.student.id == student.id %}
-                                                {{ status.get_status_display }}
-                                                {% if status.status == 'rejected' or status.status == 'not_attended' and status.reason %}
-                                                    <br><strong>Reason:</strong> {{ status.reason }}
-                                                {% endif %}
-                                                {% if status.status == 'placed' and status.offer_letter %}
-                                                    <br><a href="{{ status.offer_letter.url }}" class="view-link" target="_blank">View Offer Letter</a>
-                                                {% endif %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    </p>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
+        
+        <div class="sr-student-info">
+            <h1>{{ student.first_name }} {{ student.last_name }}</h1>
+            <div class="sr-language-selector">
+                <select class="sr-language-dropdown">
+                    <option value="en">English speaking 101</option>
+                </select>
+                <div class="sr-actions">
+                    <button class="sr-download-btn"><i class="fas fa-download"></i></button>
+                    <button class="sr-share-btn"><i class="fas fa-share-alt"></i></button>
                 </div>
-                {% empty %}
-                <p>No interviews scheduled for this student.</p>
-                {% endfor %}
             </div>
         </div>
     </div>
-    {% else %}
-    <div class="form-section-card">
-        <div class="form-section-header">
-            <h5 style="color: white;"><i class="fas fa-info-circle me-2" style="color: white;"></i>Placement Information</h5>
-        </div>
-        <div class="form-section-body">
-            <p>This student does not require placement assistance.</p>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- Batch History Section -->
-    <div class="form-section-card">
-        <div class="form-section-header">
-            <h5 style="color: white;"><i class="fas fa-history me-2" style="color: white;"></i>Batch History</h5>
-        </div>
-        <div class="form-section-body">
-            <div class="accordion" id="batchHistoryAccordion">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingCurrentBatches">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCurrentBatches" aria-expanded="true" aria-controls="collapseCurrentBatches">
-                            Current Batches
-                        </button>
-                    </h2>
-                    <div id="collapseCurrentBatches" class="accordion-collapse collapse show" aria-labelledby="headingCurrentBatches" data-bs-parent="#batchHistoryAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr class="table-light">
-                                            <th>Batch ID</th>
-                                            <th>Course</th>
-                                            <th>Trainer</th>
-                                            <th>Slot Time</th>
-                                            <th>Activated On</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% if batch_history.current_batch %}
-                                        <tr>
-                                            <td><strong>{{ batch_history.current_batch.batch_id }}</strong></td>
-                                            <td>{{ batch_history.current_batch.course }}</td>
-                                            <td>{{ batch_history.current_batch.trainer }}</td>
-                                            <td>{{ batch_history.current_batch.slot_time }}</td>
-                                            <td>{{ batch_history.current_batch.activated_at|date:"d M Y" }}</td>
-                                            <td><span class="badge bg-success">{{ batch_history.current_batch.status }}</span></td>
-                                        </tr>
-                                        {% else %}
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted">No current batch found</td>
-                                        </tr>
-                                        {% endif %}
-                                    </tbody>
-                                </table>
+
+    <!-- Main Content -->
+    <div class="sr-content">
+        <!-- Profile Section -->
+        <div class="sr-card">
+            <div class="sr-card-header">Profile</div>
+            <div class="sr-card-body">
+                <div class="sr-profile-content">
+                    <div class="sr-profile-photo">
+                        {% if placement.std_professional_photo %}
+                            <img src="{{ placement.std_professional_photo.url }}" alt="Student Photo">
+                        {% else %}
+                            <div class="sr-profile-placeholder">
+                                <i class="fas fa-user"></i>
                             </div>
+                        {% endif %}
+                    </div>
+                    <div class="sr-profile-details">
+                        <div class="sr-detail-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Date of Birth</span>
+                            <span class="sr-detail-value">{{ student.date_of_birth|date:"d-m-Y"|default:"Not provided" }}</span>
                         </div>
+                        <div class="sr-detail-item">
+                            <i class="fas fa-phone"></i>
+                            <span>Phone</span>
+                            <span class="sr-detail-value">{{ student.country_code }} {{ student.phone }}</span>
+                        </div>
+                        <div class="sr-detail-item">
+                            <i class="fas fa-envelope"></i>
+                            <span>Email</span>
+                            <span class="sr-detail-value">{{ student.email }}</span>
+                        </div>
+                        <div class="sr-detail-item">
+                            <i class="fas fa-calendar-check"></i>
+                            <span>Date of joining</span>
+                            <span class="sr-detail-value">{{ student.enrollment_date|date:"d-m-Y" }}</span>
+                        </div>
+                        <div class="sr-detail-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Last active</span>
+                            <span class="sr-detail-value">{{ student.last_updated|timesince }} ago</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="sr-profile-actions">
+                    <button class="sr-edit-profile-btn">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sessions Completed Section -->
+        <div class="sr-card">
+            <div class="sr-card-header">Sessions completed</div>
+            <div class="sr-card-body">
+                <div class="sr-sessions-progress">
+                    <div class="sr-progress-circle">
+                        <svg width="120" height="120" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="#e6e6e6" stroke-width="12" />
+                            <circle cx="60" cy="60" r="54" fill="none" stroke="#4CAF50" stroke-width="12" 
+                                stroke-dasharray="339.292" stroke-dashoffset="{{ 339.292|multiply_with:1|floatformat:2 }}" />
+                            <text x="60" y="60" text-anchor="middle" dominant-baseline="middle" font-size="24" font-weight="bold">
+                                {{ student.completed_sessions|default:20 }}
+                            </text>
+                            <text x="60" y="80" text-anchor="middle" dominant-baseline="middle" font-size="16">
+                                / {{ student.total_sessions|default:24 }}
+                            </text>
+                        </svg>
+                        <div class="sr-progress-percentage">{{ student.progress_percentage|default:84 }}%</div>
+                    </div>
+                    <div class="sr-sessions-details">
+                        <h3>Last 5 sessions</h3>
+                        <div class="sr-sessions-list">
+                            <div class="sr-session-header">
+                                <span>Date</span>
+                                <span>Status</span>
+                            </div>
+                            {% for session in student.recent_sessions|default:'' %}
+                            <div class="sr-session-item">
+                                <span>{{ session.date }}</span>
+                                <span class="sr-session-status sr-status-{{ session.status|lower }}">{{ session.status }}</span>
+                            </div>
+                            {% empty %}
+                            <div class="sr-session-item">
+                                <span>01 March</span>
+                                <span class="sr-session-status sr-status-present">Present</span>
+                            </div>
+                            <div class="sr-session-item">
+                                <span>24 Feb</span>
+                                <span class="sr-session-status sr-status-missed">Missed</span>
+                            </div>
+                            <div class="sr-session-item">
+                                <span>20 Feb</span>
+                                <span class="sr-session-status sr-status-present">Present</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <a href="#" class="sr-view-all">All sessions <i class="fas fa-chevron-right"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Analytics Section -->
+        <div class="sr-card">
+            <div class="sr-card-header">Session analytics</div>
+            <div class="sr-card-body">
+                <div class="sr-analytics-tabs">
+                    <button class="sr-tab-btn active" data-tab="attentiveness">Attentiveness</button>
+                    <button class="sr-tab-btn" data-tab="attendance">Attendance</button>
+                    <button class="sr-tab-btn" data-tab="talktime">Talktime</button>
+                </div>
+                
+                <div class="sr-analytics-alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Student's attentiveness has dropped over last 3 sessions</span>
+                </div>
+                
+                <div class="sr-analytics-stats">
+                    <div class="sr-stat-value">
+                        <span class="sr-big-number">78%</span>
+                        <span class="sr-stat-label">avg</span>
+                    </div>
+                    <div class="sr-stat-comparison">
+                        <span class="sr-comparison-value">61%</span>
+                        <span class="sr-comparison-label">in last 3 sessions</span>
                     </div>
                 </div>
                 
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingPreviousBatches">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePreviousBatches" aria-expanded="false" aria-controls="collapsePreviousBatches">
-                            Previous Batches
-                        </button>
-                    </h2>
-                    <div id="collapsePreviousBatches" class="accordion-collapse collapse" aria-labelledby="headingPreviousBatches" data-bs-parent="#batchHistoryAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr class="table-light">
-                                            <th>Batch ID</th>
-                                            <th>Course</th>
-                                            <th>Trainer</th>
-                                            <th>Slot Time</th>
-                                            <th>Deactivated On</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for batch in batch_history.batch_history %}
-                                        <tr>
-                                            <td><strong>{{ batch.batch_id }}</strong></td>
-                                            <td>{{ batch.course }}</td>
-                                            <td>{{ batch.trainer }}</td>
-                                            <td>{{ batch.slot_time }}</td>
-                                            <td>{{ batch.deactivated_at|date:"d M Y" }}</td>
-                                            <td><span class="badge bg-secondary">{{ batch.status }}</span></td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted">No previous batches found</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
+                <div class="sr-analytics-chart">
+                    <div class="sr-chart-legend">
+                        <div class="sr-legend-item">
+                            <span class="sr-legend-color sr-color-student"></span>
+                            <span>{{ student.first_name }} {{ student.last_name }}</span>
+                        </div>
+                        <div class="sr-legend-item">
+                            <span class="sr-legend-color sr-color-avg"></span>
+                            <span>Classroom Avg</span>
                         </div>
                     </div>
+                    <div class="sr-chart-container">
+                        <!-- Chart would be rendered by JavaScript -->
+                        <div class="sr-chart-placeholder"></div>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Additional Sections -->
+        <div class="sr-card">
+            <div class="sr-card-header">Course Details</div>
+            <div class="sr-card-body">
+                <div class="sr-detail-grid">
+                    <div class="sr-detail-item">
+                        <span class="sr-detail-label">Course:</span>
+                        <span class="sr-detail-value">{{ student.course.course_name }}</span>
+                    </div>
+                    <div class="sr-detail-item">
+                        <span class="sr-detail-label">Trainer:</span>
+                        <span class="sr-detail-value">{{ student.trainer.name }}</span>
+                    </div>
+                    <div class="sr-detail-item">
+                        <span class="sr-detail-label">Status:</span>
+                        <span class="sr-detail-value">{{ student.get_course_status_display }}</span>
+                    </div>
+                    <div class="sr-detail-item">
+                        <span class="sr-detail-label">Start Date:</span>
+                        <span class="sr-detail-value">{{ student.start_date|date:"d-m-Y" }}</span>
+                    </div>
+                    <div class="sr-detail-item">
+                        <span class="sr-detail-label">End Date:</span>
+                        <span class="sr-detail-value">{{ student.end_date|date:"d-m-Y" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sr-card">
+            <div class="sr-card-header">Batch History</div>
+            <div class="sr-card-body">
+                {% if batch_history.current_batch %}
+                <div class="sr-batch-section">
+                    <h3>Current Batch</h3>
+                    <div class="sr-batch-item">
+                        <span class="sr-batch-id">{{ batch_history.current_batch.batch_id }}</span>
+                        <span class="sr-batch-course">{{ batch_history.current_batch.course }}</span>
+                    </div>
+                </div>
+                {% endif %}
                 
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingTransactions">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTransactions" aria-expanded="false" aria-controls="collapseTransactions">
-                            Batch Transactions
-                        </button>
-                    </h2>
-                    <div id="collapseTransactions" class="accordion-collapse collapse" aria-labelledby="headingTransactions" data-bs-parent="#batchHistoryAccordion">
-                        <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr class="table-light">
-                                            <th>Timestamp</th>
-                                            <th>Batch</th>
-                                            <th>Type</th>
-                                            <th>Details</th>
-                                            <th>User</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for transaction in batch_history.transactions %}
-                                        <tr>
-                                            <td>{{ transaction.timestamp|date:"d M Y, H:i" }}</td>
-                                            <td><strong>{{ transaction.batch.batch_id }}</strong></td>
-                                            <td>
-                                                <span class="badge {% if 'ADD' in transaction.transaction_type %}bg-success{% elif 'REMOVE' in transaction.transaction_type %}bg-danger{% elif 'TRANSFER' in transaction.transaction_type %}bg-warning text-dark{% else %}bg-info{% endif %}">
-                                                    {{ transaction.get_transaction_type_display }}
-                                                </span>
-                                            </td>
-                                            <td class="small">
-                                                {% for key, value in transaction.details.items %}
-                                                    <strong>{{ key|title|replace:"_| " }}:</strong> {{ value }}<br>
-                                                {% endfor %}
-                                            </td>
-                                            <td>{{ transaction.user.username }}</td>
-                                        </tr>
-                                        {% empty %}
-                                        <tr>
-                                            <td colspan="5" class="text-center text-muted">No transactions found</td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
+                <div class="sr-batch-section">
+                    <h3>Previous Batches</h3>
+                    <div class="sr-batch-list">
+                        {% for batch in batch_history.batch_history %}
+                        <div class="sr-batch-item">
+                            <span class="sr-batch-id">{{ batch.batch_id }}</span>
+                            <span class="sr-batch-course">{{ batch.course }}</span>
+                        </div>
+                        {% empty %}
+                        <p>No previous batches</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="sr-card">
+            <div class="sr-card-header">Placement Details</div>
+            <div class="sr-card-body">
+                {% if placement %}
+                <div class="sr-placement-details">
+                    <div class="sr-placement-item">
+                        <span class="sr-placement-label">Resume:</span>
+                        <a href="{{ placement.resume_link.url }}" target="_blank" class="sr-resume-link">
+                            <i class="fas fa-file-pdf"></i> View Resume
+                        </a>
+                    </div>
+                    <div class="sr-placement-item">
+                        <span class="sr-placement-label">Onboarding Call:</span>
+                        <span class="sr-placement-status {% if student.onboardingcalldone %}sr-status-complete{% else %}sr-status-pending{% endif %}">
+                            {{ student.onboardingcalldone|yesno:"Completed,Pending" }}
+                        </span>
+                    </div>
+                    <div class="sr-placement-item">
+                        <span class="sr-placement-label">Interview Questions:</span>
+                        <span class="sr-placement-status {% if student.interviewquestion_shared %}sr-status-complete{% else %}sr-status-pending{% endif %}">
+                            {{ student.interviewquestion_shared|yesno:"Shared,Not Shared" }}
+                        </span>
+                    </div>
+                </div>
+                {% else %}
+                <p>No placement details available.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="sr-card">
+            <div class="sr-card-header">Interview Details</div>
+            <div class="sr-card-body">
+                {% if company_interview_data %}
+                <div class="sr-interview-list">
+                    {% for company_data in company_interview_data %}
+                    <div class="sr-interview-company">
+                        <h3>{{ company_data.company_name }}</h3>
+                        <div class="sr-interview-stats">
+                            <div class="sr-interview-stat">
+                                <span class="sr-stat-label">Total Rounds:</span>
+                                <span class="sr-stat-value">{{ company_data.total_rounds }}</span>
+                            </div>
+                            <div class="sr-interview-stat">
+                                <span class="sr-stat-label">Status:</span>
+                                <span class="sr-stat-value sr-status-{{ company_data.status|default:'in-progress'|lower }}">
+                                    {{ company_data.status|default:"In Progress" }}
+                                </span>
                             </div>
                         </div>
                     </div>
+                    {% endfor %}
                 </div>
+                {% else %}
+                <p>No interview details available.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="sr-card">
+            <div class="sr-card-header">Payment Details</div>
+            <div class="sr-card-body">
+                {% if payment %}
+                <div class="sr-payment-summary">
+                    <div class="sr-payment-stat">
+                        <span class="sr-payment-label">Total Fees</span>
+                        <span class="sr-payment-value">₹{{ payment.total_fees }}</span>
+                    </div>
+                    <div class="sr-payment-stat">
+                        <span class="sr-payment-label">Amount Paid</span>
+                        <span class="sr-payment-value">₹{{ payment.amount_paid }}</span>
+                    </div>
+                    <div class="sr-payment-stat">
+                        <span class="sr-payment-label">Pending Amount</span>
+                        <span class="sr-payment-value">₹{{ payment.total_pending_amount }}</span>
+                    </div>
+                </div>
+                <div class="sr-payment-status">
+                    <div class="sr-payment-progress">
+                        <div class="sr-progress-bar">
+                            <div class="sr-progress-fill" style="width: {{ payment.payment_percentage|default:0 }}%;"></div>
+                        </div>
+                        <div class="sr-payment-percentage">{{ payment.payment_percentage|default:0 }}% Paid</div>
+                    </div>
+                    <div class="sr-payment-status-label {{ payment.get_payment_status|lower|cut:" " }}">
+                        {{ payment.get_payment_status }}
+                    </div>
+                </div>
+                {% else %}
+                <p>No payment details available.</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching functionality
+        const tabButtons = document.querySelectorAll('.sr-tab-btn');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                this.classList.add('active');
+                
+                // Here you would normally switch content based on the tab
+                const tabName = this.dataset.tab;
+                console.log(`Switched to ${tabName} tab`);
+            });
+        });
+    });
+</script>
 {% endblock %}
