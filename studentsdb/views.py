@@ -21,9 +21,6 @@ import pandas as pd
 from django.http import HttpResponse
 from django.db import transaction
 from datetime import datetime
-from io import BytesIO
-from django.template.loader import get_template
-from xhtml2pdf import pisa
 
 @login_required
 def create_student(request):
