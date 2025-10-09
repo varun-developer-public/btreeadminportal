@@ -78,7 +78,7 @@
             <tbody>
                 {% for payment in payments %}
                 <tr class="status-{{ payment.status|lower }}">
-                    <td>{{ payment.student.student_id }}</td>
+                    <td><a href="{% url 'student_report' payment.student.student_id %}" class="view-link">{{ payment.student.student_id }}</a></td>
                     <td>{{ payment.student.first_name }} {{ payment.student.last_name|default:"" }}</td>
                     <td>{{ payment.student.phone }}</td>
                     <td>{{ payment.student.consultant.name|default:'N/A' }}</td>

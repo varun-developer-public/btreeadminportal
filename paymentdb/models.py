@@ -137,6 +137,17 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.payment_id} - {self.student}"
 
+    def get_emi_range(self):
+        """
+        Returns a range of EMI numbers based on the emi_type.
+        """
+        if self.emi_type and self.emi_type != 'NONE':
+            try:
+                return range(1, int(self.emi_type) + 1)
+            except (ValueError, TypeError):
+                return []
+        return []
+
     def get_next_payable_emi(self):
         """Returns the next EMI number that needs to be paid."""
         for i in range(1, 5):

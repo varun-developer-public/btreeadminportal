@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load core_tags student_tags %}
+{% load core_tags student_tags payment_tags %}
 {% block title %}Student Report{% endblock %}
 {% load static %}
 
@@ -19,7 +19,7 @@
         </div>
         
         <div class="sr-student-info">
-            <h1>{{ student.first_name }} {{ student.last_name }} - {{ student.student_id }}</h1>
+            <h1>Student - {{ student.student_id }}</h1>
             <div class="sr-language-selector">
                 <div class="sr-actions">
                     <button class="sr-download-btn"><i class="fas fa-download"></i></button>
@@ -43,6 +43,9 @@
                                 <i class="fas fa-user"></i>
                             </div>
                         {% endif %}
+                    </div>
+                    <div class="sr-name">
+                        <h2>{{ student.first_name }} {{ student.last_name }}</h2>
                     </div>
                     <div class="sr-profile-details">
                         <div class="sr-detail-item">
@@ -72,19 +75,33 @@
                         </div>
                         <div class="sr-detail-item">
                             <i class="fas fa-graduation-cap"></i>
-                            <span>UG Degree:</span>         
-                            <span class="sr-detail-value">{{ student.ugdegree|default:"-" }} in {{ student.ugbranch|default:"-" }} ({{ student.ugpassout|default:"-" }})</span>
+                            <span>UG Degree:</span>
+                            {% if student.ugdegree %}
+                                <span class="sr-detail-value">
+                                    {{ student.ugdegree }} in {{ student.ugbranch|default:"-" }} ({{ student.ugpassout|default:"-" }})
+                                </span>
+                            {% else %}
+                                <span class="sr-detail-value">-</span>
+                            {% endif %}
                         </div>
+
                         <div class="sr-detail-item">
                             <i class="fas fa-user-graduate"></i>
                             <span>PG Degree:</span>
-                            <span class="sr-detail-value">{{ student.pgdegree|default:"-" }} in {{ student.pgbranch|default:"-" }} ({{ student.pgpassout|default:"-" }})</span>
+                            {% if student.pgdegree %}
+                                <span class="sr-detail-value">
+                                    {{ student.pgdegree }} in {{ student.pgbranch|default:"-" }} ({{ student.pgpassout|default:"-" }})
+                                </span>
+                            {% else %}
+                                <span class="sr-detail-value">-</span>
+                            {% endif %}
                         </div>
+
                     </div>
                 </div>
                 <div class="sr-profile-actions">
                     <button class="sr-edit-profile-btn">
-                        <i class="fas fa-edit"></i> Edit Profile
+                       <a href="{% url 'update_student' student.student_id %}" class="view-link"><i class="fas fa-edit"></i> Edit Profile</a>
                     </button>
                 </div>
             </div>
@@ -103,6 +120,10 @@
                     <div class="sr-detail-item">
                         <span class="sr-detail-label">Trainer:</span>
                         <span class="sr-detail-value">{{ student.trainer.name }}</span>
+                    </div>
+                    <div class="sr-detail-item">
+                        <span class="sr-detail-label">Course Percentage:</span>
+                        <span class="sr-detail-value">{{ student.course_percentage|default:"0.0" }}</span>
                     </div>
                     <div class="sr-detail-item">
                         <span class="sr-detail-label">Status:</span>
@@ -183,9 +204,27 @@
                         </span>
                     </div>
                     <div class="sr-placement-item">
+                        <span class="sr-placement-label">Placement Session:</span>
+                        <span class="sr-placement-status {% if student.placement_session_completed %}sr-status-complete{% else %}sr-status-pending{% endif %}">
+                            {{ student.placement_session_completed|yesno:"Completed,Pending" }}
+                        </span>
+                    </div>
+                    <div class="sr-placement-item">
                         <span class="sr-placement-label">Interview Questions:</span>
                         <span class="sr-placement-status {% if student.interviewquestion_shared %}sr-status-complete{% else %}sr-status-pending{% endif %}">
                             {{ student.interviewquestion_shared|yesno:"Shared,Not Shared" }}
+                        </span>
+                    </div>
+                    <div class="sr-placement-item">
+                        <span class="sr-placement-label">ResumeTemplates:</span>
+                        <span class="sr-placement-status {% if student.resume_template_shared %}sr-status-complete{% else %}sr-status-pending{% endif %}">
+                            {{ student.resume_template_shared|yesno:"Shared,Not Shared" }}
+                        </span>
+                    </div>
+                    <div class="sr-placement-item">
+                        <span class="sr-placement-label">Mock Interview:</span>
+                        <span class="sr-placement-status {% if student.mock_interview_completed %}sr-status-complete{% else %}sr-status-pending{% endif %}">
+                            {{ student.mock_interview_completed|yesno:"Completed,Pending" }}
                         </span>
                     </div>
                     <div class="sr-placement-item">
@@ -217,54 +256,28 @@
             </div>
         </div>
 
-        <div class="sr-card">
+        <div class="sr-card sr-card-payment">
             <div class="sr-card-header">Payment Details</div>
-            <div class="sr-card-body">
-                {% if payment %}
+            <div class="sr-card-body" id="payment-details-body">
                 <div class="sr-payment-details-grid">
                     <div class="sr-detail-item">
                         <span class="sr-detail-label">Total Fees:</span>
-                        <span class="sr-detail-value">₹{{ payment.total_fees|default:"0" }}</span>
+                        <span class="sr-detail-value" id="total-fees"></span>
                     </div>
                     <div class="sr-detail-item">
                         <span class="sr-detail-label">Amount Paid:</span>
-                        <span class="sr-detail-value">₹{{ payment.amount_paid|default:"0" }}</span>
+                        <span class="sr-detail-value" id="amount-paid"></span>
                     </div>
                     <div class="sr-detail-item">
                         <span class="sr-detail-label">Pending Amount:</span>
-                        <span class="sr-detail-value">₹{{ payment.total_pending_amount|default:"0" }}</span>
+                        <span class="sr-detail-value" id="pending-amount"></span>
                     </div>
                     <div class="sr-detail-item">
                         <span class="sr-detail-label">Payment Status:</span>
-                        <span class="sr-detail-value sr-payment-status-label {{ payment.get_payment_status|lower|cut:" " }}">{{ payment.get_payment_status }}</span>
+                        <span class="sr-detail-value sr-payment-status-label" id="payment-status"></span>
                     </div>
                 </div>
-
-                {% if payment.emi_type != 'NONE' %}
-                <div class="sr-emi-details">
-                    <h4 class="sr-section-subtitle">EMI Details</h4>
-                    <div class="sr-emi-list">
-                        {% for i in payment.get_emi_range %}
-                        <div class="sr-emi-item">
-                            <span class="sr-emi-label">EMI {{ i }}:</span>
-                            <span class="sr-emi-value">
-                                ₹{{ payment|get_attribute:"emi_"|add:i|add:"_amount"|default:"0" }} due on {{ payment|get_attribute:"emi_"|add:i|add:"_date"|date:"d-m-Y" }}
-                            </span>
-                            {% with pending_amount=payment|get_emi_pending_amount:i %}
-                                {% if pending_amount > 0 %}
-                                    <span class="sr-emi-status sr-status-pending"> - Pending ₹{{ pending_amount }}</span>
-                                {% else %}
-                                     <span class="sr-emi-status sr-status-complete"> - Paid</span>
-                                {% endif %}
-                            {% endwith %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            {% else %}
-                <p>No payment details available.</p>
-            {% endif %}
+                <div id="emi-details-container"></div>
             </div>
         </div>
 
@@ -340,22 +353,62 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Tab switching functionality
-        const tabButtons = document.querySelectorAll('.sr-tab-btn');
-        
-        tabButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Remove active class from all buttons
-                tabButtons.forEach(btn => btn.classList.remove('active'));
+        const studentId = "{{ student.student_id }}";
+        fetch(`/payments/api/payment-details/${studentId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('payment-details-body').innerHTML = `<p>${data.error}</p>`;
+                    return;
+                }
+
+                document.getElementById('total-fees').textContent = `₹${data.total_fees}`;
+                document.getElementById('amount-paid').textContent = `₹${data.amount_paid}`;
+                document.getElementById('pending-amount').textContent = `₹${data.total_pending_amount}`;
                 
-                // Add active class to clicked button
-                this.classList.add('active');
-                
-                // Here you would normally switch content based on the tab
-                const tabName = this.dataset.tab;
-                console.log(`Switched to ${tabName} tab`);
+                const paymentStatus = document.getElementById('payment-status');
+                paymentStatus.textContent = data.payment_status;
+                paymentStatus.classList.add(data.payment_status.toLowerCase().replace(' ', '-'));
+
+                if (data.emi_type !== 'NONE' && data.emi_details.length > 0) {
+                    const emiContainer = document.getElementById('emi-details-container');
+                    let emiHtml = '<h4 class="sr-section-subtitle">EMI Details:</h4>';
+                    data.emi_details.forEach(emi => {
+                        emiHtml += `
+                            <div class="sr-emi-section ${emi.paid_amount ? 'paid-emi' : 'pending-emi'}">
+                                <h5>EMI ${emi.emi_number}</h5>
+                                <div class="sr-emi-details">
+                                    <div class="sr-emi-row">
+                                        <span class="sr-emi-label">Due Amount:</span>
+                                        <span class="sr-emi-value">₹${emi.due_amount}</span>
+                                    </div>
+                                    <div class="sr-emi-row">
+                                        <span class="sr-emi-label">Due Date:</span>
+                                        <span class="sr-emi-value">${new Date(emi.due_date).toLocaleDateString('en-GB')}</span>
+                                    </div>
+                                    ${emi.paid_amount ? `
+                                        <div class="sr-emi-row paid-amount">
+                                            <span class="sr-emi-label">Paid Amount:</span>
+                                            <span class="sr-emi-value">₹${emi.paid_amount}</span>
+                                            <span class="paid-date">(Paid on: ${new Date(emi.paid_date).toLocaleDateString('en-GB')})</span>
+                                        </div>
+                                    ` : `
+                                        <div class="sr-emi-row">
+                                            <span class="sr-emi-label">Status:</span>
+                                            <span class="sr-emi-value sr-status-pending">Pending</span>
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    emiContainer.innerHTML = emiHtml;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching payment details:', error);
+                document.getElementById('payment-details-body').innerHTML = '<p>Error loading payment details.</p>';
             });
-        });
     });
 </script>
 {% endblock %}

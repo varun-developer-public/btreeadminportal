@@ -55,7 +55,8 @@ def company_list(request):
                 Q(spoc__icontains=q) |
                 Q(email__icontains=q) |
                 Q(location__icontains=q) |
-                Q(company_code__icontains=q)
+                Q(company_code__icontains=q) |
+                Q(mobile__icontains=q)
             )
         if progress:
             companies = companies.filter(progress=progress)

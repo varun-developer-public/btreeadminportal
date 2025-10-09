@@ -196,3 +196,32 @@ def update_emi_date(request, payment_id):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'}, status=405)
+
+
+def get_payment_details(request, student_id):
+    try:
+        student = Student.objects.get(student_id=student_id)
+        payment = Payment.objects.get(student=student)
+        
+        emi_details = []
+        if payment.emi_type != 'NONE':
+            for i in range(1, int(payment.emi_type) + 1):
+                emi_details.append({
+                    'emi_number': i,
+                    'due_amount': getattr(payment, f'emi_{i}_amount'),
+                    'due_date': getattr(payment, f'emi_{i}_date'),
+                    'paid_amount': getattr(payment, f'emi_{i}_paid_amount'),
+                    'paid_date': getattr(payment, f'emi_{i}_paid_date'),
+                })
+
+        data = {
+            'total_fees': payment.total_fees,
+            'amount_paid': payment.amount_paid,
+            'total_pending_amount': payment.total_pending_amount,
+            'payment_status': payment.get_payment_status(),
+            'emi_type': payment.emi_type,
+            'emi_details': emi_details,
+        }
+        return JsonResponse(data)
+    except (Student.DoesNotExist, Payment.DoesNotExist):
+        return JsonResponse({'error': 'Payment details not found'}, status=404)
