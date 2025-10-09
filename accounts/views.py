@@ -445,11 +445,11 @@ def placement_dashboard(request):
     pending_count = total_resume_shared - (position_closed_count + not_shortlisted_count + no_response_count + moved_to_interview_count)
 
     # Overall Stats
-    total_placement_pool = students_in_pool.count()
-    total_placed = students_in_pool.filter(course_status='P').count()
+    total_placement_pool = placements.count()
+    total_placed = placements.filter(student__course_status='P').count()
     
     # Actively seeking students for the main stat card
-    actively_seeking_stat = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS'])
+    actively_seeking_stat = placements.filter(is_active=True)
     
     # Separate counts for actively seeking
     actively_seeking_completed = actively_seeking_stat.filter(student__course_status='C').count()
