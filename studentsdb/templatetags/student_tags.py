@@ -19,3 +19,16 @@ def get_emi_pending_amount(payment, emi_number):
         return pending_amount if pending_amount > 0 else Decimal('0')
     except (AttributeError, TypeError):
         return Decimal('0')
+
+
+@register.filter
+def replace(value, arg):
+    """
+    Replacing filter
+    Use `{{ "aaa"|replace:"a|b" }}`
+    """
+    if len(arg.split('|')) != 2:
+        return value
+
+    what, to = arg.split('|')
+    return value.replace(what, to)

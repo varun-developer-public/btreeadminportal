@@ -60,3 +60,4 @@ pyotp
 qrcode[pil] 
 python-dotenv
 psycopg2-binary
+xhtml2pdf

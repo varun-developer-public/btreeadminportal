@@ -22,7 +22,9 @@
             <h1>Student - {{ student.student_id }}</h1>
             <div class="sr-language-selector">
                 <div class="sr-actions">
-                    <button class="sr-download-btn"><i class="fas fa-download"></i></button>
+                    <a href="#" class="sr-download-btn" download="student-report.png" title="Download as Image" style="text-decoration: none; color: inherit;">
+                        <i class="fas fa-download"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -351,6 +353,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const studentId = "{{ student.student_id }}";
@@ -409,6 +412,17 @@
                 console.error('Error fetching payment details:', error);
                 document.getElementById('payment-details-body').innerHTML = '<p>Error loading payment details.</p>';
             });
+
+        document.querySelector('.sr-download-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            const reportContainer = document.querySelector('.student-report-container');
+            html2canvas(reportContainer).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `student-report-{{ student.student_id }}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        });
     });
 </script>
 {% endblock %}
