@@ -253,6 +253,7 @@ class BatchStudent(models.Model):
 
         for bs in batch_students:
             batch_info = {
+                'pk': bs.batch.id,
                 'batch_id': bs.batch.batch_id,
                 'course': str(bs.batch.course) if bs.batch.course else 'N/A',
                 'trainer': str(bs.batch.trainer) if bs.batch.trainer else 'N/A',

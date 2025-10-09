@@ -121,7 +121,7 @@
             <td>{{ student.course.category.name|default:"—" }}</td>
             <td>
                 <div class="batch-list-cell">
-                    {% for batch in student.batches.all %}
+                    {% for batch in student.unique_batches %}
                        <a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-secondary">{{ batch.batch_id }} - {{ batch.course.course_name }}</span></a>
                     {% empty %}
                         No batches

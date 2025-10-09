@@ -186,6 +186,13 @@ class BatchFilterForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'}),
         label="Time Slot"
     )
+    
+    trainer_type = forms.ChoiceField(
+        choices=[('', 'All')] + Trainer.EMPLOYMENT_TYPE_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label="Trainer Type"
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

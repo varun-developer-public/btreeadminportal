@@ -36,7 +36,7 @@
 <div class="student-form-container">
     <div class="form-header">
         <h1>Student Batch History</h1>
-        <p class="form-subtitle">History for {{ student.student_id }} - {{ student.first_name }} {{ student.last_name }} - {{ student_data.current_batch.batch_id }}</p>
+        <p class="form-subtitle">History for {{ student.student_id }} - {{ student.first_name }} {% if student.last_name %} {{ student.last_name }} {% else %} {% endif %} - {{ student_data.current_batch.batch_id }}</p>
     </div>
 
     <div class="form-section-card">
@@ -46,7 +46,7 @@
         <div class="form-section-body">
             <div class="row">
                 <div class="col-md-6">
-                    <p><strong>Name:</strong> {{ student.first_name }} {{ student.last_name }} - {{ student.student_id }}</p>
+                    <p><strong>Name:</strong> {{ student.first_name }} {% if student.last_name %} {{ student.last_name }} {% else %}  {% endif %} - {{ student.student_id }}</p>
                     <p><strong>Email:</strong> {{ student.email }}</p>
                 </div>
                 <div class="col-md-6">

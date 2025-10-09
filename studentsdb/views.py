@@ -84,7 +84,7 @@ def student_list(request):
     if hasattr(user, 'consultant_profile'):
         student_list = Student.objects.filter(consultant=user.consultant_profile.consultant).order_by('-id')
     else:
-        student_list = Student.objects.all().order_by('-id')
+        student_list = Student.objects.prefetch_related('batches', 'batches__trainer').all().order_by('-id')
 
     if form.is_valid():
         query = form.cleaned_data.get('q')
@@ -117,6 +117,13 @@ def student_list(request):
         if end_date:
             student_list = student_list.filter(enrollment_date__lte=end_date)
 
+
+    for student in student_list:
+        batches = student.batches.all()
+        unique_trainers = {batch.trainer for batch in batches if batch.trainer}
+        unique_batches = {batch for batch in batches}
+        student.unique_trainers = list(unique_trainers)
+        student.unique_batches = list(unique_batches)
 
     paginator = Paginator(student_list, 10)  # Show 10 students per page
     page = request.GET.get('page')
@@ -574,11 +581,16 @@ def student_report(request, student_id):
     except Placement.DoesNotExist:
         placement = None
 
+    # Get the latest batch for the student
+    latest_batch = student.batches.order_by('-start_date').first()
+    trainer = latest_batch.trainer if latest_batch else None
+
     context = {
         'student': student,
         'company_interview_data': company_interview_data,
         'batch_history': batch_history,
         'payment': payment,
         'placement': placement,
+        'trainer': trainer,
     }
     return render(request, 'studentsdb/student_report.html', context)

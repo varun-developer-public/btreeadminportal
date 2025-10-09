@@ -69,7 +69,7 @@ class PlacementFilterForm(forms.Form):
         label="Course Status"
     )
     location = forms.CharField(required=False, label='Location')
-    course_percentage = forms.IntegerField(required=False, label='Course Percentage')
+    course_percentage = forms.IntegerField(required=False, label='Percentage')
     resume_status = forms.ChoiceField(
         choices=[('', 'All Resumes'), ('yes', 'Resume Uploaded'), ('no', 'Resume Not Uploaded')],
         required=False,

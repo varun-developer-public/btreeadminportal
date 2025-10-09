@@ -85,6 +85,7 @@
                 <table class="table table-striped">
                     <thead>
                         <tr>
+                            <th>Student ID</th>
                             <th>Name</th>
                             <th>Email</th>
                             <th>Phone</th>
@@ -318,6 +319,10 @@
                 {{ form.time_slot.label_tag }}
                 {{ form.time_slot }}
             </div>
+            <div class="filter-group">
+                {{ form.trainer_type.label_tag }}
+                {{ form.trainer_type }}
+            </div>
         </div>
         <div class="filter-actions">
             <button type="submit" class="btn-primary">Apply Filters</button>
@@ -488,7 +493,7 @@ $('#addStudentModal').on('shown.bs.modal', function (e) {
                return {
                    results: $.map(data, function (item) {
                        return {
-                           text: item.student_id + ' - ' + item.first_name + ' ' + item.last_name,
+                           text: item.student_id + ' - ' + item.first_name + ' ' + (item.last_name ? item.last_name : ''),
                            id: item.id
                        }
                    })
@@ -546,7 +551,8 @@ function viewStudentList(batchId) {
             data.students.forEach(s => {
                 if (s.is_active) {
                     list.append(`<tr>
-                        <td>${s.name}</td><td>${s.email}</td><td>${s.phone}</td>
+                        <td><a href="/students/${s.student_id}/report/" class="view-link">${s.student_id}</a></td>
+                        <td>${s.first_name} ${s.last_name ? s.last_name : ''}</td><td>${s.email}</td><td>${s.phone}</td>
                         <td>
                             <a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn btn-info me-2" title="View History">
                                 <i class="fas fa-history fa-lg"></i>

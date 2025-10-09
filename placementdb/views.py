@@ -82,22 +82,30 @@ def placement_list(request):
         if interview_count is not None:
             placements = placements.filter(interview_count=interview_count)
 
+    # Process batches to get unique trainers and batch IDs
+    for placement in placements:
+        batches = placement.student.batches.all()
+        unique_trainers = {batch.trainer for batch in batches if batch.trainer}
+        unique_batches = {batch for batch in batches}
+        placement.unique_trainers = list(unique_trainers)
+        placement.unique_batches = list(unique_batches)
+
     paginator = Paginator(placements, 10)
     page = request.GET.get('page')
 
     try:
-        placements = paginator.page(page)
+        placements_paginated = paginator.page(page)
     except PageNotAnInteger:
-        placements = paginator.page(1)
+        placements_paginated = paginator.page(1)
     except EmptyPage:
-        placements = paginator.page(paginator.num_pages)
+        placements_paginated = paginator.page(paginator.num_pages)
 
     query_params = request.GET.copy()
     if 'page' in query_params:
         del query_params['page']
 
     return render(request, 'placementdb/placement_list.html', {
-        'placements': placements,
+        'placements': placements_paginated,
         'form': form,
         'query_params': query_params.urlencode(),
     })

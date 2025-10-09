@@ -158,7 +158,7 @@
                     </td>
                     <td>{{ placement.interview_count }}</td>
                     <td>
-                        {% for batch in placement.student.batches.all %}
+                        {% for batch in placement.unique_batches %}
                             <a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-info">{{ batch.batch_id }}</span></a>
                         {% empty %}
                             -
@@ -169,12 +169,10 @@
                     <td>{{ placement.student.phone|default:"-" }}</td>
                     <td>{{ placement.student.email|default:"-" }}</td>
                     <td>
-                        {% for batch in placement.student.batches.all %}
-                            {% if batch.trainer %}
-                                <span class="badge bg-secondary">{{ batch.trainer.name }}</span>
-                            {% else %}
-                                -
-                            {% endif %}
+                        {% for trainer in placement.unique_trainers %}
+                            <span class="badge bg-secondary">{{ trainer.name }}</span>
+                        {% empty %}
+                            -
                         {% endfor %}
                     </td>
                     <td>{{ placement.student.location|default:"-" }}</td>

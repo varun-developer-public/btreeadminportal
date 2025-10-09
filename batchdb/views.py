@@ -63,6 +63,7 @@ def batch_list(request):
         start_date = form.cleaned_data.get('start_date')
         end_date = form.cleaned_data.get('end_date')
         time_slot = form.cleaned_data.get('time_slot')
+        trainer_type = form.cleaned_data.get('trainer_type')
 
         if query:
             batch_list = batch_list.filter(
@@ -93,6 +94,9 @@ def batch_list(request):
             start_time = datetime.strptime(start_time_str, '%H:%M').time()
             end_time = datetime.strptime(end_time_str, '%H:%M').time()
             batch_list = batch_list.filter(start_time=start_time, end_time=end_time)
+
+        if trainer_type:
+            batch_list = batch_list.filter(trainer__employment_type=trainer_type)
 
     paginator = Paginator(batch_list, 10)
     page = request.GET.get('page')
