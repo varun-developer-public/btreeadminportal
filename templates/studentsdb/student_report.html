@@ -173,7 +173,11 @@
                     <div class="sr-batch-list">
                         {% for batch in batch_history.batch_history %}
                         <div class="sr-batch-item">
-                            <span class="sr-batch-id">{{ batch.batch_id }}</span>
+                            <span class="sr-batch-id">
+                                <a href="{% url 'batchdb:batch_report' batch.pk %}" class="view-link">
+                                    {{ batch.batch_id }}
+                                </a>
+                            </span>
                             <span class="sr-batch-course">{{ batch.course }}</span>
                         </div>
                         {% empty %}
