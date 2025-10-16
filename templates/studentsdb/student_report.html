@@ -47,7 +47,7 @@
                         {% endif %}
                     </div>
                     <div class="sr-name">
-                        <h2>{{ student.first_name }} {{ student.last_name }}</h2>
+                        <h2>{{ student.first_name|capfirst }} {{ student.last_name|default:''|capfirst }}</h2>
                     </div>
                     <div class="sr-profile-details">
                         <div class="sr-detail-item">
