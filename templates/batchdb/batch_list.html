@@ -552,7 +552,7 @@ function viewStudentList(batchId) {
                 if (s.is_active) {
                     list.append(`<tr>
                         <td><a href="/students/${s.student_id}/report/" class="view-link">${s.student_id}</a></td>
-                        <td>${s.first_name} ${s.last_name ? s.last_name : ''}</td><td>${s.email}</td><td>${s.phone}</td>
+                        <td>${s.name}</td><td>${s.email}</td><td>${s.phone}</td>
                         <td>
                             <a href="{% url 'batchdb:student-batch-history' %}?student_id=${s.id}" class="btn btn-info me-2" title="View History">
                                 <i class="fas fa-history fa-lg"></i>

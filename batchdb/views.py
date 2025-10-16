@@ -707,7 +707,7 @@ def get_students_for_batch(request):
         student_data = [{
             'id': student.student.id,
             'student_id': student.student.student_id,
-            'name': f"{student.student.first_name} {student.student.last_name}",
+            'name': f"{student.student.first_name} {student.student.last_name or ''}".strip(),
             'email': student.student.email,
             'phone': student.student.phone,
             'is_active': student.is_active

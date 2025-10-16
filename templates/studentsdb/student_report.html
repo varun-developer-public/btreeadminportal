@@ -231,26 +231,32 @@
                     </div>
                     <div class="sr-placement-item">
                         <span class="sr-placement-label">Placed:</span>
-                        <span class="sr-placement-status {% if placement.placed %}sr-status-complete{% else %}sr-status-pending{% endif %}">
-                            {{ placement.placed|yesno:"Yes,No" }}
+                        <span class="sr-placement-status {% if student.get_course_status_display == 'Placed' %}sr-status-complete{% else %}sr-status-pending{% endif %}">
+                             {% if student.get_course_status_display == 'Placed' %} Yes {% else %} No {% endif %}
                         </span>
                     </div>
-                    {% if placement.placed %}
+                    {% if selected_interview %}
                     <div class="sr-placement-item">
                         <span class="sr-placement-label">Company:</span>
-                        <span class="sr-detail-value">{{ placement.company_name }}</span>
+                        <span class="sr-detail-value">{{ selected_interview.company.company_name }}</span>
                     </div>
                     <div class="sr-placement-item">
                         <span class="sr-placement-label">Offer Letter:</span>
-                        {% if placement.offer_letter %}
-                        <a href="{{ placement.offer_letter.url }}" target="_blank" class="sr-resume-link">
+                        {% if placement.resume_link %}
+                        <a href="{{ placement.resume_link.url }}" target="_blank" class="sr-resume-link">
                             <i class="fas fa-file-pdf"></i> View Offer Letter
                         </a>
                         {% else %}
                         <span class="sr-placement-status sr-status-pending">Not Uploaded</span>
                         {% endif %}
                     </div>
+                    {% else %}
+                    <div class="sr-placement-item">
+                        <span class="sr-placement-label">Placement Status:</span>
+                        <span class="sr-placement-status sr-status-pending">Not Placed</span>
+                    </div>
                     {% endif %}
+
                 </div>
                 {% else %}
                 <p>No placement details available.</p>

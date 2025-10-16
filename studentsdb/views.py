@@ -15,7 +15,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import StudentUpdateForm
 from dateutil.relativedelta import relativedelta
-from placementdb.models import Placement
+from placementdb.models import CompanyInterview, Placement
 
 import pandas as pd
 from django.http import HttpResponse
@@ -522,10 +522,13 @@ def delete_all_students(request):
             messages.error(request, f"An error occurred while deleting students: {e}", extra_tags='student_message')
     
     return redirect('student_list')
+
 @login_required
 def student_report(request, student_id):
     student = get_object_or_404(Student, student_id=student_id)
-    interview_statuses = student.interview_statuses.select_related('interview__company').order_by('interview__company__company_name', 'interview__cycle_number', 'interview__round_number')
+    interview_statuses = student.interview_statuses.select_related('interview__company').order_by(
+        'interview__company__company_name', 'interview__cycle_number', 'interview__round_number'
+    )
 
     interviews_by_company = {}
     for status in interview_statuses:
@@ -562,26 +565,34 @@ def student_report(request, student_id):
             'earliest_interview_date': earliest_date
         })
 
-    # Sort the data by the earliest interview date, most recent first
+    # Sort by most recent first
     company_interview_data.sort(key=lambda x: x['earliest_interview_date'], reverse=True)
     
-    # Get batch history for the student
+    # Batch history
     from batchdb.models import BatchStudent
     batch_history = BatchStudent.get_student_batch_history(student)
 
-    # Get payment details for the student
+    # Payment
     try:
         payment = Payment.objects.get(student=student)
     except Payment.DoesNotExist:
         payment = None
 
-    # Get placement details for the student
+    # Placement
     try:
         placement = Placement.objects.get(student=student)
     except Placement.DoesNotExist:
         placement = None
 
-    # Get the latest batch for the student
+    # ✅ Get selected interview (placed company)
+    selected_interview = None
+    if placement:
+        selected_interview = CompanyInterview.objects.filter(
+            placement=placement,
+            selected=True
+        ).select_related('company').first()
+
+    # Latest batch & trainer
     latest_batch = student.batches.order_by('-start_date').first()
     trainer = latest_batch.trainer if latest_batch else None
 
@@ -592,5 +603,7 @@ def student_report(request, student_id):
         'payment': payment,
         'placement': placement,
         'trainer': trainer,
+        'selected_interview': selected_interview,  # ✅ Added this
     }
+
     return render(request, 'studentsdb/student_report.html', context)
