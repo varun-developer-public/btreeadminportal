@@ -235,15 +235,19 @@
                              {% if student.get_course_status_display == 'Placed' %} Yes {% else %} No {% endif %}
                         </span>
                     </div>
-                    {% if selected_interview %}
+                    {% if placed_interview_status %}
                     <div class="sr-placement-item">
                         <span class="sr-placement-label">Company:</span>
-                        <span class="sr-detail-value">{{ selected_interview.company.company_name }}</span>
+                        <span class="sr-detail-value">{{ placed_interview_status.interview.company.company_name }}</span>
+                    </div>
+                    <div class="sr-placement-item">
+                        <span class="sr-placement-label">Placed Date:</span>
+                        <span class="sr-detail-value">{{ placed_interview_status.interview.interview_date|date:"d-m-Y" }}</span>
                     </div>
                     <div class="sr-placement-item">
                         <span class="sr-placement-label">Offer Letter:</span>
-                        {% if placement.resume_link %}
-                        <a href="{{ placement.resume_link.url }}" target="_blank" class="sr-resume-link">
+                        {% if placed_interview_status.offer_letter %}
+                        <a href="{{ placed_interview_status.offer_letter.url }}" target="_blank" class="sr-resume-link">
                             <i class="fas fa-file-pdf"></i> View Offer Letter
                         </a>
                         {% else %}

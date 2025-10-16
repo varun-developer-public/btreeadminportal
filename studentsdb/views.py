@@ -585,12 +585,9 @@ def student_report(request, student_id):
         placement = None
 
     # ✅ Get selected interview (placed company)
-    selected_interview = None
-    if placement:
-        selected_interview = CompanyInterview.objects.filter(
-            placement=placement,
-            selected=True
-        ).select_related('company').first()
+    placed_interview_status = None
+    if student.course_status == 'P':
+        placed_interview_status = student.interview_statuses.filter(status='placed').select_related('interview__company').first()
 
     # Latest batch & trainer
     latest_batch = student.batches.order_by('-start_date').first()
@@ -603,7 +600,7 @@ def student_report(request, student_id):
         'payment': payment,
         'placement': placement,
         'trainer': trainer,
-        'selected_interview': selected_interview,  # ✅ Added this
+        'placed_interview_status': placed_interview_status,
     }
 
     return render(request, 'studentsdb/student_report.html', context)
