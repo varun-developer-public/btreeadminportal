@@ -50,7 +50,11 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="id_end_date">End Date</label>
-                            {{ form.end_date }}
+                            {% if request.user.role == 'trainer' %}
+                                <input type="text" class="form-control" id="id_end_date" value="{{ form.end_date.value }}" readonly>
+                            {% else %}
+                                {{ form.end_date }}
+                            {% endif %}
                         </div>
                     </div>
                 </div>

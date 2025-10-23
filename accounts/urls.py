@@ -8,6 +8,7 @@ urlpatterns = [
     path('staff_dashboard/', staff_dashboard, name='staff_dashboard'),
     path('consultant_dashboard/', consultant_dashboard, name='consultant_dashboard'),
     path('placement_dashboard/', placement_dashboard, name='placement_dashboard'),
+    path('trainer_dashboard/', trainer_dashboard, name='trainer_dashboard'),
     path('batch_coordination_dashboard/', batch_coordination_dashboard, name='batch_coordination_dashboard'),
     path('users/', user_list, name='user_list'),
     path('users/create/', create_user, name='create_user'),

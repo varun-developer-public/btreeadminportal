@@ -110,3 +110,22 @@ class Trainer(models.Model):
 
     def __str__(self):
         return f"{self.trainer_id} - {self.name}"
+
+from accounts.models import CustomUser
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+class TrainerProfile(models.Model):
+    user = models.OneToOneField(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='trainer_profile'
+    )
+    trainer = models.OneToOneField('Trainer', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.user.name}'s profile linked to {self.trainer.name}"
+
+@receiver(post_save, sender='trainersdb.Trainer')
+def create_or_update_trainer_profile(sender, instance, created, **kwargs):
+    pass

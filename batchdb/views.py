@@ -52,7 +52,11 @@ from placementdb.models import Placement
 # Request Management API Endpoints
 
 def batch_list(request):
-    batch_list = Batch.objects.all().order_by('-id')
+    user = request.user
+    if hasattr(user, 'trainer_profile'):
+        batch_list = Batch.objects.filter(trainer=user.trainer_profile.trainer).order_by('-id')
+    else:
+        batch_list = Batch.objects.all().order_by('-id')
     form = BatchFilterForm(request.GET)
 
     if form.is_valid():

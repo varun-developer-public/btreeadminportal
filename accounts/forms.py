@@ -2,6 +2,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django import forms
 from .models import CustomUser
 from consultantdb.models import Consultant, ConsultantProfile
+from trainersdb.models import Trainer, TrainerProfile
 
 class UserForm(forms.ModelForm):
     consultant = forms.ModelChoiceField(
@@ -9,10 +10,15 @@ class UserForm(forms.ModelForm):
         required=False,
         help_text="Select a consultant only if the role is 'Consultant'."
     )
+    trainer = forms.ModelChoiceField(
+        queryset=Trainer.objects.all(),
+        required=False,
+        help_text="Select a trainer only if the role is 'Trainer'."
+    )
 
     class Meta:
         model = CustomUser
-        fields = ['name', 'email', 'role', 'password', 'profile_picture', 'consultant', 'is_staff', 'is_superuser']
+        fields = ['name', 'email', 'role', 'password', 'profile_picture', 'consultant', 'trainer', 'is_staff', 'is_superuser']
         widgets = {
             'password': forms.PasswordInput(),
         }
@@ -26,12 +32,19 @@ class UserForm(forms.ModelForm):
         cleaned_data = super().clean()
         role = cleaned_data.get("role")
         consultant = cleaned_data.get("consultant")
+        trainer = cleaned_data.get("trainer")
 
         if role == 'consultant' and not consultant:
             raise forms.ValidationError("A consultant must be selected for the 'Consultant' role.")
         
         if role != 'consultant' and consultant:
             raise forms.ValidationError("A consultant should only be selected for the 'Consultant' role.")
+
+        if role == 'trainer' and not trainer:
+            raise forms.ValidationError("A trainer must be selected for the 'Trainer' role.")
+
+        if role != 'trainer' and trainer:
+            raise forms.ValidationError("A trainer should only be selected for the 'Trainer' role.")
 
         return cleaned_data
 
@@ -40,9 +53,13 @@ class UserForm(forms.ModelForm):
         user.set_password(self.cleaned_data["password"])
         role = self.cleaned_data.get('role')
         consultant = self.cleaned_data.get('consultant')
+        trainer = self.cleaned_data.get('trainer')
 
         if role == 'consultant' and consultant:
             user.email = consultant.email
+        
+        if role == 'trainer' and trainer:
+            user.email = trainer.email
 
         if role == 'admin':
             user.is_staff = True
@@ -58,6 +75,8 @@ class UserForm(forms.ModelForm):
             user.save()
             if user.role == 'consultant':
                 ConsultantProfile.objects.create(user=user, consultant=consultant)
+            if user.role == 'trainer':
+                TrainerProfile.objects.create(user=user, trainer=trainer)
         return user
 
 class UserUpdateForm(forms.ModelForm):

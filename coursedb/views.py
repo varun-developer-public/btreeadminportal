@@ -16,11 +16,15 @@ from decimal import Decimal
 
 @login_required
 def course_list(request):
+    user = request.user
     query = request.GET.get('q')
     category_id = request.GET.get('category')
 
     courses_list = Course.objects.prefetch_related('modules__topics').all()
-    
+    if hasattr(user, 'trainer_profile'):
+        trainer = user.trainer_profile.trainer
+        courses_list = trainer.stack.prefetch_related('modules__topics')  # Only trainer's courses
+
     if query:
         courses_list = courses_list.filter(
             Q(course_name__icontains=query) | Q(code__icontains=query)

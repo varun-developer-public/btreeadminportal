@@ -1,0 +1,1067 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
+<link rel="stylesheet" href="{% static 'css/batch_coordination.css' %}">
+{% endblock %}
+
+{% block title %}Batch Coordination Dashboard{% endblock %}
+
+{% block content %}
+<!-- Top Bar -->
+<div class="bcd-top-bar">
+    <!-- Left: Welcome Message -->
+    <div class="bcd-welcome">
+        <h2>Hey, {{ request.user.name }}!</h2>
+    </div>
+
+    <!-- Center: Search -->
+    <div class="bcd-search-container">
+        <i class="fas fa-search bcd-search-icon"></i>
+        <input type="text" class="bcd-search-input" id="bcd-search-input" placeholder="Search batches...">
+    </div>
+
+    <!-- Right: notifications -->
+    <div class="bcd-top-right">
+        <div class="bcd-notifications">
+            <i class="fas fa-bell fa-lg"></i>
+            <span class="bcd-notification-count"></span>
+        </div>
+    </div>
+</div>
+
+
+    <!-- Stats Row -->
+    <div class="bcd-stats">
+        <div class="bcd-stat-card">
+            <svg class="bcd-stat-icon" viewBox="0 0 24 24">
+                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path>
+            </svg>
+            <p class="bcd-stat-value">{{ total_batches }}</p>
+            <p class="bcd-stat-label">Total Batches</p>
+        </div>
+        <div class="bcd-stat-card">
+            <svg class="bcd-stat-icon" viewBox="0 0 24 24">
+                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"></path>
+                <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"></path>
+            </svg>
+            <p class="bcd-stat-value">{{ yts_batches }}</p>
+            <p class="bcd-stat-label">Upcoming</p>
+        </div>
+        <div class="bcd-stat-card">
+            <svg class="bcd-stat-icon" viewBox="0 0 24 24">
+                <path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"></path>
+            </svg>
+            <p class="bcd-stat-value">{{ in_progress_batches }}</p>
+            <p class="bcd-stat-label">In Progress</p>
+        </div>
+        <div class="bcd-stat-card">
+            <svg class="bcd-stat-icon" viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path>
+            </svg>
+            <p class="bcd-stat-value">{{ completed_batches }}</p>
+            <p class="bcd-stat-label">Completed</p>
+        </div>
+        <div class="bcd-stat-card">
+            <svg class="bcd-stat-icon" viewBox="0 0 24 24">
+                <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm-2 14l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"></path>
+            </svg>
+            <p class="bcd-stat-value">{{ handovers|default:"0" }}</p>
+            <p class="bcd-stat-label">Handovers</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="bcd-content">
+        <!-- Left Column: Batches Table -->
+        <div class="bcd-card">
+            <h2 class="bcd-batch-title bcd-mb-2">Batches Nearing Completion</h2>
+            <div class="bcd-table-container">
+                <table class="bcd-batches-table" id="batchesTable">
+                    <thead>
+                        <tr>
+                            <th>Batch ID</th>
+                            <th>Course</th>
+                            <th>Trainer</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Batch rows will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Right Column: Batch Detail -->
+        <div class="bcd-card bcd-batch-detail" id="batchDetailCard">
+            <div class="bcd-batch-header">
+                <h3 class="bcd-batch-title">Batch Details</h3>
+                <div class="bcd-batch-actions">
+                    <button class="bcd-btn bcd-btn-secondary" id="editBtn">Edit</button>
+                    <button class="bcd-btn bcd-btn-primary" id="transferBtn">Transfer</button>
+                </div>
+            </div>
+            <div class="bcd-batch-info">
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">Course</span>
+                    <span class="bcd-info-value" id="detailCourse">-</span>
+                </div>
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">Trainer</span>
+                    <span class="bcd-info-value" id="detailTrainer">-</span>
+                </div>
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">Start Date</span>
+                    <span class="bcd-info-value" id="detailStartDate">-</span>
+                </div>
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">End Date</span>
+                    <span class="bcd-info-value" id="detailEndDate">-</span>
+                </div>
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">Batch Type</span>
+                    <span class="bcd-info-value" id="detailType">-</span>
+                </div>
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">Status</span>
+                    <span class="bcd-info-value" id="detailStatus">-</span>
+                </div>
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">Students</span>
+                    <span class="bcd-info-value" id="detailStudents">-</span>
+                </div>
+                <div class="bcd-info-item">
+                    <span class="bcd-info-label">Time Slot</span>
+                    <span class="bcd-info-value" id="detailTimeSlot">-</span>
+                </div>
+            </div>
+            <div class="bcd-progress">
+                <div class="bcd-progress-label">
+                    <span>Progress</span>
+                    <span id="progressPercentage">0%</span>
+                </div>
+                <div class="bcd-progress-bar">
+                    <div class="bcd-progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Section -->
+    <div class="bcd-card bcd-calendar-card">
+        <h2 class="bcd-batch-title bcd-mb-2">Calendar</h2>
+        
+            <div class="bcd-calendar-header">
+                <div class="bcd-month-navigation">
+                    <button class="bcd-month-nav-btn" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                    <div class="bcd-current-month" id="current-month">-</div>
+                    <button class="bcd-month-nav-btn" id="next-month"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="bcd-week-calendar">
+                <div class="bcd-week-header">
+                    <div class="bcd-day-column bcd-time-column"></div>
+                    <button class="bcd-week-nav-btn" id="prev-week"><i class="fas fa-chevron-left"></i></button>
+                    <div class="bcd-day-column">
+                        <div class="bcd-day-name">Mon</div>
+                        <div class="bcd-day-number">-</div>
+                    </div>
+                    <div class="bcd-day-column">
+                        <div class="bcd-day-name">Tue</div>
+                        <div class="bcd-day-number">-</div>
+                    </div>
+                    <div class="bcd-day-column">
+                        <div class="bcd-day-name">Wed</div>
+                        <div class="bcd-day-number">-</div>
+                    </div>
+                    <div class="bcd-day-column">
+                        <div class="bcd-day-name">Thu</div>
+                        <div class="bcd-day-number">-</div>
+                    </div>
+                    <div class="bcd-day-column">
+                        <div class="bcd-day-name">Fri</div>
+                        <div class="bcd-day-number">-</div>
+                    </div>
+                    <div class="bcd-day-column">
+                        <div class="bcd-day-name">Sat</div>
+                        <div class="bcd-day-number">-</div>
+                    </div>
+                    <div class="bcd-day-column">
+                        <div class="bcd-day-name">Sun</div>
+                        <div class="bcd-day-number">-</div>
+                    </div>
+                    <button class="bcd-week-nav-btn" id="next-week"><i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="bcd-week-body">
+                    <div class="bcd-time-row">
+                        <div class="bcd-time-label">9:00 am - 10:30 am</div>
+                        <div class="bcd-time-slots">
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                        </div>
+                    </div>
+                    <div class="bcd-time-row">
+                        <div class="bcd-time-label">10:30 am - 12:00 pm</div>
+                        <div class="bcd-time-slots">
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                        </div>
+                    </div>
+                    <div class="bcd-time-row">
+                        <div class="bcd-time-label">12:00 pm - 1:30 pm</div>
+                        <div class="bcd-time-slots">
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                        </div>
+                    </div>
+                    <div class="bcd-time-row">
+                        <div class="bcd-time-label">3:00 pm - 4:30 pm</div>
+                        <div class="bcd-time-slots">
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                        </div>
+                    </div>
+                    <div id="calendar" style="display: none;"></div>
+                    <div class="bcd-time-row">
+                        <div class="bcd-time-label">4:30 pm - 6:00 pm</div>
+                        <div class="bcd-time-slots">
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                            <div class="bcd-time-slot"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+    </div>
+
+    <!-- Trainers by Course Section -->
+    <div class="bcd-card" style="margin-bottom: 1.5rem;">
+        <div class="bcd-availability-header">
+            <h2 class="bcd-batch-title">Trainers by Course</h2>
+            <div class="bcd-search-container" style="margin-right: 1rem;">
+                <i class="fas fa-search bcd-search-icon"></i>
+                <input type="text" class="bcd-search-input" id="course-search-input" placeholder="Search courses...">
+                <div class="bcd-search-dropdown" id="course-search-dropdown"></div>
+            </div>
+        </div>
+        <div class="bcd-availability-container">
+            <div class="bcd-availability-grid" id="trainersByCourseGrid">
+                <table class="bcd-batches-table">
+                    <thead>
+                        <tr>
+                            <th>Trainer ID</th>
+                            <th>Trainer Name</th>
+                            <th>Available Time Slots</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Trainer data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trainer Availability Section -->
+    <div class="bcd-card">
+        <div class="bcd-availability-header">
+            <h2 class="bcd-batch-title">Trainer Availability</h2>
+            <div class="bcd-search-container" style="margin-right: 1rem;">
+                <i class="fas fa-search bcd-search-icon"></i>
+                <input type="text" class="bcd-search-input" id="trainer-search-input" placeholder="Search trainers...">
+            <div class="bcd-search-dropdown" id="trainer-search-dropdown"></div>
+        </div>
+        </div>
+        <div class="bcd-trainer-stats-container" id="trainerStatsContainer" style="display: none;">
+            </div>
+        <div class="bcd-availability-container">
+            <div class="bcd-availability-grid" id="availabilityGrid">
+                <table class="bcd-batches-table">
+                    <thead>
+                        <tr>
+                            <th>Time Slots of Trainer</th>
+                            <th>Course Name</th>
+                            <th>Batch ID</th>
+                            <th>Current Module</th>
+                            <th>End Date</th>
+                            <th>Availability</th>
+                            <th>Mode</th>
+                            <th>Progress (%)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Trainer availability data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Panel -->
+    <div class="bcd-notifications-panel" id="notificationsPanel">
+        <div class="bcd-notifications-header">
+            <h3 class="bcd-notifications-title">Notifications</h3>
+            <button class="bcd-action-btn" id="closeNotifications">
+                <svg class="bcd-icon" viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
+                </svg>
+            </button>
+        </div>
+        <ul class="bcd-notifications-list" id="notificationsList">
+            <!-- Notifications will be populated by JavaScript -->
+        </ul>
+    </div>
+
+    <!-- Student Transfer Modal -->
+    <div class="bcd-modal" id="studentTransferModal">
+        <div class="bcd-modal-content">
+            <div class="bcd-modal-header">
+                <h3 class="bcd-modal-title">Transfer Students</h3>
+                <button class="bcd-modal-close" id="closeStudentTransferModal">&times;</button>
+            </div>
+            <div class="bcd-modal-body">
+                {% csrf_token %}
+                <input type="hidden" id="fromBatchId">
+                <div class="bcd-mb-2">
+                    <label for="fromBatch" class="bcd-mb-1">From Batch</label>
+                    <input type="text" id="fromBatch" class="bcd-search" readonly>
+                </div>
+                <div class="bcd-mb-2">
+                    <label for="studentsToTransfer" class="bcd-mb-1">Students to Transfer</label>
+                    <select id="studentsToTransfer" class="bcd-trainer-select" multiple>
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="bcd-mb-2">
+                    <label for="toBatch" class="bcd-mb-1">To Batch</label>
+                    <select id="toBatch" class="bcd-trainer-select">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div class="bcd-mb-2">
+                    <label for="transferReason" class="bcd-mb-1">Reason for Transfer</label>
+                    <textarea id="transferReason" class="bcd-search" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="bcd-modal-footer">
+                <button class="bcd-btn bcd-btn-secondary" id="cancelStudentTransfer">Cancel</button>
+                <button class="bcd-btn bcd-btn-primary" id="confirmStudentTransfer">Submit Request</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css">
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get data from Django context
+    const batchesData = JSON.parse('{{ batches_data|escapejs }}');
+    const trainersData = JSON.parse('{{ trainers_data|escapejs }}');
+    const notificationsData = JSON.parse('{{ notifications_data|escapejs }}');
+
+    // Initialize Batches Table
+    function initBatchesTable() {
+        const tableBody = document.querySelector('#batchesTable tbody');
+        tableBody.innerHTML = '';
+
+        batchesData.slice(0,5).forEach(batch => {
+            const row = document.createElement('tr');
+            row.dataset.batchId = batch.batch_id;
+            row.dataset.pk = batch.id;
+            
+            // Add click event to show batch details
+            row.addEventListener('click', () => {
+                document.querySelectorAll('#batchesTable tbody tr').forEach(tr => {
+                    tr.classList.remove('selected');
+                });
+                row.classList.add('selected');
+                showBatchDetails(batch.batch_id);
+            });
+
+            row.innerHTML = `
+                <td><a href="/batches/batch/${batch.id}/report/" class="view-link">${batch.batch_id}</a></td>
+                <td>${batch.course}</td>
+                <td>
+                    <div class="bcd-trainer-info">
+                        <div class="bcd-avatar">${batch.trainer.initials}</div>
+                        ${batch.trainer.name}
+                    </div>
+                </td>
+                <td>${formatDate(batch.endDate)}</td>
+                <td><span class="bcd-status-badge bcd-status-${batch.status}">${formatStatus(batch.status)}</span></td>
+                <td>
+                    <div class="bcd-progress-bar">
+                        <div class="bcd-progress-fill" style="width: ${batch.progress}%"></div>
+                    </div>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+
+        // Select the first batch by default
+        if (batchesData.length > 0) {
+            const firstRow = tableBody.querySelector('tr');
+            if (firstRow) {
+                firstRow.classList.add('selected');
+                showBatchDetails(batchesData[0].batch_id);
+            }
+        }
+    }
+
+    // Show Batch Details
+    function showBatchDetails(batchId) {
+        const batch = batchesData.find(b => b.batch_id === batchId);
+        if (!batch) return;
+
+        document.getElementById('detailCourse').textContent = batch.course;
+        document.getElementById('detailTrainer').textContent = batch.trainer.name;
+        document.getElementById('detailStartDate').textContent = formatDate(batch.startDate);
+        document.getElementById('detailEndDate').textContent = formatDate(batch.endDate);
+        document.getElementById('detailType').textContent = batch.batchType;
+        document.getElementById('detailStatus').textContent = formatStatus(batch.status);
+        document.getElementById('detailStudents').textContent = batch.students;
+        document.getElementById('detailTimeSlot').textContent = `${formatTo12Hour(batch.startTime)} - ${formatTo12Hour(batch.endTime)}`;
+        
+        document.getElementById('progressPercentage').textContent = `${batch.progress}%`;
+        document.getElementById('progressFill').style.width = `${batch.progress}%`;
+    }
+
+    // Utility: Format Time to 12-hour
+    function formatTo12Hour(time24) {
+        if (!time24) return '';
+        let [hour, minute] = time24.split(':').map(Number);
+        let ampm = hour >= 12 ? 'PM' : 'AM';
+        hour = hour % 12 || 12; 
+        return `${hour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+    }
+    // Utility: Normalize date (avoid timezone shift issue)
+    function parseDate(dateStr) {
+        if (!dateStr) return null;
+        const parts = dateStr.split('-');
+        // new Date(year, monthIndex, day)
+        return new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]));
+    }
+
+    // Utility: map startTime to row index
+    function getTimeRowIndex(startTime) {
+        const slots = [
+            "09:00", // 9:00 - 10:30
+            "10:30", // 10:30 - 12:00
+            "12:00", // 12:00 - 1:30
+            "15:00", // 3:00 - 4:30
+            "16:30"  // 4:30 - 6:00
+        ];
+        return slots.findIndex(slot => startTime.startsWith(slot));
+    }
+
+    // Initialize Calendar (Week View Only)
+    function initCalendar() {
+        const weekCalendar = document.querySelector('.bcd-week-calendar');
+
+        // Header
+        const currentMonthEl = document.getElementById('current-month');
+        const prevMonthBtn = document.getElementById('prev-month');
+        const nextMonthBtn = document.getElementById('next-month');
+
+        let currentDate = new Date();
+        updateCalendarHeader();
+
+        // Navigation buttons
+        const prevWeekBtn = document.getElementById('prev-week');
+        const nextWeekBtn = document.getElementById('next-week');
+
+        prevMonthBtn.addEventListener('click', function() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            updateCalendarHeader();
+            updateWeekCalendar();
+        });
+
+        nextMonthBtn.addEventListener('click', function() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            updateCalendarHeader();
+            updateWeekCalendar();
+        });
+
+        prevWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() - 7);
+            updateCalendarHeader();   // ✅ also refresh header
+            updateWeekCalendar();
+        });
+
+        nextWeekBtn.addEventListener('click', function() {
+            currentDate.setDate(currentDate.getDate() + 7);
+            updateCalendarHeader();   // ✅ also refresh header
+            updateWeekCalendar();
+        });
+
+        function updateCalendarHeader() {
+            const monthNames = [
+                "January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"
+            ];
+            currentMonthEl.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+        }
+
+        function updateWeekCalendar() {
+            // Get Monday of current week
+            const firstDay = new Date(currentDate);
+            const day = firstDay.getDay();
+            const diff = firstDay.getDate() - day + (day === 0 ? -6 : 1);
+            firstDay.setDate(diff);
+
+            // Update day headers
+            const dayColumns = document.querySelectorAll('.bcd-day-number');
+            const dayNames = document.querySelectorAll('.bcd-day-name');
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            for (let i = 0; i < dayColumns.length; i++) {
+                const date = new Date(firstDay);
+                date.setDate(firstDay.getDate() + i);
+                dayColumns[i].textContent = date.getDate();
+                dayNames[i].textContent = days[i];
+            }
+
+            // Clear events
+            document.querySelectorAll('.bcd-event').forEach(event => {
+                if (!event.classList.contains('bcd-event-team-sync') &&
+                    !event.classList.contains('bcd-event-onboarding')) {
+                    event.remove();
+                }
+            });
+
+            // 🔹 Add batch events (start and end separate)
+            batchesData.forEach(batch => {
+                const batchStartDate = parseDate(batch.startDate);
+                const batchEndDate = parseDate(batch.endDate);
+
+                // Batch Start
+                const daysBetween = (date1, date2) => {
+                    const d1 = new Date(Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate()));
+                    const d2 = new Date(Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate()));
+                    return Math.round((d1 - d2) / (1000 * 60 * 60 * 24));
+                };
+
+                // Batch Start
+                if (batchStartDate) {
+                    const startDayDiff = daysBetween(batchStartDate, firstDay);
+                    if (startDayDiff >= 0 && startDayDiff < 7) {
+                        addBatchEvent(startDayDiff, batch, 'start');
+                    }
+                }
+
+                // Batch End
+                if (batchEndDate) {
+                    const endDayDiff = daysBetween(batchEndDate, firstDay);
+                    if (endDayDiff >= 0 && endDayDiff < 7) {
+                        addBatchEvent(endDayDiff, batch, 'end');
+                    }
+                }
+            });
+
+        }
+
+        function addBatchEvent(dayIndex, batch, eventType) {
+            const timeRows = document.querySelectorAll('.bcd-time-row');
+            let targetSlot = null;
+
+            // Determine batch time based on event type
+            const batchTime = batch.startTime; // Both start and end events should use the start time
+            if (!batchTime) return; // no time, skip
+
+            const [batchHour, batchMinute] = batchTime.split(':').map(Number);
+            const batchTotalMinutes = batchHour * 60 + batchMinute;
+
+            // Loop through all time rows
+            for (let i = 0; i < timeRows.length; i++) {
+                const timeLabel = timeRows[i].querySelector('.bcd-time-label').textContent;
+                const [startTime, endTime] = timeLabel.split(' - ').map(t => t.trim());
+
+                const parseTime = (timeStr) => {
+                    const parts = timeStr.match(/(\d+):(\d+)\s*(am|pm)/i);
+                    if (!parts) return 0;
+                    let hours = parseInt(parts[1], 10);
+                    const minutes = parseInt(parts[2], 10);
+                    const modifier = parts[3].toLowerCase();
+
+                    if (modifier === 'pm' && hours < 12) {
+                        hours += 12;
+                    }
+                    if (modifier === 'am' && hours === 12) {
+                        hours = 0; // Midnight case
+                    }
+                    return hours * 60 + minutes;
+                };
+
+                const startTotalMinutes = parseTime(startTime);
+                const endTotalMinutes = parseTime(endTime);
+
+                if (batchTotalMinutes >= startTotalMinutes && batchTotalMinutes < endTotalMinutes) {
+                    targetSlot = timeRows[i].querySelectorAll('.bcd-time-slot')[dayIndex];
+                    break;
+                }
+            }
+
+            // Fallback to first row if no slot matched
+            if (!targetSlot) {
+                targetSlot = timeRows[0].querySelectorAll('.bcd-time-slot')[dayIndex];
+            }
+
+            // Create and append the event
+            if (targetSlot) {
+                const batchEvent = document.createElement('div');
+                batchEvent.className = `bcd-event ${eventType === 'start' ? 'bcd-event-start' : 'bcd-event-end'}`;
+                batchEvent.innerHTML = `
+                    <div class="bcd-event-title">${batch.batch_id}: ${batch.course}</div>
+                    <div class="bcd-event-description">${eventType === 'start' ? '🚀 Batch Starting' : '✅ Batch Ending'}</div>
+                    <div class="bcd-event-attendees">
+                        <div class="bcd-attendee-avatar">${batch.trainer.name}</div>
+                    </div>
+                `;
+                targetSlot.appendChild(batchEvent);
+
+                // Click to view details
+                batchEvent.addEventListener('click', () => viewBatchDetails(batch.batch_id));
+            }
+        }
+
+        // 🚀 Always load Week View
+        weekCalendar.style.display = 'block';
+        updateWeekCalendar();
+    }
+
+
+    // Initialize Trainer Availability
+    function initTrainerAvailability() {
+        const availabilityGrid = document.getElementById('availabilityGrid');
+        const tableBody = availabilityGrid.querySelector('tbody');
+        if (tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="100%" class="bcd-text-secondary" style="text-align: center;">Search for a trainer to view their availability.</td></tr>';
+        }
+    }
+
+    // Initialize Notifications
+    function initNotifications() {
+        const notificationsIcon = document.querySelector('.bcd-notifications');
+        const notificationsPanel = document.getElementById('notificationsPanel');
+        const closeNotifications = document.getElementById('closeNotifications');
+        const notificationsList = document.getElementById('notificationsList');
+        
+        // Update notifications badge
+        const unreadCount = notificationsData.filter(n => !n.read).length;
+        document.querySelector('.bcd-notification-count').textContent = unreadCount;
+        
+        // Populate notifications list
+        notificationsList.innerHTML = '';
+        notificationsData.forEach(notification => {
+            const li = document.createElement('li');
+            li.className = 'bcd-notification-item';
+            if (!notification.read) {
+                li.className += ' unread';
+            }
+            
+            li.innerHTML = `
+                <div class="bcd-notification-content">${notification.content}</div>
+                <div class="bcd-notification-time">${notification.time}</div>
+                <div class="bcd-notification-actions">
+                    <button class="bcd-btn bcd-btn-secondary" data-id="${notification.id}">Mark as Read</button>
+                </div>
+            `;
+            
+            notificationsList.appendChild(li);
+        });
+        
+        // Toggle notifications panel
+        notificationsIcon.addEventListener('click', function() {
+            notificationsPanel.classList.toggle('active');
+        });
+        
+        // Close notifications panel
+        closeNotifications.addEventListener('click', function() {
+            notificationsPanel.classList.remove('active');
+        });
+        
+        // Mark notification as read
+        notificationsList.addEventListener('click', function(e) {
+            if (e.target.classList.contains('bcd-btn-secondary')) {
+                const notificationId = e.target.dataset.id;
+                // Send AJAX request to mark notification as read
+                fetch(`/notifications/mark-read/${notificationId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        e.target.closest('.bcd-notification-item').classList.remove('unread');
+                        const newUnreadCount = parseInt(document.querySelector('.bcd-notification-count').textContent) - 1;
+                        document.querySelector('.bcd-notification-count').textContent = newUnreadCount > 0 ? newUnreadCount : 0;
+                    }
+                });
+            }
+        });
+    }
+
+    // Initialize Student Transfer Modal
+    function initStudentTransferModal() {
+        const transferBtn = document.getElementById('transferBtn');
+        const transferModal = document.getElementById('studentTransferModal');
+        const closeModal = document.getElementById('closeStudentTransferModal');
+        const cancelBtn = document.getElementById('cancelStudentTransfer');
+        const confirmBtn = document.getElementById('confirmStudentTransfer');
+
+        transferBtn.addEventListener('click', function() {
+            const selectedRow = document.querySelector('#batchesTable tbody tr.selected');
+            if (!selectedRow) {
+                alert('Please select a batch first.');
+                return;
+            }
+            const batchId = selectedRow.dataset.pk;
+            const batch = batchesData.find(b => b.id == batchId);
+            
+            document.getElementById('fromBatchId').value = batch.id;
+            document.getElementById('fromBatch').value = batch.batch_id;
+            // Fetch students for the selected batch
+                $.get("{% url 'batchdb:get_students_for_batch' %}", { batch_id: batchId }, function(data) {
+                    let select = $('#studentsToTransfer').empty();
+                    if (data.students.length) {
+                        data.students.forEach(s => {
+                            if (s.is_active) {
+                                select.append(`<option value="${s.id}">${s.student_id} - ${s.name}</option>`);
+                            }
+                        });
+                    } else {
+                        select.html("<option disabled>No active students to transfer</option>");
+                    }
+                    select.select2({ placeholder: 'Select students', width: '100%' });
+                });
+
+            // Fetch available batches for transfer
+            $.get("{% url 'batchdb:batchdb_api:available-batches-for-transfer' %}", { from_batch_id: batchId }, function(data) {
+                    let select = $('#toBatch').empty().append("<option value=''>Select a batch</option>");
+                    if (data.length) {
+                        data.forEach(b => select.append(`<option value="${b.id}">${b.batch_id} - ${b.course_name}</option>`));
+                    } else {
+                        select.html("<option disabled>No compatible batches available</option>");
+                    }
+                    select.select2({ placeholder: 'Select target batch', width: '100%' });
+                });
+
+            transferModal.classList.add('active');
+        });
+
+        closeModal.addEventListener('click', () => transferModal.classList.remove('active'));
+        cancelBtn.addEventListener('click', () => transferModal.classList.remove('active'));
+
+        confirmBtn.addEventListener('click', function() {
+            const fromBatchId = document.getElementById('fromBatchId').value;
+            const toBatchId = document.getElementById('toBatch').value;
+            const studentIds =Array.from(document.getElementById('studentsToTransfer').selectedOptions).map(opt => opt.value);
+            const reason = document.getElementById('transferReason').value;
+
+            if (!toBatchId || studentIds.length === 0 || !reason) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            fetch("{% url 'batchdb:batchdb_api:transferrequest-list' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    "X-CSRFToken": "{{ csrf_token }}" ,
+                },
+                body: JSON.stringify({
+                    from_batch: fromBatchId,
+                    to_batch: toBatchId,
+                    students: studentIds,
+                    remarks: reason,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.id) {
+                    alert('Transfer request submitted successfully!');
+                    transferModal.classList.remove('active');
+                    location.reload();
+                } else {
+                    alert('Error submitting transfer request: ' + JSON.stringify(data));
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    }
+
+    // Helper Functions
+    function formatDate(dateString) {
+        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        return new Date(dateString).toLocaleDateString(undefined, options);
+    }
+
+    function formatStatus(status) {
+        switch (status) {
+            case 'ip':
+                return 'In Progress';
+            case 'yts':
+                return 'Yet to Start';
+            case 'c':
+                return 'Completed';
+            default:
+                return status;
+        }
+    }
+
+    // Make viewBatchDetails function globally available
+    window.viewBatchDetails = function(batchId) {
+        const rows = document.querySelectorAll('#batchesTable tbody tr');
+        rows.forEach(row => {
+            if (row.dataset.batchId === batchId) {
+                row.click();
+            }
+        });
+    };
+
+    document.getElementById('editBtn').addEventListener('click', function() {
+        const selectedRow = document.querySelector('#batchesTable tbody tr.selected');
+        if (selectedRow) {
+            const pk = selectedRow.dataset.pk;
+            window.location.href = `/batches/${pk}/update/`;
+        } else {
+            alert('Please select a batch to edit.');
+        }
+    });
+
+    // Initialize all components
+    initBatchesTable();
+    initCalendar();
+    initTrainerAvailability();
+    initNotifications();
+    initStudentTransferModal();
+
+    // Search functionality
+    const searchInput = document.querySelector('.bcd-search-input');
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#batchesTable tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    // Trainer search functionality
+    const trainerSearchInput = document.getElementById('trainer-search-input');
+    const trainerSearchDropdown = document.getElementById('trainer-search-dropdown');
+    let trainersDataList = [];
+    fetch("{% url 'trainers_availability' %}")
+        .then(response => response.json())
+        .then(data => {
+            trainersDataList = data;
+        });
+
+    trainerSearchInput.addEventListener('input', function() {
+        
+        const searchTerm = this.value.toLowerCase();
+        trainerSearchDropdown.innerHTML = '';
+
+        if (searchTerm.length === 0) {
+            trainerSearchDropdown.style.display = 'none';
+            return;
+        }
+
+        const filteredTrainers = trainersDataList.filter(trainer =>
+            trainer.name.toLowerCase().includes(searchTerm)||
+            trainer.trainer_id.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+
+        if (filteredTrainers.length > 0) {
+            filteredTrainers.forEach(trainer => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.textContent = `${trainer.name} (${trainer.trainer_id})`;
+                item.dataset.trainerId = trainer.id;
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    trainerSearchInput.value = trainer.name;
+                    trainerSearchDropdown.style.display = 'none';
+                    displayTrainerAvailability(trainer.id);
+                });
+                trainerSearchDropdown.appendChild(item);
+            });
+            trainerSearchDropdown.style.display = 'block';
+        } else {
+            trainerSearchDropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!trainerSearchInput.contains(e.target)) {
+            trainerSearchDropdown.style.display = 'none';
+        }
+    });
+
+    function displayTrainerAvailability(trainerId) {
+        const availabilityTable = document.querySelector('#availabilityGrid table');
+        const tableBody = availabilityTable.querySelector('tbody');
+        tableBody.innerHTML = '<tr><td colspan="100%" class="bcd-text-secondary" style="text-align: center;">Loading...</td></tr>';
+
+        fetch(`{% url 'trainer_availability_api' %}?trainer_id=${trainerId}`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = '';
+                const statsContainer = document.getElementById('trainerStatsContainer');
+                
+                if (data.availability && data.availability.length > 0) {
+                    data.availability.forEach(item => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${item.slot_time}</td>
+                            <td>${item.course_name}</td>
+                            <td>${item.batch_id}</td>
+                            <td>${item.current_module}</td>
+                            <td>${item.end_date}</td>
+                            <td>${item.availability}</td>
+                            <td>${item.mode}</td>
+                            <td>${item.percentage}</td>
+                            <td><span class="status-${item.status.toLowerCase()}">${item.status}</span></td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="9" class="bcd-text-secondary" style="text-align: center;">No availability data for this trainer.</td></tr>';
+                }
+
+                if (data.stats) {
+                    statsContainer.innerHTML = `
+                        <div class="stat-item">Total Batches: <span class="count">${data.stats.total_batches}</span></div>
+                        <div class="stat-item">Completed: <span class="count completed">${data.stats.completed_batches}</span></div>
+                        <div class="stat-item">Ongoing: <span class="count ongoing">${data.stats.ongoing_batches}</span></div>
+                        <div class="stat-item">Yet to Start: <span class="count yts">${data.stats.yts_batches}</span></div>
+                        <div class="stat-item occupied">Occupied: <span class="count">${data.stats.occupied_count}</span></div>
+                        <div class="stat-item available">Available: <span class="count">${data.stats.available_count}</span></div>
+                    `;
+                    statsContainer.style.display = 'flex';
+                } else {
+                    statsContainer.style.display = 'none';
+                }
+            });
+    }
+
+    // Course search functionality
+    const courseSearchInput = document.getElementById('course-search-input');
+    const courseSearchDropdown = document.getElementById('course-search-dropdown');
+    let coursesDataList = [];
+    fetch("{% url 'coursedb:course_list_api' %}")
+        .then(response => response.json())
+        .then(data => {
+            coursesDataList = data;
+        });
+
+    courseSearchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        courseSearchDropdown.innerHTML = '';
+
+        if (searchTerm.length === 0) {
+            courseSearchDropdown.style.display = 'none';
+            return;
+        }
+
+        const filteredCourses = coursesDataList.filter(course =>
+            course.course_name.toLowerCase().includes(searchTerm)
+        );
+
+        if (filteredCourses.length > 0) {
+            filteredCourses.forEach(course => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.textContent = course.course_name;
+                item.dataset.courseName = course.course_name;
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    courseSearchInput.value = course.course_name;
+                    courseSearchDropdown.style.display = 'none';
+                    displayTrainersByCourse(course.course_name);
+                });
+                courseSearchDropdown.appendChild(item);
+            });
+            courseSearchDropdown.style.display = 'block';
+        } else {
+            courseSearchDropdown.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!courseSearchInput.contains(e.target)) {
+            courseSearchDropdown.style.display = 'none';
+        }
+    });
+
+    function displayTrainersByCourse(courseName) {
+        const trainersTable = document.querySelector('#trainersByCourseGrid table');
+        const tableBody = trainersTable.querySelector('tbody');
+        tableBody.innerHTML = '<tr><td colspan="3" class="bcd-text-secondary" style="text-align: center;">Loading...</td></tr>';
+
+        fetch(`{% url 'trainers_by_course' %}?course_name=${courseName}`)
+            .then(response => response.json())
+            .then(data => {
+                tableBody.innerHTML = '';
+                if (data.trainers && data.trainers.length > 0) {
+                    data.trainers.forEach(trainer => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${trainer.trainer_id}</td>
+                            <td>${trainer.name}</td>
+                            <td>${trainer.timing_slots_count}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="3" class="bcd-text-secondary" style="text-align: center;">No active trainers found for this course.</td></tr>';
+                }
+            });
+    }
+});
+</script>
+{% endblock %}

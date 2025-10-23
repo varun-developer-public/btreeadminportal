@@ -373,6 +373,7 @@
                     </td>
                     <td>
                         <div class="d-flex gap-2">
+                            {% if user.role != 'trainer' %}
                             <div class="dropdown">
                                 <button class="btn-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-ellipsis-v"></i></button>
                                 <ul class="dropdown-menu">
@@ -391,6 +392,7 @@
                                     <li><a class="dropdown-item" href="{% url 'batchdb:export_batch_data' batch.id %}"><i class="fas fa-file-export me-1"></i>Export Data</a></li>
                                 </ul>
                             </div>
+                            {% endif %}
                             <a href="{% url 'batchdb:update_batch' batch.pk %}" class="btn-update"><i class="fas fa-edit"></i></a>
                             {% if user.role == 'admin' %}
                             <a href="{% url 'batchdb:delete_batch' batch.pk %}" class="btn-danger"><i class="fas fa-trash"></i></a>

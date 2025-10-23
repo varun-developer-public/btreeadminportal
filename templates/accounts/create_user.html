@@ -49,6 +49,10 @@
                     {{ form.consultant.label_tag }}
                     {{ form.consultant|attr:"class:form-control" }}
                 </div>
+                <div id="trainer_div" class="form-group hidden">
+                    {{ form.trainer.label_tag }}
+                    {{ form.trainer|attr:"class:form-control" }}
+                </div>
                 <div id="permissions_div" class="form-group hidden">
                     <div class="form-group">
                         {{ form.is_staff.label_tag }}
@@ -94,6 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const roleSelect = document.getElementById('id_role');
     const permissionsDiv = document.getElementById('permissions_div');
     const consultantDiv = document.getElementById('consultant_div');
+    const trainerDiv = document.getElementById('trainer_div');
     const fileInput = document.querySelector('input[type="file"]');
     const fileLabel = document.querySelector('.custom-file-label');
 
@@ -108,6 +113,12 @@ document.addEventListener('DOMContentLoaded', function() {
             consultantDiv.classList.remove('hidden');
         } else {
             consultantDiv.classList.add('hidden');
+        }
+
+        if (roleSelect.value === 'trainer') {
+            trainerDiv.classList.remove('hidden');
+        } else {
+            trainerDiv.classList.add('hidden');
         }
     }
 

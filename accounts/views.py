@@ -21,6 +21,9 @@ def is_consultant(user):
 def is_placement(user):
     return user.is_authenticated and (user.role == 'placement' or user.is_superuser)
 
+def is_trainer(user):
+    return user.is_authenticated and (user.role == 'trainer' or user.is_superuser)
+
 def is_batch_coordinator(user):
     return user.is_authenticated and (user.role == 'batch_coordination' or user.is_superuser)
 from django.db.models import Sum, Q, F
@@ -428,6 +431,112 @@ def consultant_dashboard(request):
     return render(request, 'accounts/consultant_dashboard.html', context)
 
 @login_required
+@user_passes_test(is_trainer)
+def trainer_dashboard(request):
+    now = timezone.now()
+    
+    trainer = request.user.trainer_profile.trainer
+    
+    # Get all batches for the specific trainer
+    all_batches_for_stats = Batch.objects.filter(trainer=trainer)
+    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS']).select_related('course').prefetch_related('students').order_by('end_date')
+    
+    # Prepare batches data for the dashboard
+    batches_data = []
+    for batch in active_batches:
+        # Calculate progress based on start and end dates
+        if batch.start_date and batch.end_date:
+            total_days = (batch.end_date - batch.start_date).days
+            days_passed = (now.date() - batch.start_date).days
+            
+            if total_days > 0:
+                progress = min(100, max(0, int((days_passed / total_days) * 100)))
+            else:
+                progress = 0
+        else:
+            progress = 0
+            
+        # Format batch data
+        batch_data = {
+            'id': batch.id,
+            'batch_id': batch.batch_id,
+            'course': batch.course.course_name if batch.course else "N/A",
+            'trainer': {
+                'id': batch.trainer.id if batch.trainer else None,
+                'name': batch.trainer.name if batch.trainer else "N/A",
+                'initials': ''.join([name[0].upper() for name in batch.trainer.name.split()[:2]]) if batch.trainer else "NA"
+            },
+            'startDate': batch.start_date.isoformat() if batch.start_date else None,
+            'endDate': batch.end_date.isoformat() if batch.end_date else None,
+            'status': batch.batch_status.lower() if batch.batch_status else "unknown",
+            'progress': batch.batch_percentage if batch.batch_percentage is not None else progress,
+            'batchType': batch.batch_type if batch.batch_type else "Regular",
+            'students': batch.batchstudent_set.filter(is_active=True).count(),
+            'hoursPerDay': batch.hours_per_day if batch.hours_per_day else 0,
+            'days': batch.days.split(',') if batch.days and isinstance(batch.days, str) else (batch.days if isinstance(batch.days, list) else []),
+            'startTime': batch.start_time.strftime('%H:%M') if batch.start_time else None,
+            'endTime': batch.end_time.strftime('%H:%M') if batch.end_time else None
+        }
+        batches_data.append(batch_data)
+
+    # Create calendar events for all batches
+    calendar_events = []
+    for batch in active_batches:
+        if batch.start_date:
+            calendar_events.append({
+                'title': f'{batch.batch_id}: {batch.course.course_name if batch.course else ""} (Start)',
+                'start': batch.start_date.isoformat(),
+                'backgroundColor': '#34d3ff',
+                'borderColor': '#34d3ff'
+            })
+        
+        if batch.end_date:
+            calendar_events.append({
+                'title': f'{batch.batch_id}: {batch.course.course_name if batch.course else ""} (End)',
+                'start': batch.end_date.isoformat(),
+                'backgroundColor': '#8b5cf6',
+                'borderColor': '#8b5cf6'
+            })
+    
+    # Get trainer handovers for notifications
+    from batchdb.models import TrainerHandover
+    handovers = TrainerHandover.objects.filter(to_trainer=trainer).select_related('batch', 'from_trainer', 'to_trainer').order_by('-requested_at')[:5]
+    
+    notifications_data = []
+    for handover in handovers:
+        notifications_data.append({
+            'id': handover.id,
+            'content': f"Batch {handover.batch.batch_id} transferred from {handover.from_trainer.name} to you",
+            'time': f"{(now - handover.requested_at).days} days ago" if (now - handover.requested_at).days > 0 else "Today",
+            'read': False
+        })
+    
+    # Add notifications for batches nearing completion (>80%)
+    for batch in active_batches:
+        if batch.batch_status == 'IP' and batch.batch_percentage and batch.batch_percentage >= 80:
+            notifications_data.append({
+                'id': f"batch_{batch.id}",
+                'content': f"Batch {batch.batch_id} is {batch.batch_percentage}% complete",
+                'time': "Recently updated",
+                'read': False
+            })
+
+    import json
+    from django.core.serializers.json import DjangoJSONEncoder
+
+    context = {
+        'total_batches': all_batches_for_stats.count(),
+        'yts_batches': all_batches_for_stats.filter(batch_status='YTS').count(),
+        'in_progress_batches': all_batches_for_stats.filter(batch_status='IP').count(),
+        'completed_batches': all_batches_for_stats.filter(batch_status='C').count(),
+        'handovers': handovers.count(),
+        'batches_data': json.dumps(batches_data, cls=DjangoJSONEncoder),
+        'notifications_data': json.dumps(notifications_data, cls=DjangoJSONEncoder),
+        'calendar_events': json.dumps(calendar_events, cls=DjangoJSONEncoder),
+    }
+    return render(request, 'accounts/trainer_dashboard.html', context)
+
+@login_required
 @user_passes_test(is_placement)
 def placement_dashboard(request):
     # Base Querysets
@@ -816,6 +925,8 @@ def login_view(request):
                     return redirect('admin_dashboard')
                 elif user.role == 'consultant':
                     return redirect('consultant_dashboard')
+                elif user.role == 'trainer':
+                    return redirect('trainer_dashboard')
                 elif user.role == 'placement':
                     return redirect('placement_dashboard')
                 elif user.role == 'batch_coordination':
@@ -1004,6 +1115,8 @@ def verify_2fa(request):
                     return redirect('admin_dashboard')
                 elif user.role == 'consultant':
                     return redirect('consultant_dashboard')
+                elif user.role == 'trainer':
+                    return redirect('trainer_dashboard')
                 elif user.role == 'placement':
                     return redirect('placement_dashboard')
                 elif user.role == 'batch_coordination':

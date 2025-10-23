@@ -35,6 +35,12 @@
                 <i class="fas fa-home"></i><span>Dashboard</span>
             </a>
         </li>
+        {% elif user.role == 'trainer' %}
+        <li>
+            <a href="{% url 'trainer_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'trainer_dashboard' %}active{% endif %}">
+                <i class="fas fa-home"></i><span>Dashboard</span>
+            </a>
+        </li>
         {% elif user.role == 'batch_coordination' %}
         <li>
             <a href="{% url 'batch_coordination_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'batch_coordination_dashboard' %}active{% endif %}">
@@ -75,6 +81,8 @@
                 <i class="fas fa-calendar-alt"></i><span>Batch</span>
             </a>
         </li>
+        {% endif %}
+        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'batch_coordination' %}
         <li>
             <a href="{% url 'batchdb:requests_list' %}" class="nav-link {% if request.resolver_match.url_name == 'requests_list' %}active{% endif %}">
                 <i class="fas fa-exchange-alt"></i><span>Approval</span>
@@ -99,14 +107,14 @@
             </ul>
         </li>
         {% endif %}
-        {% if user.role == 'batch_coordination' %}
+        {% if user.role == 'batch_coordination' or user.role == 'trainer' %}
         <li class="nav-item has-submenu">
             <a href="#" class="nav-link submenu-toggle {% if request.resolver_match.app_name == 'coursedb' %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#course-submenu" aria-expanded="{% if request.resolver_match.app_name == 'coursedb' %}true{% else %}false{% endif %}" aria-controls="course-submenu">
                 <i class="fas fa-book"></i><span>Courses</span>
             </a>
             <ul class="submenu collapse {% if request.resolver_match.app_name == 'coursedb' %}show{% endif %}" id="course-submenu">
                 <li><a href="{% url 'coursedb:course_list' %}" class="nav-link {% if request.resolver_match.url_name == 'course_list' %}active{% endif %}">Course List</a></li>
-                {% if user.role != 'batch_coordination' %}
+                {% if user.role != 'batch_coordination' and user.role != 'trainer' %}
                 <li><a href="{% url 'coursedb:category_list' %}" class="nav-link {% if request.resolver_match.url_name == 'category_list' %}active{% endif %}">Category List</a></li>
                 {% endif %}
             </ul>
