@@ -1043,7 +1043,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const tableBody = trainersTable.querySelector('tbody');
         tableBody.innerHTML = '<tr><td colspan="3" class="bcd-text-secondary" style="text-align: center;">Loading...</td></tr>';
 
-        fetch(`{% url 'trainers_by_course' %}?course_name=${courseName}`)
+        fetch(`{% url 'trainers_by_course' %}?course_name=${encodeURIComponent(courseName)}`)
             .then(response => response.json())
             .then(data => {
                 tableBody.innerHTML = '';
