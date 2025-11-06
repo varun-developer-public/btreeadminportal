@@ -152,6 +152,8 @@ def create_batch(request):
 @login_required
 def update_batch(request, pk):
     batch = get_object_or_404(Batch, pk=pk)
+    # Fetch active students in this batch via through model
+    active_batch_students = BatchStudent.objects.filter(batch=batch, is_active=True).select_related('student')
     if request.method == 'POST':
         form = BatchUpdateForm(request.POST, instance=batch)
         if form.is_valid():
@@ -160,6 +162,45 @@ def update_batch(request, pk):
             batch.updated_by = request.user
             batch.save()
             form.save_m2m()
+
+            # Process per-student updates: course_percentage and course_status
+            updated_count = 0
+            status_values = {choice[0] for choice in Student.COURSE_STATUS_CHOICES}
+            for bs in active_batch_students:
+                student = bs.student
+                perc_key = f"student_{student.id}_percentage"
+                status_key = f"student_{student.id}_status"
+                perc_val = request.POST.get(perc_key)
+                status_val = request.POST.get(status_key)
+
+                changed = False
+                # Update percentage if provided and valid
+                if perc_val is not None and perc_val != "":
+                    try:
+                        perc_float = float(perc_val)
+                        # Clamp between 0 and 100
+                        if perc_float < 0:
+                            perc_float = 0
+                        if perc_float > 100:
+                            perc_float = 100
+                        if student.course_percentage != perc_float:
+                            student.course_percentage = perc_float
+                            changed = True
+                    except ValueError:
+                        # Ignore invalid percentage input
+                        pass
+
+                # Update status if provided and valid choice
+                if status_val and status_val in status_values and student.course_status != status_val:
+                    student.course_status = status_val
+                    changed = True
+
+                if changed:
+                    student.save()
+                    updated_count += 1
+
+            if updated_count:
+                messages.success(request, f"Updated {updated_count} student(s) for batch {batch.batch_id}.")
             messages.success(request, f"Batch {batch.batch_id} updated successfully.")
             return redirect('batchdb:batch_list')
     else:
@@ -167,6 +208,8 @@ def update_batch(request, pk):
     context = {
         'form': form,
         'batch': batch,
+        'active_batch_students': active_batch_students,
+        'course_status_choices': Student.COURSE_STATUS_CHOICES,
     }
     return render(request, 'batchdb/update_batch.html', context)
 

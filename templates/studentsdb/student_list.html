@@ -96,6 +96,7 @@
             <th>Course Name</th>
             <th>Course Category</th>
             <th>Current Batches</th>
+            <th>Percentage</th>
             <th>Course Status</th>
             <th>Enrollment Date</th>
             <th>Status</th>
@@ -128,6 +129,7 @@
                     {% endfor %}
                 </div>
             </td>
+            <td>{{ student.course_percentage }}</td>
             <td>{{ student.get_course_status_display }}</td>
             <td>{{ student.enrollment_date }}</td>
             <td>

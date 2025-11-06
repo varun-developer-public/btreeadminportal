@@ -153,6 +153,11 @@
                             <select id="id_chennai_area" class="form-control"></select>
                             <div class="error-message"></div>
                         </div>
+                        <div class="form-group" id="other_district_group" style="display: none;">
+                            <label for="id_other_district">Other District<span class="required-indicator">*</span></label>
+                            <input type="text" id="id_other_district" class="form-control" placeholder="Enter district">
+                            <div class="error-message"></div>
+                        </div>
                         <div class="form-group">
                             {{ student_form.location }}
                             <div class="error-message"></div>
@@ -589,10 +594,12 @@ $(document).ready(function () {
     const $districtSelect = $('#id_district');
     const $chennaiAreaGroup = $('#chennai_area_group');
     const $chennaiAreaSelect = $('#id_chennai_area');
+    const $otherDistrictGroup = $('#other_district_group');
+    const $otherDistrictInput = $('#id_other_district');
 
     // Populate districts if not already populated
     if ($districtSelect.find('option').length <= 1) {
-        const districts = ["", "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai","Pondicherry", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"];
+        const districts = ["", "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram", "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai","Pondicherry", "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar", "Others"];
         districts.forEach(d => {
             $districtSelect.append(new Option(d, d));
         });
@@ -610,13 +617,25 @@ $(document).ready(function () {
         const district = $districtSelect.val();
         if (district === 'Chennai') {
             $chennaiAreaGroup.show();
+            $otherDistrictGroup.hide();
+            $otherDistrictInput.val('');
+        } else if (district === 'Others') {
+            $otherDistrictGroup.show();
+            $chennaiAreaGroup.hide();
+            $chennaiAreaSelect.val('').trigger('change.select2');
         } else {
             $chennaiAreaGroup.hide();
+            $otherDistrictGroup.hide();
+            $chennaiAreaSelect.val('').trigger('change.select2');
+            $otherDistrictInput.val('');
         }
-        
+
         const area = $chennaiAreaSelect.val();
         if (district === 'Chennai') {
-            locationInput.val(area ? `Chennai - ${area}` : 'Chennai');
+            locationInput.val(area ? `${area}, Chennai` : 'Chennai');
+        } else if (district === 'Others') {
+            const other = ($otherDistrictInput.val() || '').trim();
+            locationInput.val(other);
         } else {
             locationInput.val(district);
         }
@@ -632,6 +651,8 @@ $(document).ready(function () {
     $chennaiAreaSelect.on('change', function() {
         updateLocationView();
     });
+
+    $otherDistrictInput.on('input', updateLocationView);
 
     updateLocationView();
 

@@ -77,6 +77,7 @@
                         <tr>
                             <th>Student ID</th>
                             <th>Name</th>
+                            <th>Percentage</th>
                             <th>Email</th>
                             <th>Phone</th>
                         </tr>
@@ -86,6 +87,7 @@
                         <tr>
                             <td> <a href="{% url 'student_report' student.student_id %}" class="view-link">{{ student.student_id }}</a></td>
                             <td>{{ student.first_name }}{% if student.last_name %} {{ student.last_name }} {% else %} {% endif %}</td>
+                            <td>{{ student.course_percentage }}</td>
                             <td>{{ student.email }}</td>
                             <td>{{ student.phone }}</td>
                         </tr>

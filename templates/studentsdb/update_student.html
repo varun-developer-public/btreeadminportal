@@ -123,6 +123,11 @@
                             <select id="id_chennai_area" class="form-control"></select>
                             <div class="error-message"></div>
                         </div>
+                        <div class="form-group" id="other_district_group" style="display: none;">
+                            <label for="id_other_district">Other District<span class="required-indicator">*</span></label>
+                            <input type="text" id="id_other_district" class="form-control" placeholder="Enter district">
+                            <div class="error-message"></div>
+                        </div>
                         <div class="form-group">
                             {{ form.location }}
                             <div class="error-message">{{ form.location.errors }}</div>
@@ -367,13 +372,15 @@ $(document).ready(function() {
     const districtSelect = $('#id_district');
     const chennaiAreaGroup = $('#chennai_area_group');
     const chennaiAreaSelect = $('#id_chennai_area');
+    const otherDistrictGroup = $('#other_district_group');
+    const otherDistrictInput = $('#id_other_district');
     const locationInput = $('#id_location');
 
     const districts = [
         "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore", "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kanchipuram",
         "Kanyakumari", "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam", "Namakkal", "Nilgiris", "Perambalur", "Pondicherry", "Pudukkottai",
         "Ramanathapuram", "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni", "Thoothukudi", "Tiruchirappalli", "Tirunelveli",
-        "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar"
+        "Tirupathur", "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore", "Viluppuram", "Virudhunagar", "Others"
     ];
 
     const chennaiAreas = [
@@ -391,9 +398,16 @@ $(document).ready(function() {
     function setLocationValue() {
         const district = districtSelect.val();
         const chennaiArea = chennaiAreaSelect.val();
-        if (district === 'Chennai' && chennaiArea) {
-            locationInput.val(chennaiArea + ', ' + district);
-        } else if (district && district !== 'Chennai') {
+        const otherDistrict = (otherDistrictInput.val() || '').trim();
+        if (district === 'Chennai') {
+            if (chennaiArea) {
+                locationInput.val(chennaiArea + ', ' + district);
+            } else {
+                locationInput.val(district);
+            }
+        } else if (district === 'Others') {
+            locationInput.val(otherDistrict);
+        } else if (district) {
             locationInput.val(district);
         } else {
             locationInput.val('');
@@ -401,14 +415,25 @@ $(document).ready(function() {
     }
 
     districtSelect.on('change', function() {
-        if (this.value === 'Chennai') {
+        const val = this.value;
+        if (val === 'Chennai') {
             chennaiAreaGroup.show();
-        } else {
+            otherDistrictGroup.hide();
+            otherDistrictInput.val('');
+        } else if (val === 'Others') {
+            otherDistrictGroup.show();
             chennaiAreaGroup.hide();
             chennaiAreaSelect.val('').trigger('change');
+        } else {
+            chennaiAreaGroup.hide();
+            otherDistrictGroup.hide();
+            chennaiAreaSelect.val('').trigger('change');
+            otherDistrictInput.val('');
         }
         setLocationValue();
     });
+
+    otherDistrictInput.on('input', setLocationValue);
 
     chennaiAreaSelect.on('change', setLocationValue);
 
@@ -435,6 +460,10 @@ $(document).ready(function() {
             if (chennaiAreas.includes(district)) {
                 districtSelect.val('Chennai').trigger('change');
                 chennaiAreaSelect.val(district).trigger('change');
+            } else {
+                districtSelect.val('Others').trigger('change');
+                otherDistrictInput.val(currentLocation);
+                setLocationValue();
             }
         }
     }
@@ -485,10 +514,15 @@ $(document).ready(function() {
         $countryCodeHidden.val(countryCode);
     });
 
-    // Set initial value for hidden input
+    // Initialize hidden value from current selection
     var initialSelectedOption = $countryCodeSelect.find('option:selected');
     if (initialSelectedOption.length) {
         $countryCodeHidden.val(initialSelectedOption.data('code'));
+    }
+    // If hidden is empty, default to India (+91)
+    if (!$countryCodeHidden.val()) {
+        $countryCodeSelect.val('in').trigger('change');
+        $countryCodeHidden.val('+91');
     }
 
     var $altCountryCodeSelect = $('#id_alternative_country_code_select');
@@ -500,10 +534,15 @@ $(document).ready(function() {
         $altCountryCodeHidden.val(countryCode);
     });
 
-    // Set initial value for hidden input
+    // Initialize hidden value from current selection
     var initialAltSelectedOption = $altCountryCodeSelect.find('option:selected');
     if (initialAltSelectedOption.length) {
         $altCountryCodeHidden.val(initialAltSelectedOption.data('code'));
+    }
+    // If hidden is empty, default to India (+91)
+    if (!$altCountryCodeHidden.val()) {
+        $altCountryCodeSelect.val('in').trigger('change');
+        $altCountryCodeHidden.val('+91');
     }
 });
 </script>
