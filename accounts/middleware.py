@@ -36,7 +36,7 @@ URL_ROLE_MAPPINGS = {
     'trainer': [
         'trainer_dashboard',
         'batch_list',
-        'student_list',
+        'student_list','batch_report','student_report',
         'batch_list','update_batch','course_list','category_list','course_create','course_update','get_next_course_code','get_courses_by_category'
     ],
     'batch_coordination': [

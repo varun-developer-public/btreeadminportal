@@ -16,7 +16,7 @@ from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from core.permissions import IsBatchCoordinator, IsStaff
+from core.permissions import IsBatchCoordinator, IsStaff, IsTrainer
 from django.views.decorators.csrf import csrf_exempt
 
 # Model imports
@@ -155,9 +155,21 @@ def update_batch(request, pk):
     # Fetch active students in this batch via through model
     active_batch_students = BatchStudent.objects.filter(batch=batch, is_active=True).select_related('student')
     if request.method == 'POST':
-        form = BatchUpdateForm(request.POST, instance=batch)
+        post_data = request.POST.copy()
+        # Ensure trainers submit end_date (readonly field still must be present)
+        if request.user.role == 'trainer' and not post_data.get('end_date'):
+            # Use the existing batch end_date if no value is posted
+            if batch.end_date:
+                post_data['end_date'] = batch.end_date.isoformat()
+        form = BatchUpdateForm(post_data, instance=batch)
+        # Make end_date readonly for trainers at render time
+        if request.user.role == 'trainer':
+            form.fields['end_date'].widget.attrs['readonly'] = True
         if form.is_valid():
             batch = form.save(commit=False)
+            # Enforce that trainers cannot change end_date server-side
+            if request.user.role == 'trainer' and batch.end_date != Batch.objects.get(pk=batch.pk).end_date:
+                batch.end_date = Batch.objects.get(pk=batch.pk).end_date
 
             batch.updated_by = request.user
             batch.save()
@@ -205,6 +217,8 @@ def update_batch(request, pk):
             return redirect('batchdb:batch_list')
     else:
         form = BatchUpdateForm(instance=batch, initial={'days': batch.days})
+        if request.user.role == 'trainer':
+            form.fields['end_date'].widget.attrs['readonly'] = True
     context = {
         'form': form,
         'batch': batch,
@@ -294,7 +308,7 @@ def get_students_for_course(request):
 class BatchViewSet(viewsets.ModelViewSet):
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
-    permission_classes = [IsBatchCoordinator | IsStaff]
+    permission_classes = [IsBatchCoordinator | IsStaff | IsTrainer]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['batch_id', 'course__name', 'trainer__name']
     ordering_fields = ['start_date', 'end_date', 'created_at', 'batch_id']

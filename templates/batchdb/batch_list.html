@@ -278,7 +278,10 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-users me-2"></i>Batch List</h2>
         <div class="d-flex gap-2">
+            {% if user.role != 'trainer' %}
             <a href="{% url 'batchdb:create_batch' %}" class="btn-primary"><i class="fas fa-plus me-1"></i>Add Batch</a>
+            {% endif %}
+
             {% if user.role == 'admin' %}
             <a href="{% url 'batchdb:import_batches' %}" class="btn-secondary"><i class="fas fa-file-import me-1"></i>Import</a>
             <a href="{% url 'batchdb:export_all_batches_data' %}" class="btn-secondary"><i class="fas fa-file-export me-1"></i>Export All</a>
@@ -289,6 +292,7 @@
     <!-- Filters -->
     <form method="get" class="filters mb-4">
         <div class="filter-row">
+            {% if user.role != 'trainer' %}
             <div class="filter-group">
                 {{ form.course.label_tag }}
                 {{ form.course }}
@@ -297,6 +301,7 @@
                 {{ form.trainer.label_tag }}
                 {{ form.trainer }}
             </div>
+            {% endif %}
             <div class="filter-group">
                 {{ form.batch_status.label_tag }}
                 {{ form.batch_status }}
@@ -315,6 +320,7 @@
                 {{ form.end_date.label_tag }}
                 {{ form.end_date }}
             </div>
+            {% if user.role != 'trainer' %}
             <div class="filter-group">
                 {{ form.time_slot.label_tag }}
                 {{ form.time_slot }}
@@ -323,6 +329,7 @@
                 {{ form.trainer_type.label_tag }}
                 {{ form.trainer_type }}
             </div>
+            {% endif %}
         </div>
         <div class="filter-actions">
             <button type="submit" class="btn-primary">Apply Filters</button>
