@@ -361,7 +361,14 @@ select:focus {
     box-shadow: 0 0 0 3px rgba(var(--danger-rgb), 0.15) !important;
 }
 
-.form-group:has(.is-invalid) label {
+@supports selector(:has(*)) {
+    .form-group:has(.is-invalid) label {
+        color: var(--danger);
+    }
+}
+
+/* Fallback for browsers without :has support */
+.form-group.has-invalid label {
     color: var(--danger);
 }
 

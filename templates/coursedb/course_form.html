@@ -148,4 +148,24 @@
 
 {% block extra_js %}
 <script src="{% static 'js/course_create_form.js' %}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      if (!CSS.supports('selector(:has(*))')) {
+        document.querySelectorAll('.form-group').forEach(function(group) {
+          if (group.querySelector('.is-invalid')) {
+            group.classList.add('has-invalid');
+          }
+        });
+      }
+    } catch (e) {
+      // Defensive: some very old browsers may not support CSS.supports
+      document.querySelectorAll('.form-group').forEach(function(group) {
+        if (group.querySelector('.is-invalid')) {
+          group.classList.add('has-invalid');
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}
