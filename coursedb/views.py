@@ -63,8 +63,21 @@ def course_create(request):
                     print("Module names:", module_names)
                     print("Module hours:", module_hours)
 
-                    total_module_duration = sum(Decimal(h) for h in module_hours if h)
-                    print(f"Calculated total module duration: {total_module_duration}")
+                    # Compute per-module durations server-side.
+                    computed_module_durations = []
+                    for i in range(len(module_names)):
+                        has_topics_flag = request.POST.get(f'has_topics_module_{i}') == 'on'
+                        if has_topics_flag:
+                            topic_hours_list = request.POST.getlist(f'topic_hours_module_{i}')
+                            module_duration = sum(Decimal(h) for h in topic_hours_list if h)
+                        else:
+                            # Safely get module_hours[i] if present
+                            mh = module_hours[i] if i < len(module_hours) else ''
+                            module_duration = Decimal(mh) if mh else Decimal(0)
+                        computed_module_durations.append(module_duration)
+
+                    total_module_duration = sum(computed_module_durations) if computed_module_durations else Decimal(0)
+                    print(f"Calculated total module duration (server-side): {total_module_duration}")
                     print(f"Course total duration from form: {course.total_duration}")
 
                     if course.total_duration != total_module_duration:
@@ -78,12 +91,13 @@ def course_create(request):
 
                     for i in range(len(module_names)):
                         has_topics = request.POST.get(f'has_topics_module_{i}') == 'on'
-                        
-                        print(f"Creating module {i+1}: Name={module_names[i]}, Duration={module_hours[i]}, Has Topics={has_topics}")
+                        # Use the computed duration for persistence
+                        module_duration_value = computed_module_durations[i] if i < len(computed_module_durations) else Decimal(0)
+                        print(f"Creating module {i+1}: Name={module_names[i]}, Duration={module_duration_value}, Has Topics={has_topics}")
                         module = CourseModule.objects.create(
                             course=course,
                             name=module_names[i],
-                            module_duration=module_hours[i],
+                            module_duration=module_duration_value,
                             has_topics=has_topics
                         )
                         print(f"Module created with ID: {module.id}")
@@ -146,8 +160,20 @@ def course_update(request, pk):
                     print("Module names:", module_names)
                     print("Module hours:", module_hours)
 
-                    total_module_duration = sum(Decimal(h) for h in module_hours if h)
-                    print(f"Calculated total module duration: {total_module_duration}")
+                    # Compute per-module durations server-side for update as well.
+                    computed_module_durations = []
+                    for i in range(len(module_names)):
+                        has_topics_flag = request.POST.get(f'has_topics_module_{i}') == 'on'
+                        if has_topics_flag:
+                            topic_hours_list = request.POST.getlist(f'topic_hours_module_{i}')
+                            module_duration = sum(Decimal(h) for h in topic_hours_list if h)
+                        else:
+                            mh = module_hours[i] if i < len(module_hours) else ''
+                            module_duration = Decimal(mh) if mh else Decimal(0)
+                        computed_module_durations.append(module_duration)
+
+                    total_module_duration = sum(computed_module_durations) if computed_module_durations else Decimal(0)
+                    print(f"Calculated total module duration (server-side): {total_module_duration}")
                     print(f"Course total duration from form: {course.total_duration}")
 
                     if course.total_duration != total_module_duration:
@@ -166,12 +192,12 @@ def course_update(request, pk):
 
                     for i in range(len(module_names)):
                         has_topics = request.POST.get(f'has_topics_module_{i}') == 'on'
-                        
-                        print(f"Creating module {i+1}: Name={module_names[i]}, Duration={module_hours[i]}, Has Topics={has_topics}")
+                        module_duration_value = computed_module_durations[i] if i < len(computed_module_durations) else Decimal(0)
+                        print(f"Creating module {i+1}: Name={module_names[i]}, Duration={module_duration_value}, Has Topics={has_topics}")
                         module = CourseModule.objects.create(
                             course=course,
                             name=module_names[i],
-                            module_duration=module_hours[i],
+                            module_duration=module_duration_value,
                             has_topics=has_topics
                         )
                         print(f"Module created with ID: {module.id}")
