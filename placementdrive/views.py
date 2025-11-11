@@ -149,6 +149,23 @@ def company_list(request):
                     unique_courses.append(course.course_name)
                 
         company.unique_courses = unique_courses
+
+        # Compute latest update timestamp across company creation, resume shared statuses, and interviews
+        latest_resume = None
+        try:
+            latest_resume = company.resume_shared_statuses.all()[0] if company.resume_shared_statuses.all() else None
+        except Exception:
+            latest_resume = company.resume_shared_statuses.order_by('-created_at').first()
+
+        latest_interview = company.scheduled_interviews.order_by('-created_at').first()
+
+        candidates = [company.created_at]
+        if latest_resume:
+            candidates.append(latest_resume.created_at)
+        if latest_interview:
+            candidates.append(latest_interview.created_at)
+
+        company.latest_update_at = max(candidates) if candidates else company.created_at
             
     return render(request, 'placementdrive/company_list.html', {
         'companies': companies,

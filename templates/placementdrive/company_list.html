@@ -131,7 +131,7 @@
                     <th>Location</th>
                     <th>Stack</th>
                     <th>Progress</th>
-                    <th>Date</th>
+                    <th>Updated</th>
                     <th>Created By</th>
                     <th>Actions</th>
                 </tr>
@@ -172,7 +172,7 @@
                             </span>
                         {% endif %}
                     </td>
-                    <td>{{ company.date }}</td>
+                    <td>{% if company.latest_update_at %}{{ company.latest_update_at}}{% else %}-{% endif %}</td>
                     <td>{{ company.created_by.name }}</td>
                     <td>
                         <div class="d-flex gap-2 justify-content-center">

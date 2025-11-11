@@ -140,7 +140,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', 'xaiqetsigdskrwqn')
 DEFAULT_FROM_EMAIL = os.environ.get('EMAIL_HOST_USER', 'btreesystem@gmail.com')
 
 # for developement
-DEBUG = True
+# DEBUG = True
 # ALLOWED_HOSTS = ['*']
 
 # DATABASES = {
