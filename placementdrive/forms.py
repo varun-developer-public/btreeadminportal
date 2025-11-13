@@ -125,6 +125,43 @@ class InterviewStudentForm(forms.ModelForm):
             self.add_error('offer_letter', 'An offer letter is required when the status is Placed.')
 
         return cleaned_data
+class InterviewFilterForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        label='Search',
+        widget=forms.TextInput(attrs={'placeholder': 'Search by company or role'})
+    )
+    interview_round = forms.ChoiceField(
+        choices=[('', 'All Rounds')] + Interview.ROUND_CHOICES,
+        required=False,
+        label='Round'
+    )
+    venue = forms.ChoiceField(
+        choices=[('', 'All Venues')] + Interview.VENUE_CHOICES,
+        required=False,
+        label='Venue'
+    )
+    location = forms.ChoiceField(
+        choices=[('', 'All Locations')] + Interview.LOCATION_CHOICES,
+        required=False,
+        label='Location'
+    )
+    courses = forms.ModelMultipleChoiceField(
+        queryset=Course.objects.all(),
+        required=False,
+        label='Courses',
+        widget=forms.SelectMultiple(attrs={'class': 'select2'})
+    )
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Start Date'
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='End Date'
+    )
 class CompanyFilterForm(forms.Form):
     q = forms.CharField(
         required=False,
@@ -161,6 +198,11 @@ class CompanyFilterForm(forms.Form):
         queryset=User.objects.none(),
         required=False,
         label='Created By'
+    )
+    date_type = forms.ChoiceField(
+        choices=[('', 'All Date Types'), ('created', 'Created'), ('updated', 'Updated'), ('interview_date', 'Interview Date')],
+        required=False,
+        label='Date Type'
     )
     start_date = forms.DateField(
         required=False,

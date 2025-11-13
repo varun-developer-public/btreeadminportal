@@ -6,6 +6,7 @@ urlpatterns = [
     path('create/', views.company_create, name='company_create'),
     path('<int:pk>/update/', views.company_update, name='company_update'),
     path('<int:pk>/delete/', views.company_delete, name='company_delete'),
+    path('interviews/', views.interview_list, name='interview_list'),
     path('interview/<int:parent_interview_pk>/add_round/', views.add_interview_round, name='add_interview_round'),
     path('interview/<int:interview_pk>/update_students/', views.update_interview_students, name='update_interview_students'),
     path('interview-student/<int:student_interview_pk>/remove/', views.remove_interview_student, name='remove_interview_student'),

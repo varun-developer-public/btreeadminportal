@@ -101,6 +101,10 @@
                 {{ form.created_by.label_tag }}
                 {{ form.created_by }}
             </div>
+            <div class="filter-group">
+                {{ form.date_type.label_tag }}
+                {{ form.date_type }}
+            </div>
             
             <div class="filter-group">
                 {{ form.start_date.label_tag }}
@@ -172,8 +176,18 @@
                             </span>
                         {% endif %}
                     </td>
-                    <td>{% if company.latest_update_at %}{{ company.latest_update_at}}{% else %}-{% endif %}</td>
-                    <td>{{ company.created_by.name }}</td>
+                    <td>
+                        {% if company.latest_update_at %}
+                            {{ company.latest_update_at }}
+                            {% if company.latest_updated_by %}
+                                &nbsp;by {{ company.latest_updated_by.name|capfirst }}
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+
+                    <td>{{ company.created_at }} by {{ company.created_by.name }}</td>
                     <td>
                         <div class="d-flex gap-2 justify-content-center">
                             <a href="{% url 'company_update' company.pk %}" class="btn btn-update btn-sm"><i class="fas fa-edit"></i></a>
@@ -301,6 +315,9 @@
             <input type="hidden" name="domain" value="{{ request.GET.domain }}">
             <input type="hidden" name="location" value="{{ request.GET.location }}">
             <input type="hidden" name="created_by" value="{{ request.GET.created_by }}">
+            <input type="hidden" name="date_type" value="{{ request.GET.date_type }}">
+            <input type="hidden" name="start_date" value="{{ request.GET.start_date }}">
+            <input type="hidden" name="end_date" value="{{ request.GET.end_date }}">
             <button type="submit" class="btn btn-primary btn-sm">Go</button>
         </form>
     </div>

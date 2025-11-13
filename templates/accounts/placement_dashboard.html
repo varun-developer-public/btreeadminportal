@@ -279,7 +279,7 @@
         <div class="info-card">
             <div class="info-header">
                 <h4 class="info-title"><i class="fas fa-calendar-alt"></i> Upcoming Interviews</h4>
-                <a href="#" class="view-all">View All</a>
+                <a href="{% url 'interview_list' %}" class="view-all">View All</a>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -289,7 +289,13 @@
                             <td>
                                 <strong>{{ interview.company.company_name }}</strong> - Round {{ interview.round_number }} ({{ interview.get_interview_round_display }})
                                 <br>
-                                <small class="text-muted">{{ interview.interview_date|date:"d M Y" }} at {{ interview.interview_time|time:"H:i A" }}</small>
+                                <small class="text-muted">{{ interview.interview_date|date:"d M Y" }} at {{ interview.interview_time|time:"H:i A" }} for
+                                    <span>
+                                    {% for course in interview.courses.all %}
+                                        {{ course.course_name }}{% if not forloop.last %}, {% endif %}
+                                    {% empty %}-{% endfor %}
+                                    </span>
+                                </small>
                             </td>
                             <td>
                                 {% for student_status in interview.student_status.all %}

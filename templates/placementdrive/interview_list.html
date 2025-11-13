@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Upcoming Interviews{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/theme.css' %}">
+<link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
+<style>
+    .view-link:hover{
+        color: blue;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Upcoming Interviews</h2>
+    </div>
+    <form method="get" class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                {{ form.q.label_tag }}
+                {{ form.q }}
+            </div>
+            <div class="filter-group">
+                {{ form.interview_round.label_tag }}
+                {{ form.interview_round }}
+            </div>
+            <div class="filter-group">
+                {{ form.venue.label_tag }}
+                {{ form.venue }}
+            </div>
+            <div class="filter-group">
+                {{ form.location.label_tag }}
+                {{ form.location }}
+            </div>
+        </div>
+        <div class="filter-row">
+            <div class="filter-group">
+                {{ form.courses.label_tag }}
+                {{ form.courses }}
+            </div>
+            <div class="filter-group">
+                {{ form.start_date.label_tag }}
+                {{ form.start_date }}
+            </div>
+            <div class="filter-group">
+                {{ form.end_date.label_tag }}
+                {{ form.end_date }}
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn btn-primary">Apply Filters</button>
+            <a href="{% url 'interview_list' %}" class="btn btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Role</th>
+                    <th>Courses</th>
+                    <th>Round</th>
+                    <th>Type</th>
+                    <th>Venue</th>
+                    <th>Location</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Students</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for interview in interviews %}
+                <tr>
+                    <td>{{ interview.company.company_name }}</td>
+                    <td>{{ interview.applying_role }}</td>
+                    <td>
+                        {% for course in interview.courses.all %}
+                            {{ course.course_name }}{% if not forloop.last %}, {% endif %}
+                        {% empty %}-{% endfor %}
+                    </td>
+                    <td>Round {{ interview.round_number }}</td>
+                    <td>{{ interview.get_interview_round_display }}</td>
+                    <td>{{ interview.get_venue_display }}</td>
+                    <td>{% if interview.location == 'others' %}Others{% else %}{{ interview.location|capfirst }}{% endif %}</td>
+                    <td>{{ interview.interview_date|date:"d M Y" }}</td>
+                    <td>{{ interview.interview_time|time:"h:i A" }}</td>
+                    <td>
+                        {% for student_status in interview.student_status.all %}
+                            <a href="/placements/?q={{ student_status.student.student_id }}" class="view-link">{{ student_status.student.student_id }}</a>{% if not forloop.last %}, {% endif %}
+                        {% empty %}
+                            -
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-calendar-alt me-2"></i>No upcoming interviews.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if interviews.has_other_pages %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if interviews.has_previous %}
+                <a href="?page=1&{{ query_params }}">&laquo; first</a>
+                <a href="?page={{ interviews.previous_page_number }}&{{ query_params }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ interviews.number }} of {{ interviews.paginator.num_pages }}.
+            </span>
+
+            {% if interviews.has_next %}
+                <a href="?page={{ interviews.next_page_number }}&{{ query_params }}">next</a>
+                <a href="?page={{ interviews.paginator.num_pages }}&{{ query_params }}">last &raquo;</a>
+            {% endif %}
+        </span>
+        <form method="get" class="page-search">
+            <input type="number" name="page" min="1" max="{{ interviews.paginator.num_pages }}" placeholder="Page">
+            <input type="hidden" name="q" value="{{ request.GET.q }}">
+            <input type="hidden" name="interview_round" value="{{ request.GET.interview_round }}">
+            <input type="hidden" name="venue" value="{{ request.GET.venue }}">
+            <input type="hidden" name="location" value="{{ request.GET.location }}">
+            {% for course_id in selected_course_ids %}
+            <input type="hidden" name="courses" value="{{ course_id }}">
+            {% endfor %}
+            <input type="hidden" name="start_date" value="{{ request.GET.start_date }}">
+            <input type="hidden" name="end_date" value="{{ request.GET.end_date }}">
+            <button type="submit" class="btn btn-primary btn-sm">Go</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    $('.select2').select2({
+        placeholder: "Select courses",
+        allowClear: true,
+        width: '100%'
+    });
+});
+</script>
+{% endblock %}

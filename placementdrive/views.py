@@ -2,12 +2,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from .models import Company, Interview, InterviewStudent, ResumeSharedStatus
-from .forms import CompanyForm, InterviewScheduleForm, InterviewStudentForm, CompanyFilterForm, ResumeSharedStatusForm
+from .forms import CompanyForm, InterviewScheduleForm, InterviewStudentForm, CompanyFilterForm, ResumeSharedStatusForm, InterviewFilterForm
 from studentsdb.models import Student
 from coursedb.models import Course
 from placementdb.models import CompanyInterview
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Subquery, OuterRef, DateTimeField
+from django.db.models.functions import Coalesce, Greatest, TruncDate
 from django.contrib import messages
 import json
 from datetime import time, datetime
@@ -43,12 +44,30 @@ def company_list(request):
         company_stack = form.cleaned_data.get('company_stack')
         start_date = form.cleaned_data.get('start_date')
         end_date = form.cleaned_data.get('end_date')
+        date_type = form.cleaned_data.get('date_type')
 
 
-        if start_date and end_date:
-            companies = companies.filter(
-                resume_shared_statuses__created_at__range=(start_date, end_date)
-            ).distinct()
+        if start_date and end_date and date_type:
+            if date_type == 'created':
+                companies = companies.filter(created_at__date__range=(start_date, end_date)).distinct()
+            elif date_type == 'updated':
+                latest_resume_subq = ResumeSharedStatus.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
+                latest_interview_subq = Interview.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
+
+                companies = companies.annotate(
+                    latest_resume_created_at=Subquery(latest_resume_subq, output_field=DateTimeField()),
+                    latest_interview_created_at=Subquery(latest_interview_subq, output_field=DateTimeField()),
+                    latest_update=Greatest(
+                        'created_at',
+                        Coalesce('latest_resume_created_at', 'created_at'),
+                        Coalesce('latest_interview_created_at', 'created_at'),
+                    ),
+                    latest_update_date=TruncDate('latest_update')
+                ).filter(latest_update_date__range=(start_date, end_date)).distinct()
+            elif date_type == 'interview_date':
+                companies = companies.filter(
+                    scheduled_interviews__interview_date__range=(start_date, end_date)
+                ).distinct()
         if q:
             companies = companies.filter(
                 Q(company_name__icontains=q) |
@@ -159,18 +178,83 @@ def company_list(request):
 
         latest_interview = company.scheduled_interviews.order_by('-created_at').first()
 
-        candidates = [company.created_at]
-        if latest_resume:
-            candidates.append(latest_resume.created_at)
-        if latest_interview:
-            candidates.append(latest_interview.created_at)
+        candidates = [
+            (company.created_at, company.created_by)
+        ]
 
-        company.latest_update_at = max(candidates) if candidates else company.created_at
-            
+        if latest_resume:
+            candidates.append((latest_resume.created_at, latest_resume.created_by))
+
+        if latest_interview:
+            candidates.append((latest_interview.created_at, latest_interview.created_by))
+
+        company.latest_update_at, company.latest_updated_by = max(
+            candidates, key=lambda x: x[0]
+        )
+        
     return render(request, 'placementdrive/company_list.html', {
         'companies': companies,
         'form': form,
         'query_params': query_params.urlencode(),
+    })
+
+@login_required
+def interview_list(request):
+    from django.utils import timezone
+    from django.db.models import Max, F
+
+    qs = Interview.objects.filter(
+        interview_date__gte=timezone.now().date()
+    ).annotate(
+        latest_round=Max('company__scheduled_interviews__round_number')
+    ).filter(
+        round_number=F('latest_round')
+    ).select_related('company').prefetch_related('student_status__student', 'courses')\
+     .order_by('interview_date', 'interview_time')
+
+    form = InterviewFilterForm(request.GET or None)
+    if form.is_valid():
+        q = form.cleaned_data.get('q')
+        interview_round = form.cleaned_data.get('interview_round')
+        venue = form.cleaned_data.get('venue')
+        location = form.cleaned_data.get('location')
+        courses = form.cleaned_data.get('courses')
+        start_date = form.cleaned_data.get('start_date')
+        end_date = form.cleaned_data.get('end_date')
+
+        if q:
+            qs = qs.filter(Q(company__company_name__icontains=q) | Q(applying_role__icontains=q))
+        if interview_round:
+            qs = qs.filter(interview_round=interview_round)
+        if venue:
+            qs = qs.filter(venue=venue)
+        if location:
+            qs = qs.filter(location=location)
+        if courses and courses.exists():
+            qs = qs.filter(courses__in=courses).distinct()
+        if start_date and end_date:
+            qs = qs.filter(interview_date__range=(start_date, end_date))
+
+    paginator = Paginator(qs, 10)
+    page = request.GET.get('page')
+    try:
+        interviews = paginator.page(page)
+    except PageNotAnInteger:
+        interviews = paginator.page(1)
+    except EmptyPage:
+        interviews = paginator.page(paginator.num_pages)
+
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+
+    selected_course_ids = request.GET.getlist('courses')
+
+    return render(request, 'placementdrive/interview_list.html', {
+        'interviews': interviews,
+        'form': form,
+        'query_params': query_params.urlencode(),
+        'selected_course_ids': selected_course_ids,
     })
 
 @login_required
