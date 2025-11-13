@@ -21,7 +21,7 @@ URL_ROLE_MAPPINGS = {
         'transferrequest-list','transferrequest-detail',
         'trainerhandover-list','trainerhandover-detail',
         'batchtransaction-list','batchtransaction-detail',
-        'studenthistory-list','studenthistory-detail','batch_report',
+        'studenthistory-list','studenthistory-detail','batch_report','interview_list',
         'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','requests_list','student_report'
     ],
     'placement': [
@@ -31,7 +31,7 @@ URL_ROLE_MAPPINGS = {
         'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses',
         'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
         'ajax_load_students','postpone_interview_round', 'restart_interview_cycle','student_report','api_courses_by_category','edit_resume_shared_status',
-        'delete_placement','batch_report'
+        'delete_placement','batch_report','interview_list'
     ],
     'trainer': [
         'trainer_dashboard',
