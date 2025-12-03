@@ -124,6 +124,7 @@ def student_list(request):
         unique_batches = {batch for batch in batches}
         student.unique_trainers = list(unique_trainers)
         student.unique_batches = list(unique_batches)
+        student.active_batch_ids = list(student.batchstudent_set.filter(is_active=True).values_list('batch_id', flat=True))
 
     paginator = Paginator(student_list, 10)  # Show 10 students per page
     page = request.GET.get('page')

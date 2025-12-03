@@ -95,6 +95,30 @@ class PlacementFilterForm(forms.Form):
         label="Status"
     )
 
+    course_start_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Course Start From'
+    )
+
+    course_start_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Course Start To'
+    )
+
+    course_end_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Course End From'
+    )
+
+    course_end_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Course End To'
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['ug_degree'].choices = [('', 'All Degrees')] + [(d, d) for d in Student.objects.values_list('ugdegree', flat=True).distinct().order_by('ugdegree') if d]

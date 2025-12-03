@@ -102,17 +102,28 @@
                 {{ form.created_by }}
             </div>
             <div class="filter-group">
-                {{ form.date_type.label_tag }}
-                {{ form.date_type }}
-            </div>
-            
-            <div class="filter-group">
-                {{ form.start_date.label_tag }}
-                {{ form.start_date }}
+                {{ form.created_from.label_tag }}
+                {{ form.created_from }}
             </div>
             <div class="filter-group">
-                {{ form.end_date.label_tag }}
-                {{ form.end_date }}
+                {{ form.created_to.label_tag }}
+                {{ form.created_to }}
+            </div>
+            <div class="filter-group">
+                {{ form.updated_from.label_tag }}
+                {{ form.updated_from }}
+            </div>
+            <div class="filter-group">
+                {{ form.updated_to.label_tag }}
+                {{ form.updated_to }}
+            </div>
+            <div class="filter-group">
+                {{ form.interview_from.label_tag }}
+                {{ form.interview_from }}
+            </div>
+            <div class="filter-group">
+                {{ form.interview_to.label_tag }}
+                {{ form.interview_to }}
             </div>
         </div>
              <div class="filter-group" style="flex: 2;"></div>
@@ -315,9 +326,12 @@
             <input type="hidden" name="domain" value="{{ request.GET.domain }}">
             <input type="hidden" name="location" value="{{ request.GET.location }}">
             <input type="hidden" name="created_by" value="{{ request.GET.created_by }}">
-            <input type="hidden" name="date_type" value="{{ request.GET.date_type }}">
-            <input type="hidden" name="start_date" value="{{ request.GET.start_date }}">
-            <input type="hidden" name="end_date" value="{{ request.GET.end_date }}">
+            <input type="hidden" name="created_from" value="{{ request.GET.created_from }}">
+            <input type="hidden" name="created_to" value="{{ request.GET.created_to }}">
+            <input type="hidden" name="updated_from" value="{{ request.GET.updated_from }}">
+            <input type="hidden" name="updated_to" value="{{ request.GET.updated_to }}">
+            <input type="hidden" name="interview_from" value="{{ request.GET.interview_from }}">
+            <input type="hidden" name="interview_to" value="{{ request.GET.interview_to }}">
             <button type="submit" class="btn btn-primary btn-sm">Go</button>
         </form>
     </div>

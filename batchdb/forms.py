@@ -194,6 +194,22 @@ class BatchFilterForm(forms.Form):
         label="Trainer Type"
     )
 
+    percentage_min = forms.DecimalField(
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Min %'}),
+        label="Min %"
+    )
+
+    percentage_max = forms.DecimalField(
+        required=False,
+        min_value=0,
+        max_value=100,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'placeholder': 'Max %'}),
+        label="Max %"
+    )
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         

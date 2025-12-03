@@ -199,20 +199,35 @@ class CompanyFilterForm(forms.Form):
         required=False,
         label='Created By'
     )
-    date_type = forms.ChoiceField(
-        choices=[('', 'All Date Types'), ('created', 'Created'), ('updated', 'Updated'), ('interview_date', 'Interview Date')],
-        required=False,
-        label='Date Type'
-    )
-    start_date = forms.DateField(
+    created_from = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={'type': 'date'}),
-        label="Start Date"
+        label='Created From'
     )
-    end_date = forms.DateField(
+    created_to = forms.DateField(
         required=False,
         widget=forms.DateInput(attrs={'type': 'date'}),
-        label="End Date"
+        label='Created To'
+    )
+    updated_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Updated From'
+    )
+    updated_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Updated To'
+    )
+    interview_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Interview From'
+    )
+    interview_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label='Interview To'
     )
 
     def __init__(self, *args, **kwargs):

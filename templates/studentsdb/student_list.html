@@ -123,7 +123,7 @@
             <td>
                 <div class="batch-list-cell">
                     {% for batch in student.unique_batches %}
-                       <a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-secondary">{{ batch.batch_id }} - {{ batch.course.course_name }}</span></a>
+                       <a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge {% if batch.id in student.active_batch_ids %}bg-primary{% else %}bg-secondary{% endif %}">{{ batch.batch_id }} - {{ batch.course.course_name }}</span></a>
                     {% empty %}
                         No batches
                     {% endfor %}

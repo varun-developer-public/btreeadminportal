@@ -68,6 +68,8 @@ def batch_list(request):
         end_date = form.cleaned_data.get('end_date')
         time_slot = form.cleaned_data.get('time_slot')
         trainer_type = form.cleaned_data.get('trainer_type')
+        percentage_min = form.cleaned_data.get('percentage_min')
+        percentage_max = form.cleaned_data.get('percentage_max')
 
         if query:
             batch_list = batch_list.filter(
@@ -101,6 +103,12 @@ def batch_list(request):
 
         if trainer_type:
             batch_list = batch_list.filter(trainer__employment_type=trainer_type)
+
+        if percentage_min is not None:
+            batch_list = batch_list.filter(batch_percentage__gte=percentage_min)
+
+        if percentage_max is not None:
+            batch_list = batch_list.filter(batch_percentage__lte=percentage_max)
 
     paginator = Paginator(batch_list, 10)
     page = request.GET.get('page')

@@ -42,32 +42,36 @@ def company_list(request):
         location = form.cleaned_data.get('location')
         created_by = form.cleaned_data.get('created_by')
         company_stack = form.cleaned_data.get('company_stack')
-        start_date = form.cleaned_data.get('start_date')
-        end_date = form.cleaned_data.get('end_date')
-        date_type = form.cleaned_data.get('date_type')
+        created_from = form.cleaned_data.get('created_from')
+        created_to = form.cleaned_data.get('created_to')
+        updated_from = form.cleaned_data.get('updated_from')
+        updated_to = form.cleaned_data.get('updated_to')
+        interview_from = form.cleaned_data.get('interview_from')
+        interview_to = form.cleaned_data.get('interview_to')
 
 
-        if start_date and end_date and date_type:
-            if date_type == 'created':
-                companies = companies.filter(created_at__date__range=(start_date, end_date)).distinct()
-            elif date_type == 'updated':
-                latest_resume_subq = ResumeSharedStatus.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
-                latest_interview_subq = Interview.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
+        if created_from and created_to:
+            companies = companies.filter(created_at__date__range=(created_from, created_to)).distinct()
 
-                companies = companies.annotate(
-                    latest_resume_created_at=Subquery(latest_resume_subq, output_field=DateTimeField()),
-                    latest_interview_created_at=Subquery(latest_interview_subq, output_field=DateTimeField()),
-                    latest_update=Greatest(
-                        'created_at',
-                        Coalesce('latest_resume_created_at', 'created_at'),
-                        Coalesce('latest_interview_created_at', 'created_at'),
-                    ),
-                    latest_update_date=TruncDate('latest_update')
-                ).filter(latest_update_date__range=(start_date, end_date)).distinct()
-            elif date_type == 'interview_date':
-                companies = companies.filter(
-                    scheduled_interviews__interview_date__range=(start_date, end_date)
-                ).distinct()
+        if updated_from and updated_to:
+            latest_resume_subq = ResumeSharedStatus.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
+            latest_interview_subq = Interview.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
+
+            companies = companies.annotate(
+                latest_resume_created_at=Subquery(latest_resume_subq, output_field=DateTimeField()),
+                latest_interview_created_at=Subquery(latest_interview_subq, output_field=DateTimeField()),
+                latest_update=Greatest(
+                    'created_at',
+                    Coalesce('latest_resume_created_at', 'created_at'),
+                    Coalesce('latest_interview_created_at', 'created_at'),
+                ),
+                latest_update_date=TruncDate('latest_update')
+            ).filter(latest_update_date__range=(updated_from, updated_to)).distinct()
+
+        if interview_from and interview_to:
+            companies = companies.filter(
+                scheduled_interviews__interview_date__range=(interview_from, interview_to)
+            ).distinct()
         if q:
             companies = companies.filter(
                 Q(company_name__icontains=q) |

@@ -34,6 +34,10 @@ def placement_list(request):
         is_active = form.cleaned_data.get('is_active')
         interview_count = form.cleaned_data.get('interview_count')
         status = form.cleaned_data.get('status')
+        course_start_from = form.cleaned_data.get('course_start_from')
+        course_start_to = form.cleaned_data.get('course_start_to')
+        course_end_from = form.cleaned_data.get('course_end_from')
+        course_end_to = form.cleaned_data.get('course_end_to')
 
         if status:
             placements = placements.filter(**{f'student__{status}': True})
@@ -82,6 +86,15 @@ def placement_list(request):
         if interview_count is not None:
             placements = placements.filter(interview_count=interview_count)
 
+        if course_start_from:
+            placements = placements.filter(student__start_date__gte=course_start_from)
+        if course_start_to:
+            placements = placements.filter(student__start_date__lte=course_start_to)
+        if course_end_from:
+            placements = placements.filter(student__end_date__gte=course_end_from)
+        if course_end_to:
+            placements = placements.filter(student__end_date__lte=course_end_to)
+
     # Process batches to get unique trainers and batch IDs
     for placement in placements:
         batches = placement.student.batches.all()
@@ -89,6 +102,7 @@ def placement_list(request):
         unique_batches = {batch for batch in batches}
         placement.unique_trainers = list(unique_trainers)
         placement.unique_batches = list(unique_batches)
+        placement.active_batch_ids = list(placement.student.batchstudent_set.filter(is_active=True).values_list('batch_id', flat=True))
 
     paginator = Paginator(placements, 10)
     page = request.GET.get('page')
@@ -130,6 +144,10 @@ def pending_resumes_list(request):
         location = form.cleaned_data.get('location')
         course_percentage = form.cleaned_data.get('course_percentage')
         is_active = form.cleaned_data.get('is_active')
+        course_start_from = form.cleaned_data.get('course_start_from')
+        course_start_to = form.cleaned_data.get('course_start_to')
+        course_end_from = form.cleaned_data.get('course_end_from')
+        course_end_to = form.cleaned_data.get('course_end_to')
 
         if q:
             placements = placements.filter(
@@ -168,6 +186,15 @@ def pending_resumes_list(request):
                 placements = placements.filter(is_active=True)
             elif is_active == 'no':
                 placements = placements.filter(is_active=False)
+
+        if course_start_from:
+            placements = placements.filter(student__start_date__gte=course_start_from)
+        if course_start_to:
+            placements = placements.filter(student__start_date__lte=course_start_to)
+        if course_end_from:
+            placements = placements.filter(student__end_date__gte=course_end_from)
+        if course_end_to:
+            placements = placements.filter(student__end_date__lte=course_end_to)
 
     paginator = Paginator(placements, 10)
     page = request.GET.get('page')

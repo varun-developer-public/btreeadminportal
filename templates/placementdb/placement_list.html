@@ -88,8 +88,26 @@
                                {{ form.status.label_tag }}
                                {{ form.status }}
                           </div>
+                        </div>
+                        <div class="filter-row">
+                           <div class="filter-group">
+                                 {{ form.course_start_from.label_tag }}
+                                 {{ form.course_start_from }}
+                           </div>
+                           <div class="filter-group">
+                                 {{ form.course_start_to.label_tag }}
+                                 {{ form.course_start_to }}
+                           </div>
+                           <div class="filter-group">
+                                 {{ form.course_end_from.label_tag }}
+                                 {{ form.course_end_from }}
+                           </div>
+                           <div class="filter-group">
+                                 {{ form.course_end_to.label_tag }}
+                                 {{ form.course_end_to }}
+                           </div>
                        </div>
-                      <div class="filter-actions">
+                       <div class="filter-actions">
                            <button type="submit" class="btn-primary">Apply Filters</button>
                             <a href="{% url 'placementdb:placement_list' %}" class="btn-secondary">Reset</a>
                         </div>
@@ -159,7 +177,7 @@
                     <td>{{ placement.interview_count }}</td>
                     <td>
                         {% for batch in placement.unique_batches %}
-                            <a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-info">{{ batch.batch_id }}</span></a>
+                            <a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge {% if batch.id in placement.active_batch_ids %}bg-primary{% else %}bg-info{% endif %}">{{ batch.batch_id }}</span></a>
                         {% empty %}
                             -
                         {% endfor %}
@@ -257,6 +275,10 @@
             <input type="hidden" name="resume_status" value="{{ request.GET.resume_status }}">
             <input type="hidden" name="is_active" value="{{ request.GET.is_active }}">
             <input type="hidden" name="interview_count" value="{{ request.GET.interview_count }}">
+            <input type="hidden" name="course_start_from" value="{{ request.GET.course_start_from }}">
+            <input type="hidden" name="course_start_to" value="{{ request.GET.course_start_to }}">
+            <input type="hidden" name="course_end_from" value="{{ request.GET.course_end_from }}">
+            <input type="hidden" name="course_end_to" value="{{ request.GET.course_end_to }}">
             <button type="submit">Go</button>
         </form>
     </div>

@@ -320,6 +320,14 @@
                 {{ form.end_date.label_tag }}
                 {{ form.end_date }}
             </div>
+            <div class="filter-group">
+                {{ form.percentage_min.label_tag }}
+                {{ form.percentage_min }}
+            </div>
+            <div class="filter-group">
+                {{ form.percentage_max.label_tag }}
+                {{ form.percentage_max }}
+            </div>
             {% if user.role != 'trainer' %}
             <div class="filter-group">
                 {{ form.time_slot.label_tag }}
@@ -345,11 +353,13 @@
                     <th>Batch ID</th>
                     <th>Course</th>
                     <th>Trainer</th>
+                    <th>Trainer Type</th>
+                    <th>Batch %</th>
+                    <th>Status</th>
                     <th>Students</th>
                     <th>Start</th>
                     <th>End</th>
                     <th>Slot</th>
-                    <th>Status</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -359,6 +369,13 @@
                     <td><a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-secondary">{{ batch.batch_id }}</span></a></td>
                     <td>{{ batch.course.course_name }}</td>
                     <td>{{ batch.trainer.name }}</td>
+                    <td>{{ batch.trainer.get_employment_type_display }}</td>
+                    <td>{{ batch.batch_percentage|floatformat:2 }}%</td>
+                    <td>
+                        <span class="badge {% if batch.batch_status == 'YTS' %}bg-warning text-dark{% elif batch.batch_status == 'IP' %}bg-success{% else %}bg-secondary{% endif %}">
+                            {{ batch.get_batch_status_display }}
+                        </span>
+                    </td>
                     <td>
                         <div class="student-list-cell">
                             {% for batch_student in batch.batchstudent_set.all %}
@@ -373,11 +390,6 @@
                     <td>{{ batch.start_date|date:"d-m-Y" }}</td>
                     <td>{{ batch.end_date|date:"d-m-Y" }}</td>
                     <td>{{ batch.get_slottime }}</td>
-                    <td>
-                        <span class="badge {% if batch.batch_status == 'YTS' %}bg-warning text-dark{% elif batch.batch_status == 'IP' %}bg-success{% else %}bg-secondary{% endif %}">
-                            {{ batch.get_batch_status_display }}
-                        </span>
-                    </td>
                     <td>
                         <div class="d-flex gap-2">
                             {% if user.role != 'trainer' %}
@@ -408,7 +420,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="9" class="text-center text-muted">No batches found</td></tr>
+                <tr><td colspan="11" class="text-center text-muted">No batches found</td></tr>
                 {% endfor %}
             </tbody>
         </table>
