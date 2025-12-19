@@ -1,10 +1,11 @@
 from studentsdb.forms import StudentPlacementForm
+from studentsdb.models import Student
 from .models import Placement, CompanyInterview
 # from .models import Company
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from .forms import PlacementUpdateForm, PlacementFilterForm, CompanyInterviewForm
+from .forms import PlacementUpdateForm, PlacementFilterForm, CompanyInterviewForm, PlacedStudentsFilterForm
 from django.db.models import Q, Count
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from placementdrive.models import Company
@@ -266,3 +267,61 @@ def delete_placement(request, pk):
         messages.success(request, "Placement deleted successfully.")
         return redirect('placementdb:placement_list')
     return render(request, 'placementdb/placement_confirm_delete.html', {'placement': placement})
+
+@login_required
+def placed_students_list(request):
+    from placementdrive.models import InterviewStudent
+    from django.db.models import OuterRef, Subquery, F
+    from django.db.models.functions import Coalesce
+
+    latest_placed_date_sq = InterviewStudent.objects.filter(
+        student=OuterRef('pk'), status='placed'
+    ).order_by('-interview__interview_date').values('interview__interview_date')[:1]
+
+    latest_placed_company_sq = InterviewStudent.objects.filter(
+        student=OuterRef('pk'), status='placed'
+    ).order_by('-interview__interview_date').values('interview__company__company_name')[:1]
+
+    qs = (
+        Student.objects.filter(course_status='P')
+        .annotate(
+            latest_placed_date=Coalesce(Subquery(latest_placed_date_sq), F('end_date')),
+            latest_placed_company=Subquery(latest_placed_company_sq)
+        )
+        .order_by('-latest_placed_date')
+    )
+
+    form = PlacedStudentsFilterForm(request.GET)
+    if form.is_valid():
+        q = form.cleaned_data.get('q')
+        start_date = form.cleaned_data.get('start_date')
+        end_date = form.cleaned_data.get('end_date')
+        if q:
+            qs = qs.filter(
+                Q(first_name__icontains=q) |
+                Q(last_name__icontains=q) |
+                Q(student_id__icontains=q)
+            )
+        if start_date:
+            qs = qs.filter(latest_placed_date__gte=start_date)
+        if end_date:
+            qs = qs.filter(latest_placed_date__lte=end_date)
+
+    paginator = Paginator(qs, 10)
+    page = request.GET.get('page')
+    try:
+        students = paginator.page(page)
+    except PageNotAnInteger:
+        students = paginator.page(1)
+    except EmptyPage:
+        students = paginator.page(paginator.num_pages)
+
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+
+    return render(request, 'placementdb/placed_students_list.html', {
+        'students': students,
+        'form': form,
+        'query_params': query_params.urlencode(),
+    })

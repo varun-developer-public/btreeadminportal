@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import placement_list, update_placement, pending_resumes_list, update_interview, delete_placement
+from .views import placement_list, update_placement, pending_resumes_list, update_interview, delete_placement, placed_students_list
 
 app_name = 'placementdb'
 
@@ -8,5 +8,6 @@ urlpatterns = [
     path('<int:pk>/update/', update_placement, name='update_placement'),
     path('interview/<int:pk>/update/', update_interview, name='update_interview'),
     path('pending-resumes/', pending_resumes_list, name='pending_resumes_list'),
+    path('placed-students/', placed_students_list, name='placed_students_list'),
     path('<int:pk>/delete/', delete_placement, name='delete_placement'),
 ]

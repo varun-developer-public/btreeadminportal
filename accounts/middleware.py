@@ -31,7 +31,7 @@ URL_ROLE_MAPPINGS = {
         'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses',
         'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
         'ajax_load_students','postpone_interview_round', 'restart_interview_cycle','student_report','api_courses_by_category','edit_resume_shared_status',
-        'delete_placement','batch_report','interview_list'
+        'delete_placement','batch_report','interview_list','placed_students_list'
     ],
     'trainer': [
         'trainer_dashboard',

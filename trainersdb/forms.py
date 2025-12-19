@@ -70,6 +70,8 @@ class TrainerForm(forms.ModelForm):
         instance = super(TrainerForm, self).save(commit=False)
         instance.timing_slots = self.cleaned_data.get('timing_slots')
         instance.commercials = self.cleaned_data.get('commercials')
+        if instance.pk is None and not self.cleaned_data.get('is_active', True):
+            instance.is_active = True
         if commit:
             instance.save()
             self.save_m2m()

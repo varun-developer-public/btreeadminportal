@@ -341,7 +341,7 @@
     <div class="info-card mt-4">
         <div class="info-header">
             <h4 class="info-title"><i class="fas fa-user-graduate"></i> Recently Placed Students</h4>
-            <a href="#" class="view-all">View All</a>
+            <a href="{% url 'placementdb:placed_students_list' %}" class="view-all">View All</a>
         </div>
         <div class="table-responsive">
             <table class="table table-hover">
@@ -350,7 +350,7 @@
                     <tr>
                         <td>{{ student.first_name }} {{ student.last_name|default:"" }}🏆</td>
                         <td>{{ courses_dict|get_item:student.course_id|default:"-" }}</td>
-                        <td>{{ student.end_date|date:"d M Y" }}</td>
+                        <td>{{ student.latest_placed_date|date:"d M Y" }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="3" class="no-data">No students have been placed recently.</td></tr>

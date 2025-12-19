@@ -28,13 +28,14 @@ def is_batch_coordinator(user):
     return user.is_authenticated and (user.role == 'batch_coordination' or user.is_superuser)
 from django.db.models import Sum, Q, F
 from batchdb.models import Batch
-from django.db.models.functions import TruncMonth
+from django.db.models.functions import TruncMonth, Coalesce
 from studentsdb.models import Student
 from paymentdb.models import Payment
 from settingsdb.models import TransactionLog
 from placementdb.models import Placement
 from placementdrive.models import Company
 from datetime import datetime
+from django.db.models import OuterRef, Subquery
 
 from django.utils import timezone
 from datetime import timedelta
@@ -631,7 +632,15 @@ def placement_dashboard(request):
 
 
     # Table Data
-    recently_placed_students = students_in_pool.filter(course_status='P').order_by('-end_date')[:5]
+    from placementdrive.models import InterviewStudent
+    latest_placed_date_sq = InterviewStudent.objects.filter(
+        student=OuterRef('pk'), status='placed'
+    ).order_by('-interview__interview_date').values('interview__interview_date')[:1]
+    recently_placed_students = (
+        Student.objects.filter(course_status='P')
+        .annotate(latest_placed_date=Coalesce(Subquery(latest_placed_date_sq), F('end_date')))
+        .order_by('-latest_placed_date')[:5]
+    )
     
     # Manually fetch courses for all student lists
     from coursedb.models import Course
@@ -656,15 +665,14 @@ def placement_dashboard(request):
     # Fetch upcoming interviews using the correct 'Interview' model from 'placementdrive'
     from placementdrive.models import Interview
 
-    from django.db.models import Max
-    # Get the latest interview round for each company without using DISTINCT ON
-    upcoming_interviews = Interview.objects.filter(
-        interview_date__gte=timezone.now().date()
-    ).annotate(
-        latest_round=Max('company__scheduled_interviews__round_number')
-    ).filter(
-        round_number=F('latest_round')
-    ).select_related('company').prefetch_related('student_status__student').order_by('interview_date')[:5]
+    # Upcoming interviews strictly by scheduled date (ignoring round/latest-round)
+    upcoming_interviews = (
+        Interview.objects
+        .filter(interview_date__gte=timezone.now().date())
+        .select_related('company')
+        .prefetch_related('student_status__student')
+        .order_by('interview_date', 'interview_time')[:5]
+    )
     students_yet_to_be_placed = placements.filter(is_active=True, student__course_status__in=['IP', 'C', 'YTS', 'H']).select_related('student')[:10]
 
     context = {

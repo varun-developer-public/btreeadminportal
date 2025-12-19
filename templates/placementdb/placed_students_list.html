@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Placed Students{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/theme.css' %}">
+<link rel="stylesheet" href="{% static 'css/list_pages.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0"><i class="fas fa-user-graduate me-2"></i>Placed Students</h2>
+    </div>
+    <form method="get" class="filters">
+        <div class="filter-row">
+            <div class="filter-group">
+                {{ form.q.label_tag }}
+                {{ form.q }}
+            </div>
+            <div class="filter-group">
+                {{ form.start_date.label_tag }}
+                {{ form.start_date }}
+            </div>
+            <div class="filter-group">
+                {{ form.end_date.label_tag }}
+                {{ form.end_date }}
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filters</button>
+            <a href="{% url 'placementdb:placed_students_list' %}" class="btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Company</th>
+                    <th>Course</th>
+                    <th>Placed Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                    <tr>
+                        <td>{{ s.first_name }} {{ s.last_name|default:"" }}</td>
+                        <td>{{ s.latest_placed_company|default:"-" }}</td>
+                        <td>{{ s.course.course_name|default:"-" }}</td>
+                        <td>{{ s.latest_placed_date|date:"d M Y" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            <i class="fas fa-user-slash me-2"></i>No placed students found.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if students.has_other_pages %}
+    <div class="pagination">
+        <span class="step-links">
+            {% if students.has_previous %}
+                <a href="?page=1&{{ query_params }}">&laquo; first</a>
+                <a href="?page={{ students.previous_page_number }}&{{ query_params }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ students.number }} of {{ students.paginator.num_pages }}.
+            </span>
+
+            {% if students.has_next %}
+                <a href="?page={{ students.next_page_number }}&{{ query_params }}">next</a>
+                <a href="?page={{ students.paginator.num_pages }}&{{ query_params }}">last &raquo;</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

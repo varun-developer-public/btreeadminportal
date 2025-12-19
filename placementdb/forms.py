@@ -137,3 +137,20 @@ class PlacementFilterForm(forms.Form):
                 self.fields['course'].queryset = Course.objects.filter(category_id=category_id).order_by('course_name')
             except (ValueError, TypeError):
                 pass
+
+class PlacedStudentsFilterForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        label='Search',
+        widget=forms.TextInput(attrs={'placeholder': 'Name or ID'})
+    )
+    start_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Placed From'
+    )
+    end_date = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Placed To'
+    )

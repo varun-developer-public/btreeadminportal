@@ -500,7 +500,7 @@ class TransferRequest(models.Model):
         for student in students_to_transfer:
             # Deactivate in the source batch
             try:
-                batch_student = BatchStudent.objects.get(batch=self.from_batch, student=student)
+                batch_student = BatchStudent.objects.get(batch=self.from_batch, student=student, is_active=True)
                 batch_student.deactivate(user=approved_by)
                 
                 # Log the transfer out transaction
