@@ -169,15 +169,25 @@ def update_batch(request, pk):
             # Use the existing batch end_date if no value is posted
             if batch.end_date:
                 post_data['end_date'] = batch.end_date.isoformat()
+        # Ensure tentative_end_date has a value; default to end_date
+        if not post_data.get('tentative_end_date') and batch.end_date:
+            post_data['tentative_end_date'] = batch.end_date.isoformat()
         form = BatchUpdateForm(post_data, instance=batch)
         # Make end_date readonly for trainers at render time
         if request.user.role == 'trainer':
             form.fields['end_date'].widget.attrs['readonly'] = True
+        # Tentative End Date edit permissions: trainers, staff, batch_coordination can edit
+        allowed_roles_for_tentative = {'trainer', 'staff', 'batch_coordination', 'admin'}
+        if not (request.user.is_superuser or request.user.role in allowed_roles_for_tentative):
+            form.fields['tentative_end_date'].widget.attrs['readonly'] = True
         if form.is_valid():
             batch = form.save(commit=False)
             # Enforce that trainers cannot change end_date server-side
             if request.user.role == 'trainer' and batch.end_date != Batch.objects.get(pk=batch.pk).end_date:
                 batch.end_date = Batch.objects.get(pk=batch.pk).end_date
+            # Enforce tentative_end_date server-side for unauthorized roles
+            if not (request.user.is_superuser or request.user.role in allowed_roles_for_tentative):
+                batch.tentative_end_date = Batch.objects.get(pk=batch.pk).tentative_end_date
 
             batch.updated_by = request.user
             batch.save()
@@ -224,9 +234,15 @@ def update_batch(request, pk):
             messages.success(request, f"Batch {batch.batch_id} updated successfully.")
             return redirect('batchdb:batch_list')
     else:
-        form = BatchUpdateForm(instance=batch, initial={'days': batch.days})
+        initial_data = {'days': batch.days}
+        if not batch.tentative_end_date and batch.end_date:
+            initial_data['tentative_end_date'] = batch.end_date
+        form = BatchUpdateForm(instance=batch, initial=initial_data)
         if request.user.role == 'trainer':
             form.fields['end_date'].widget.attrs['readonly'] = True
+        allowed_roles_for_tentative = {'trainer', 'staff', 'batch_coordination', 'admin'}
+        if not (request.user.is_superuser or request.user.role in allowed_roles_for_tentative):
+            form.fields['tentative_end_date'].widget.attrs['readonly'] = True
     context = {
         'form': form,
         'batch': batch,
@@ -463,21 +479,28 @@ class BatchViewSet(viewsets.ModelViewSet):
     
     @action(detail=True, methods=['post'])
     def remove_student(self, request, pk=None):
+        if not request.user.is_superuser:
+            return Response({'error': 'Only superadmin can remove students from a batch'}, status=status.HTTP_403_FORBIDDEN)
         batch = self.get_object()
         student_id = request.data.get('student_id')
         
         if not student_id:
             return Response({'error': 'Student ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            batch_student = BatchStudent.objects.get(batch=batch, student_id=student_id, is_active=True)
-        except BatchStudent.DoesNotExist:
-            return Response({'error': 'Active student not found in this batch'}, status=status.HTTP_404_NOT_FOUND)
-        
-        # Deactivate the student
-        batch_student.deactivate(user=request.user)
-        
-        return Response({'message': 'Student removed from batch'}, status=status.HTTP_200_OK)
+        # Active removal: deactivate
+        active_qs = BatchStudent.objects.filter(batch=batch, student_id=student_id, is_active=True)
+        if active_qs.exists():
+            bs = active_qs.first()
+            bs.deactivate(user=request.user)
+            return Response({'message': 'Student marked inactive and removed from active list'}, status=status.HTTP_200_OK)
+
+        # Inactive removal: delete record
+        inactive_qs = BatchStudent.objects.filter(batch=batch, student_id=student_id, is_active=False)
+        if inactive_qs.exists():
+            inactive_qs.first().delete()
+            return Response({'message': 'Inactive student removed from batch history'}, status=status.HTTP_200_OK)
+
+        return Response({'error': 'Student not found in this batch'}, status=status.HTTP_404_NOT_FOUND)
 
 class TransferRequestViewSet(viewsets.ModelViewSet):
     queryset = TransferRequest.objects.all()
@@ -1084,6 +1107,32 @@ def batch_report(request, pk):
     }
     
     return render(request, 'batchdb/batch_report.html', context)
+
+@login_required
+@require_POST
+def remove_student_from_batch(request, pk, student_id):
+    batch = get_object_or_404(Batch, pk=pk)
+    if not request.user.is_superuser:
+        messages.error(request, "Only superadmin can remove students from a batch.")
+        return redirect('batchdb:batch_report', pk=batch.pk)
+
+    # First, try to deactivate if active
+    active_qs = BatchStudent.objects.filter(batch=batch, student_id=student_id, is_active=True)
+    if active_qs.exists():
+        bs = active_qs.first()
+        bs.deactivate(user=request.user)
+        messages.success(request, "Student marked inactive and removed from active list.")
+        return redirect('batchdb:batch_report', pk=batch.pk)
+
+    # Otherwise, delete inactive association
+    inactive_qs = BatchStudent.objects.filter(batch=batch, student_id=student_id, is_active=False)
+    if inactive_qs.exists():
+        inactive_qs.first().delete()
+        messages.success(request, "Inactive student removed from this batch history.")
+        return redirect('batchdb:batch_report', pk=batch.pk)
+
+    messages.error(request, "Student not found in this batch.")
+    return redirect('batchdb:batch_report', pk=batch.pk)
 
 def view_handover_requests(request):
     handover_requests = TrainerHandover.objects.filter(status='PENDING')

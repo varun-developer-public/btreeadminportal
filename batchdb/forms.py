@@ -129,7 +129,7 @@ class BatchCreationForm(forms.ModelForm):
 class BatchUpdateForm(forms.ModelForm):
     class Meta:
         model = Batch
-        fields = ['batch_status', 'batch_percentage', 'end_date']
+        fields = ['batch_status', 'batch_percentage', 'end_date', 'tentative_end_date']
         widgets = {
             'batch_status': forms.Select(attrs={'class': 'form-control'}),
             'batch_percentage': forms.NumberInput(attrs={
@@ -139,6 +139,7 @@ class BatchUpdateForm(forms.ModelForm):
                 'max': '100'
             }),
             'end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'tentative_end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 class BatchFilterForm(forms.Form):
     q = forms.CharField(

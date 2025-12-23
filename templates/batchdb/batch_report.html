@@ -80,6 +80,9 @@
                             <th>Percentage</th>
                             <th>Email</th>
                             <th>Phone</th>
+                            {% if request.user.is_superuser %}
+                            <th>Actions</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -90,6 +93,17 @@
                             <td>{{ student.course_percentage }}</td>
                             <td>{{ student.email }}</td>
                             <td>{{ student.phone }}</td>
+                            {% if request.user.is_superuser %}
+                            <td>
+                                <form method="post" action="{% url 'batchdb:remove_student_from_batch' pk=batch.pk student_id=student.id %}" style="display:inline;" class="remove-student-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-compact" title="Remove from this batch">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                </form>
+                                {% else %}-
+                            </td>
+                            {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
@@ -116,6 +130,9 @@
                             <th>Email</th>
                             <th>Phone</th>
                             <th>Transfer Reason</th>
+                            {% if request.user.is_superuser %}
+                            <th>Actions</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
@@ -126,6 +143,17 @@
                             <td>{{ student.email }}</td>
                             <td>{{ student.phone }}</td>
                             <td>{{ student.transfer_reason }}</td>
+                            {% if request.user.is_superuser %}
+                            <td>
+                                <form method="post" action="{% url 'batchdb:remove_student_from_batch' pk=batch.pk student_id=student.id %}" style="display:inline;" class="remove-student-form">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger btn-compact" title="Remove from this batch">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                </form>
+                                {% else %}-
+                            </td>
+                            {% endif %}
                         </tr>
                         {% empty %}
                         <tr>
@@ -195,4 +223,20 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('submit', function(e) {
+    if (e.target && e.target.matches('.remove-student-form')) {
+      e.preventDefault();
+      var ok = window.confirm('Are you sure you want to remove this student from this batch?');
+      if (ok) {
+        e.target.submit();
+      }
+    }
+  });
+});
+</script>
 {% endblock %}

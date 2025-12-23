@@ -173,8 +173,8 @@
                             <td>{{ status.role }}</td>
                             <td>{% for course in status.courses.all %}{{ course.course_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
                             <td>{{ status.resumes_shared }}</td>
-                            <td>{{ status.created_by.name }}</td>
-                            <td>{{ status.created_at }}</td>
+                            <td>{% if status.updated_by %}{{ status.updated_by.name }}{% else %}{{ status.created_by.name }}{% endif %}</td>
+                            <td>{% if status.updated_at %}{{ status.updated_at }}{% else %}{{ status.created_at }}{% endif %}</td>
                             <td style="text-align: center;">
                                 <a href="{% url 'edit_resume_shared_status' status_pk=status.id %}" class="view-link" ><i class="fas fa-edit"></i></a>
                             </td>

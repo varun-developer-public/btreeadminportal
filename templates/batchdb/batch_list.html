@@ -353,13 +353,14 @@
                     <th>Batch ID</th>
                     <th>Course</th>
                     <th>Trainer</th>
-                    <th>Trainer Type</th>
                     <th>Batch %</th>
                     <th>Status</th>
-                    <th>Students</th>
                     <th>Start</th>
                     <th>End</th>
+                    <th>Tentative End</th>
                     <th>Slot</th>
+                    <th>Trainer Type</th>
+                    <th>Students</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -369,13 +370,17 @@
                     <td><a href="{% url 'batchdb:batch_report' batch.pk %}"><span class="badge bg-secondary">{{ batch.batch_id }}</span></a></td>
                     <td>{{ batch.course.course_name }}</td>
                     <td>{{ batch.trainer.name }}</td>
-                    <td>{{ batch.trainer.get_employment_type_display }}</td>
                     <td>{{ batch.batch_percentage|floatformat:2 }}%</td>
                     <td>
                         <span class="badge {% if batch.batch_status == 'YTS' %}bg-warning text-dark{% elif batch.batch_status == 'IP' %}bg-success{% else %}bg-secondary{% endif %}">
                             {{ batch.get_batch_status_display }}
                         </span>
                     </td>
+                    <td>{{ batch.start_date|date:"d-m-Y" }}</td>
+                    <td>{{ batch.end_date|date:"d-m-Y" }}</td>
+                    <td>{% if batch.tentative_end_date %}{{ batch.tentative_end_date|date:"d-m-Y" }}{% else %}-{% endif %}</td>
+                    <td>{{ batch.get_slottime }}</td>
+                    <td>{{ batch.trainer.get_employment_type_display }}</td>
                     <td>
                         <div class="student-list-cell">
                             {% for batch_student in batch.batchstudent_set.all %}
@@ -387,9 +392,6 @@
                             {% endfor %}
                         </div>
                     </td>
-                    <td>{{ batch.start_date|date:"d-m-Y" }}</td>
-                    <td>{{ batch.end_date|date:"d-m-Y" }}</td>
-                    <td>{{ batch.get_slottime }}</td>
                     <td>
                         <div class="d-flex gap-2">
                             {% if user.role != 'trainer' %}

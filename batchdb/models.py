@@ -39,6 +39,7 @@ class Batch(models.Model):
     
     start_date = models.DateField()
     end_date = models.DateField()
+    tentative_end_date = models.DateField(null=True, blank=True)
     
     batch_type = models.CharField(max_length=10, choices=BATCH_TYPE_CHOICES, default='WD')
     batch_status = models.CharField(max_length=3, choices=STATUS_CHOICES, default='YTS')
@@ -119,6 +120,10 @@ class Batch(models.Model):
             
         if not self.batch_id and self.course and self.course.category:
             self.batch_id = self.generate_batch_id(self.course.category, self.course)
+        
+        # Default tentative_end_date to end_date if not set
+        if not self.tentative_end_date:
+            self.tentative_end_date = self.end_date
         
         # Save the batch
         super().save(*args, **kwargs)

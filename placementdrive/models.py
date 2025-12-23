@@ -45,8 +45,10 @@ class Company(models.Model):
     location = models.CharField(max_length=255, choices=LOCATION_CHOICES)
     other_location = models.CharField(max_length=255, blank=True, null=True)
     progress = models.CharField(max_length=50, choices=PROGRESS_CHOICES, default='resume_shared')
-    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False, related_name='companies_created')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, editable=False, related_name='companies_updated')
     interview_cycles = models.PositiveIntegerField(default=1)
     
     
@@ -101,7 +103,9 @@ class ResumeSharedStatus(models.Model):
     resumes_shared = models.PositiveIntegerField(default=1)
     courses = models.ManyToManyField(Course, related_name='resume_shared_statuses')
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False, related_name='resume_statuses_created')
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, editable=False, related_name='resume_statuses_updated')
     def __str__(self):
         return f"{self.company.company_name} - {self.get_status_display()}"
         
@@ -142,8 +146,10 @@ class Interview(models.Model):
     other_location = models.CharField(max_length=255, blank=True, null=True)
     interview_date = models.DateField()
     interview_time = models.TimeField()
-    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, editable=False, related_name='interviews_created')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+    updated_by = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, editable=False, related_name='interviews_updated')
     cycle_number = models.PositiveIntegerField(default=1)
     
     def __str__(self):

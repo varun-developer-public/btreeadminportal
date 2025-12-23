@@ -54,8 +54,20 @@ def company_list(request):
             companies = companies.filter(created_at__date__range=(created_from, created_to)).distinct()
 
         if updated_from and updated_to:
-            latest_resume_subq = ResumeSharedStatus.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
-            latest_interview_subq = Interview.objects.filter(company=OuterRef('pk')).order_by('-created_at').values('created_at')[:1]
+            latest_resume_subq = (
+                ResumeSharedStatus.objects
+                .filter(company=OuterRef('pk'))
+                .annotate(_eff_updated_at=Coalesce('updated_at', 'created_at'))
+                .order_by('-_eff_updated_at')
+                .values('_eff_updated_at')[:1]
+            )
+            latest_interview_subq = (
+                Interview.objects
+                .filter(company=OuterRef('pk'))
+                .annotate(_eff_updated_at=Coalesce('updated_at', 'created_at'))
+                .order_by('-_eff_updated_at')
+                .values('_eff_updated_at')[:1]
+            )
 
             companies = companies.annotate(
                 latest_resume_created_at=Subquery(latest_resume_subq, output_field=DateTimeField()),
@@ -176,21 +188,26 @@ def company_list(request):
         # Compute latest update timestamp across company creation, resume shared statuses, and interviews
         latest_resume = None
         try:
-            latest_resume = company.resume_shared_statuses.all()[0] if company.resume_shared_statuses.all() else None
+            latest_resume = (
+                company.resume_shared_statuses.order_by('-updated_at', '-created_at').first()
+                if company.resume_shared_statuses.all() else None
+            )
         except Exception:
-            latest_resume = company.resume_shared_statuses.order_by('-created_at').first()
+            latest_resume = company.resume_shared_statuses.order_by('-updated_at', '-created_at').first()
 
-        latest_interview = company.scheduled_interviews.order_by('-created_at').first()
+        latest_interview = company.scheduled_interviews.order_by('-updated_at', '-created_at').first()
 
         candidates = [
             (company.created_at, company.created_by)
         ]
 
         if latest_resume:
-            candidates.append((latest_resume.created_at, latest_resume.created_by))
+            candidates.append((latest_resume.updated_at or latest_resume.created_at,
+                               latest_resume.updated_by or latest_resume.created_by))
 
         if latest_interview:
-            candidates.append((latest_interview.created_at, latest_interview.created_by))
+            candidates.append((latest_interview.updated_at or latest_interview.created_at,
+                               latest_interview.updated_by or latest_interview.created_by))
 
         company.latest_update_at, company.latest_updated_by = max(
             candidates, key=lambda x: x[0]
@@ -343,6 +360,8 @@ def update_interview_students(request, interview_pk):
         formset = InterviewStudentFormSet(request.POST, request.FILES, queryset=queryset)
         if formset.is_valid():
             formset.save()
+            interview.updated_by = request.user
+            interview.save()
             return redirect('company_update', pk=interview.company.pk)
     else:
         # We need to pass the paginated queryset to the formset
@@ -413,6 +432,7 @@ def company_update(request, pk):
                 status = resume_shared_status_form.save(commit=False)
                 status.company = company
                 status.created_by = request.user
+                status.updated_by = request.user
                 status.save()
                 # Save the many-to-many relationship for courses
                 messages.success(request, "Resume status saved successfully!")
@@ -481,6 +501,7 @@ def edit_resume_shared_status(request, status_pk):
         form = ResumeSharedStatusForm(request.POST, instance=status)
         if form.is_valid():
             status = form.save(commit=False)
+            status.updated_by = request.user
             status.save()
             # Save the many-to-many relationship for courses
             form.save_m2m()
@@ -512,6 +533,7 @@ def postpone_interview_round(request, interview_pk):
         time = request.POST.get('interview_time')
         interview.interview_date = date
         interview.interview_time = time
+        interview.updated_by = request.user
         interview.save()
         return redirect('company_update', pk=interview.company.pk)
     return render(request, 'placementdrive/postpone_interview.html', {'interview': interview})
