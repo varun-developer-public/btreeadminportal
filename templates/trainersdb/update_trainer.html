@@ -176,9 +176,30 @@
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Update Trainer</button>
+            {{ form.update_remarks.as_hidden }}
+            <button type="button" class="btn btn-primary" id="openRemarksModalBtn">Update Trainer</button>
         </div>
     </form>
+</div>
+
+<!-- Remarks Modal -->
+<div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="remarksModalLabel">Enter Remarks</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <label for="remarksModalInput" class="form-label">Remarks for this update</label>
+        <textarea id="remarksModalInput" class="form-control" rows="3" placeholder="Describe what/why changed"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="remarksModalSaveBtn">OK</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 {% block extra_js %}
@@ -372,6 +393,25 @@ $(document).ready(function() {
         // Ignore parsing errors, start with empty commercials
     }
     renderCommercials();
+
+    // Remarks modal logic
+    var remarksModalEl = document.getElementById('remarksModal');
+    var remarksModal = new bootstrap.Modal(remarksModalEl);
+    var openBtn = document.getElementById('openRemarksModalBtn');
+    var saveBtn = document.getElementById('remarksModalSaveBtn');
+    var hiddenRemarksInput = document.getElementById('id_update_remarks');
+    var formEl = document.querySelector('.student-form');
+
+    openBtn.addEventListener('click', function() {
+        remarksModal.show();
+    });
+
+    saveBtn.addEventListener('click', function() {
+        var val = document.getElementById('remarksModalInput').value.trim();
+        hiddenRemarksInput.value = val;
+        remarksModal.hide();
+        formEl.submit();
+    });
 });
 </script>
 {% endblock %}

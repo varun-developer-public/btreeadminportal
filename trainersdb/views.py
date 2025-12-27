@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from .models import Trainer
 from .forms import TrainerForm
+from django.utils import timezone
 from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
@@ -117,9 +118,20 @@ def update_trainer(request, pk):
     if request.method == 'POST':
         form = TrainerForm(request.POST, request.FILES, instance=trainer)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Trainer updated successfully!")
-            return redirect('trainer_list')
+            changed_model_fields = [f for f in form.changed_data if f in TrainerForm.Meta.fields]
+            remarks = form.cleaned_data.get('update_remarks')
+            if changed_model_fields and not remarks:
+                form.add_error('update_remarks', 'Remarks are required when making changes.')
+            else:
+                instance = form.save(commit=False)
+                instance.last_updated_by = request.user
+                instance.last_updated_at = timezone.now()
+                if remarks:
+                    instance.last_update_remarks = remarks
+                instance.save()
+                form.save_m2m()
+                messages.success(request, "Trainer updated successfully!")
+                return redirect('trainer_list')
     else:
         form = TrainerForm(instance=trainer)
     return render(request, 'trainersdb/update_trainer.html', {'form': form, 'title': 'Update Trainer'})

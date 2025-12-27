@@ -73,6 +73,9 @@ class Trainer(models.Model):
     demo_link = models.URLField(blank=True, null=True)
     commercials = models.JSONField(default=list, blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    last_updated_at = models.DateTimeField(blank=True, null=True)
+    last_updated_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, blank=True, null=True, related_name='trainer_last_updates')
+    last_update_remarks = models.TextField(blank=True, null=True)
 
 
     def save(self, *args, **kwargs):

@@ -361,6 +361,8 @@
                     <th>Slot</th>
                     <th>Trainer Type</th>
                     <th>Students</th>
+                    <th>Last Updated</th>
+                    <th>Updated By</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -392,6 +394,8 @@
                             {% endfor %}
                         </div>
                     </td>
+                    <td>{% if batch.updated_at %}{{ batch.updated_at }}{% else %}-{% endif %}</td>
+                    <td>{% if batch.updated_by %}{{ batch.updated_by.name }}{% else %}-{% endif %}</td>
                     <td>
                         <div class="d-flex gap-2">
                             {% if user.role != 'trainer' %}
@@ -422,7 +426,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="11" class="text-center text-muted">No batches found</td></tr>
+                <tr><td colspan="14" class="text-center text-muted">No batches found</td></tr>
                 {% endfor %}
             </tbody>
         </table>

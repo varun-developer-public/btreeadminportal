@@ -7,6 +7,7 @@ class TrainerForm(forms.ModelForm):
     country_code = forms.CharField(widget=forms.HiddenInput(), required=False)
     timing_slots = forms.CharField(widget=forms.HiddenInput(), required=False)
     commercials = forms.CharField(widget=forms.HiddenInput(), required=False)
+    update_remarks = forms.CharField(label='Remarks', required=False, widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2}))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
