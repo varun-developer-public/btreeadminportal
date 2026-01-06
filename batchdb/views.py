@@ -200,10 +200,14 @@ def update_batch(request, pk):
                 student = bs.student
                 perc_key = f"student_{student.id}_percentage"
                 status_key = f"student_{student.id}_status"
+                remarks_key = f"student_{student.id}_remarks"
                 perc_val = request.POST.get(perc_key)
                 status_val = request.POST.get(status_key)
+                remarks_val = request.POST.get(remarks_key, '') or ''
 
                 changed = False
+                old_percentage = student.course_percentage
+                old_status = student.course_status
                 # Update percentage if provided and valid
                 if perc_val is not None and perc_val != "":
                     try:
@@ -225,9 +229,36 @@ def update_batch(request, pk):
                     student.course_status = status_val
                     changed = True
 
+                # Remarks persist even if no percentage/status change
+                remarks_old = bs.update_remarks or ''
+                remarks_new = (remarks_val or '').strip()
+                remarks_changed = remarks_new != remarks_old
+                if remarks_changed:
+                    bs.update_remarks = remarks_new
+                    bs.save(update_fields=['update_remarks'])
+
                 if changed:
                     student.save()
+                if changed or remarks_changed:
                     updated_count += 1
+                    change_details = {
+                        'student_id': student.student_id,
+                        'name': f"{student.first_name} {student.last_name or ''}".strip(),
+                        'percentage_old': old_percentage,
+                        'percentage_new': float(student.course_percentage) if student.course_percentage is not None else None,
+                        'status_old': old_status,
+                        'status_new': student.course_status,
+                    }
+                    if remarks_changed:
+                        change_details['remarks_old'] = remarks_old
+                        change_details['remarks_new'] = remarks_new
+                    BatchTransaction.log_transaction(
+                        batch=batch,
+                        transaction_type='STUDENT_UPDATED',
+                        user=request.user,
+                        details=change_details,
+                        affected_students=[student]
+                    )
 
             if updated_count:
                 messages.success(request, f"Updated {updated_count} student(s) for batch {batch.batch_id}.")

@@ -21,6 +21,27 @@
     text-align: center;
     text-align-last: center; /* Center the selected option text in modern browsers */
 }
+
+/* Remarks input: grey appearance when read-only */
+.remarks-input[readonly] {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    border-color: #dee2e6;
+}
+/* Input group sizing and centering */
+.remarks-group {
+    max-width: 360px;
+    margin: 0 auto;
+}
+/* Ensure tooltip can show long text nicely */
+.tooltip .tooltip-inner {
+    text-align: left;
+    white-space: pre-wrap;
+}
+/* Compact action button */
+.btn-compact {
+    padding: 0.375rem 0.5rem;
+}
 </style>
 {% endblock %}
 
@@ -96,6 +117,7 @@
                                 <th>Phone</th>
                                 <th>Course %</th>
                                 <th>Course Status</th>
+                                <th>Remarks</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -124,6 +146,25 @@
                                             {% endfor %}
                                         </select>
                                     </td>
+                                    <td style="min-width: 260px;">
+                                        <div class="input-group input-group-sm remarks-group justify-content-center gap-3">
+                                            <input type="text"
+                                                   name="student_{{ student.id }}_remarks"
+                                                   class="form-control remarks-input"
+                                                   value="{{ bs.update_remarks|default:'' }}"
+                                                   placeholder="Remarks for changes"
+                                                   readonly
+                                                   data-bs-toggle="tooltip"
+                                                   data-bs-placement="top"
+                                                   title="{{ bs.update_remarks|default:'' }}">
+                                            <button type="button"
+                                                    class="btn btn-secondary btn-compact edit-remarks-btn mt-2"
+                                                    data-student-id="{{ student.id }}"
+                                                    aria-label="Edit remarks">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {% endwith %}
                             {% endfor %}
@@ -146,4 +187,48 @@
 {% block extra_js %}
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize tooltips for readonly inputs
+  const tooltipMap = new Map();
+  document.querySelectorAll('.remarks-input').forEach(function(input) {
+    const tip = new bootstrap.Tooltip(input, { trigger: 'hover focus' });
+    tooltipMap.set(input, tip);
+  });
+
+  // Toggle edit mode and tooltip
+  document.querySelectorAll('.edit-remarks-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const id = this.getAttribute('data-student-id');
+      const input = document.querySelector('input[name=\"student_' + id + '_remarks\"]');
+      if (!input) return;
+
+      if (input.readOnly) {
+        // Enter edit mode
+        input.readOnly = false;
+        // Dispose tooltip while editing
+        const tip = tooltipMap.get(input);
+        if (tip) {
+          tip.dispose();
+          tooltipMap.delete(input);
+        }
+        this.classList.remove('btn-secondary');
+        this.classList.add('btn-success');
+        this.innerHTML = '<i class=\"fas fa-check\"></i>';
+        input.focus();
+      } else {
+        // Exit edit mode
+        input.readOnly = true;
+        // Restore tooltip with updated content
+        input.setAttribute('title', input.value || '');
+        const tip = new bootstrap.Tooltip(input, { trigger: 'hover focus' });
+        tooltipMap.set(input, tip);
+        this.classList.remove('btn-success');
+        this.classList.add('btn-secondary');
+        this.innerHTML = '<i class=\"fas fa-edit\"></i>';
+      }
+    });
+  });
+});
+</script>
 {% endblock %}

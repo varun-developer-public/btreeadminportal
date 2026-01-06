@@ -178,6 +178,7 @@ class BatchStudent(models.Model):
     is_active = models.BooleanField(default=True)
     activated_at = models.DateTimeField(default=timezone.now)
     deactivated_at = models.DateTimeField(null=True, blank=True)
+    update_remarks = models.TextField(blank=True, null=True)
     
     class Meta:
         verbose_name = 'Batch Student'
@@ -284,6 +285,7 @@ class BatchTransaction(models.Model):
     TRANSACTION_TYPES = [
         ('BATCH_CREATED', 'Batch Created'),
         ('BATCH_UPDATED', 'Batch Updated'),
+        ('STUDENT_UPDATED', 'Student Updated'),
         ('STUDENT_ADDED', 'Student Added'),
         ('STUDENT_REMOVED', 'Student Removed'),
         ('TRANSFER_OUT', 'Transfer Out'),
