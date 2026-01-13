@@ -176,18 +176,22 @@ def update_batch(request, pk):
         # Make end_date readonly for trainers at render time
         if request.user.role == 'trainer':
             form.fields['end_date'].widget.attrs['readonly'] = True
-        # Tentative End Date edit permissions: trainers, staff, batch_coordination can edit
         allowed_roles_for_tentative = {'trainer', 'staff', 'batch_coordination', 'admin'}
+        # Trainers should NOT edit start_date; only staff, batch_coordination, admin
+        allowed_roles_for_start = {'staff', 'batch_coordination', 'admin'}
         if not (request.user.is_superuser or request.user.role in allowed_roles_for_tentative):
             form.fields['tentative_end_date'].widget.attrs['readonly'] = True
+        if not (request.user.is_superuser or request.user.role in allowed_roles_for_start):
+            form.fields['start_date'].widget.attrs['readonly'] = True
         if form.is_valid():
             batch = form.save(commit=False)
             # Enforce that trainers cannot change end_date server-side
             if request.user.role == 'trainer' and batch.end_date != Batch.objects.get(pk=batch.pk).end_date:
                 batch.end_date = Batch.objects.get(pk=batch.pk).end_date
-            # Enforce tentative_end_date server-side for unauthorized roles
             if not (request.user.is_superuser or request.user.role in allowed_roles_for_tentative):
                 batch.tentative_end_date = Batch.objects.get(pk=batch.pk).tentative_end_date
+            if not (request.user.is_superuser or request.user.role in allowed_roles_for_start):
+                batch.start_date = Batch.objects.get(pk=batch.pk).start_date
 
             batch.updated_by = request.user
             batch.save()
@@ -272,8 +276,11 @@ def update_batch(request, pk):
         if request.user.role == 'trainer':
             form.fields['end_date'].widget.attrs['readonly'] = True
         allowed_roles_for_tentative = {'trainer', 'staff', 'batch_coordination', 'admin'}
+        allowed_roles_for_start = {'staff', 'batch_coordination', 'admin'}
         if not (request.user.is_superuser or request.user.role in allowed_roles_for_tentative):
             form.fields['tentative_end_date'].widget.attrs['readonly'] = True
+        if not (request.user.is_superuser or request.user.role in allowed_roles_for_start):
+            form.fields['start_date'].widget.attrs['readonly'] = True
     context = {
         'form': form,
         'batch': batch,
