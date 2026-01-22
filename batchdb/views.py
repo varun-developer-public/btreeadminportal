@@ -120,9 +120,14 @@ def batch_list(request):
     except EmptyPage:
         batches = paginator.page(paginator.num_pages)
 
+    qs = request.GET.copy()
+    if 'page' in qs:
+        qs.pop('page')
+    querystring = qs.urlencode()
     return render(request, 'batchdb/batch_list.html', {
         'batches': batches,
-        'form': form
+        'form': form,
+        'querystring': querystring
     })
 
 @login_required
