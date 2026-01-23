@@ -213,6 +213,7 @@ class PendingPaymentRecord(models.Model):
     next_due_date = models.DateField(null=True, blank=True)
     consultant_name = models.CharField(max_length=200, null=True, blank=True)
     trainer_name = models.CharField(max_length=200, null=True, blank=True)
+    trainer_type = models.CharField(max_length=2, choices=[('FT', 'Full Time'), ('FL', 'Freelancer')], null=True, blank=True)
     course_percentage = models.FloatField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=[('Pending', 'Pending'), ('Paid', 'Paid')], default='Pending')
     feedback = models.TextField(blank=True, null=True)
@@ -245,6 +246,7 @@ class PendingPaymentRecord(models.Model):
         self.next_due_date = getattr(self.payment, f'emi_{next_emi}_date') if next_emi else None
         self.consultant_name = s.consultant.name if s.consultant else None
         self.trainer_name = (active_bs.batch.trainer.name if active_bs and active_bs.batch and active_bs.batch.trainer else (s.trainer.name if s.trainer else None))
+        self.trainer_type = (active_bs.batch.trainer.employment_type if active_bs and active_bs.batch and active_bs.batch.trainer else (s.trainer.employment_type if s.trainer else None))
         self.course_percentage = s.course_percentage
 
 from django.db.models.signals import post_save

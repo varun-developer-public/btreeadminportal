@@ -265,6 +265,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
         mobile = request.GET.get('mobile', '').strip()
         batch_code = request.GET.get('batch_code', '').strip()
         trainer = request.GET.get('trainer', '').strip()
+        trainer_type = request.GET.get('trainer_type', '').strip()
         consultant = request.GET.get('consultant', '').strip()
         pending_min = request.GET.get('pending_min', '').strip()
         pending_max = request.GET.get('pending_max', '').strip()
@@ -312,6 +313,8 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
             qs = qs.filter(batch_code__icontains=batch_code)
         if trainer:
             qs = qs.filter(trainer_name__icontains=trainer)
+        if trainer_type in {'FT', 'FL'}:
+            qs = qs.filter(trainer_type=trainer_type)
         if consultant:
             qs = qs.filter(consultant_name__icontains=consultant)
         if pending_min:
@@ -377,6 +380,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
                 'next_due_date': rec.next_due_date,
                 'consultant_name': rec.consultant_name,
                 'trainer_name': rec.trainer_name,
+                'trainer_type': rec.trainer_type,
                 'course_percentage': rec.course_percentage,
                 'feedback': rec.feedback,
                 'updated_by_name': rec.edited_by.name if rec.edited_by else None,
@@ -436,6 +440,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
             'mobile': mobile,
             'batch_code': batch_code,
             'trainer': trainer,
+            'trainer_type': trainer_type,
             'consultant': consultant,
             'pending_min': pending_min,
             'pending_max': pending_max,
@@ -447,6 +452,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
             'batch_codes': batch_codes,
             'trainer_names': trainer_names,
             'consultant_names': consultant_names,
+            'trainer_types': [('FT', 'Full Time'), ('FL', 'Freelancer')],
             'updated_by': updated_by,
             'updated_from': updated_from,
             'updated_to': updated_to,

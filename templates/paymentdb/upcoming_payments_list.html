@@ -51,7 +51,7 @@
                 </select>
             </div>
         </div>
-        <div class="filter-row filter-row-4">
+        <div class="filter-row filter-row-5">
             <div class="filter-group">
                 <label for="q">Search</label>
                 <input type="text" id="q" name="q" value="{{ q|default:'' }}" placeholder="ID, Name, Mobile, Batch, Course, Trainer, Consultant, Feedback">
@@ -71,6 +71,15 @@
                     <option value="">All</option>
                     {% for t in trainer_names %}
                         <option value="{{ t }}" {% if trainer == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="trainer_type">Trainer Type</label>
+                <select id="trainer_type" name="trainer_type">
+                    <option value="">All</option>
+                    {% for value, label in trainer_types %}
+                        <option value="{{ value }}" {% if request.GET.trainer_type == value %}selected{% endif %}>{{ value }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -97,8 +106,6 @@
                 <label for="updated_to">Updated To</label>
                 <input type="date" id="updated_to" name="updated_to" value="{{ updated_to|default:'' }}">
             </div>
-        </div>
-        <div class="filter-row filter-row-7">
             <div class="filter-group">
                 <label for="next_emi">Next EMI No</label>
                 <select id="next_emi" name="next_emi">
@@ -109,6 +116,8 @@
                     <option value="4" {% if next_emi == '4' %}selected{% endif %}>4</option>
                 </select>
             </div>
+        </div>
+        <div class="filter-row filter-row-7">
             <div class="filter-group">
                 <label for="due_from">Due From</label>
                 <input type="date" id="due_from" name="due_from" value="{{ due_from|default:'' }}">
@@ -152,6 +161,7 @@
                     <th>Course Name</th>
                     <th>Course Status</th>
                     <th>Trainer</th>
+                    <th>Trainer Type</th>
                     <th>Course %</th>
                     <th>Total Fee</th>
                     <th>Till Paid</th>
@@ -191,6 +201,7 @@
                         {% endif %}
                     </td>
                     <td>{{ r.trainer_name|default:"—" }}</td>
+                    <td>{% if r.trainer_type %}{{ r.trainer_type }}{% else %}—{% endif %}</td>
                     <td>
                         {% if r.course_percentage is not None %}
                             {{ r.course_percentage|floatformat:0 }}%
@@ -263,6 +274,7 @@
             <input type="hidden" name="q" value="{{ q|default:'' }}">
             <input type="hidden" name="batch_code" value="{{ batch_code|default:'' }}">
             <input type="hidden" name="trainer" value="{{ trainer|default:'' }}">
+            <input type="hidden" name="trainer_type" value="{{ request.GET.trainer_type|default:'' }}">
             <input type="hidden" name="consultant" value="{{ consultant|default:'' }}">
             <input type="hidden" name="next_emi" value="{{ next_emi|default:'' }}">
             <input type="hidden" name="due_from" value="{{ due_from|default:'' }}">
@@ -395,6 +407,7 @@
         }
         .filter-row { display: grid; gap: 12px; }
         .filter-row-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .filter-row-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
         .filter-row-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
         .filter-group label {
             display: block;
