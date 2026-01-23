@@ -25,6 +25,12 @@
                 </ul>
             </div>
             {% endif %}
+            {% if user.is_superuser or user.role == 'staff' or user.role == 'batch_coordination' %}
+            <a href="{% url 'pending_payments' %}" class="btn btn-primary" title="Pending Payments">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span class="d-none d-md-inline">Pending</span>
+            </a>
+            {% endif %}
             <div class="dropdown">
                 <button class="profile-button" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="me-2">{{ user.name }}</span>

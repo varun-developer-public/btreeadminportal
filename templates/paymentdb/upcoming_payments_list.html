@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% block title %}Pending Payments{% endblock %}
+
+{% block content %}
+<div class="list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Pending Payments</h2>
+        <div class="d-flex gap-2">
+            {% if request.user.is_superuser %}
+            <a href="{% url 'admin_dashboard' %}" class="btn-secondary">Back to Dashboard</a>
+            {% elif request.user.is_staff %}
+            <a href="{% url 'staff_dashboard' %}" class="btn-secondary">Back to Dashboard</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="get" class="filters">
+        <div class="filter-row filter-row-4">
+            <div class="filter-group">
+                <label for="course">Course</label>
+                <select name="course" id="course">
+                    <option value="">All Courses</option>
+                    {% for c in courses %}
+                        <option value="{{ c.id }}" {% if request.GET.course|default:'' == c.id|stringformat:"s" %}selected{% endif %}>{{ c.course_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="batch_type">Batch Type</label>
+                <select name="batch_type" id="batch_type">
+                    <option value="">All</option>
+                    {% for value, label in batch_types %}
+                        <option value="{{ value }}" {% if request.GET.batch_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="course_status">Course Status</label>
+                <select name="course_status" id="course_status">
+                    <option value="">All Statuses</option>
+                    {% for value, label in course_statuses %}
+                        <option value="{{ value }}" {% if request.GET.course_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="per_page">Per Page</label>
+                <select name="per_page" id="per_page">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-row filter-row-4">
+            <div class="filter-group">
+                <label for="q">Search</label>
+                <input type="text" id="q" name="q" value="{{ q|default:'' }}" placeholder="ID, Name, Mobile, Batch, Course, Trainer, Consultant, Feedback">
+            </div>
+            <div class="filter-group">
+                <label for="batch_code">Batch</label>
+                <select id="batch_code" name="batch_code">
+                    <option value="">All</option>
+                    {% for b in batch_codes %}
+                        <option value="{{ b }}" {% if batch_code == b %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="trainer">Trainer</label>
+                <select id="trainer" name="trainer">
+                    <option value="">All</option>
+                    {% for t in trainer_names %}
+                        <option value="{{ t }}" {% if trainer == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="consultant">Consultant</label>
+                <select id="consultant" name="consultant">
+                    <option value="">All</option>
+                    {% for c in consultant_names %}
+                        <option value="{{ c }}" {% if consultant == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="filter-row filter-row-7">
+            <div class="filter-group">
+                <label for="next_emi">Next EMI No</label>
+                <select id="next_emi" name="next_emi">
+                    <option value="">All</option>
+                    <option value="1" {% if next_emi == '1' %}selected{% endif %}>1</option>
+                    <option value="2" {% if next_emi == '2' %}selected{% endif %}>2</option>
+                    <option value="3" {% if next_emi == '3' %}selected{% endif %}>3</option>
+                    <option value="4" {% if next_emi == '4' %}selected{% endif %}>4</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="due_from">Due From</label>
+                <input type="date" id="due_from" name="due_from" value="{{ due_from|default:'' }}">
+            </div>
+            <div class="filter-group">
+                <label for="due_to">Due To</label>
+                <input type="date" id="due_to" name="due_to" value="{{ due_to|default:'' }}">
+            </div>
+            <div class="filter-group">
+                <label for="pending_min">Pending Min</label>
+                <input type="number" step="0.01" id="pending_min" name="pending_min" value="{{ pending_min|default:'' }}">
+            </div>
+            <div class="filter-group">
+                <label for="pending_max">Pending Max</label>
+                <input type="number" step="0.01" id="pending_max" name="pending_max" value="{{ pending_max|default:'' }}">
+            </div>
+            <div class="filter-group">
+                <label for="course_pct_min">Course % Min</label>
+                <input type="number" step="1" id="course_pct_min" name="course_pct_min" value="{{ course_pct_min|default:'' }}">
+            </div>
+            <div class="filter-group">
+                <label for="course_pct_max">Course % Max</label>
+                <input type="number" step="1" id="course_pct_max" name="course_pct_max" value="{{ course_pct_max|default:'' }}">
+            </div>
+        </div>
+        <div class="filter-actions">
+            <button type="submit" class="btn-primary">Apply Filters</button>
+            <a href="{% url 'pending_payments' %}" class="btn-secondary">Reset</a>
+        </div>
+    </form>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Student Name</th>
+                    <th>Mobile Number</th>
+                    <th>Batch</th>
+                    <th>Batch Type</th>
+                    <th>Course Name</th>
+                    <th>Course Status</th>
+                    <th>Trainer</th>
+                    <th>Course %</th>
+                    <th>Total Fee</th>
+                    <th>Till Paid</th>
+                    <th>Pending Amount</th>
+                    <th>Next EMI No</th>
+                    <th>Next EMI Amount</th>
+                    <th>Due Date</th>
+                    <th>Consultant</th>
+                    <th>Feedback</th>
+                    <th>Updated By</th>
+                    <th>Updated At</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr>
+                    <td><a href="{% url 'student_report' r.student_id %}" class="view-link">{{ r.student_id }}</a></td>
+                    <td>{{ r.student_name }}</td>
+                    <td>{{ r.mobile }}</td>
+                    <td>{{ r.batch_code|default:"—" }}</td>
+                    <td>
+                        {% if r.batch_type %}
+                        <span class="badge rounded-pill {% if r.batch_type == 'WD' %}bg-secondary{% elif r.batch_type == 'WE' %}bg-info{% else %}bg-primary{% endif %}">
+                            {{ r.batch_type }}
+                        </span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ r.course_name|default:"—" }}</td>
+                    <td>
+                        {% if r.course_status == 'YTS' %}
+                            <span class="badge bg-secondary">Yet to Start</span>
+                        {% elif r.course_status == 'IP' %}
+                            <span class="badge bg-primary">In Progress</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ r.course_status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ r.trainer_name|default:"—" }}</td>
+                    <td>
+                        {% if r.course_percentage is not None %}
+                            {{ r.course_percentage|floatformat:0 }}%
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>₹{{ r.total_fee|floatformat:2 }}</td>
+                    <td>₹{{ r.amount_paid|floatformat:2 }}</td>
+                    <td style="color:#dc3545;">₹{{ r.pending_amount|floatformat:2 }}</td>
+                    <td>{{ r.next_emi_number|default:"—" }}</td>
+                    <td>
+                        {% if r.next_emi_amount %}
+                            ₹{{ r.next_emi_amount|floatformat:2 }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if r.next_due_date %}
+                            {{ r.next_due_date|date:"d M Y" }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>{{ r.consultant_name|default:"—" }}</td>
+                    <td 
+                        class="cell-feedback" 
+                        {% if r.feedback %}title="{{ r.feedback }}"{% endif %} 
+                        data-bs-toggle="tooltip"
+                    >{{ r.feedback|default:"—" }}</td>
+                    <td class="cell-updated-by">{{ r.updated_by_name|default:"—" }}</td>
+                    <td class="cell-updated-at">{% if r.updated_at %}{{ r.updated_at|date:"d M Y, H:i" }}{% else %}—{% endif %}</td>
+                    <td>
+                        <button 
+                            type="button" 
+                            class="btn-secondary btn-update-feedback" 
+                            data-record="{{ r.record_id }}" 
+                            data-feedback="{{ r.feedback|default:'' }}" 
+                            data-url="{% url 'update_pending_feedback' r.record_id %}">
+                            Update Feedback
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="14" class="text-center py-4 text-muted">No pending payments found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if rows.has_previous %}
+                <a href="?page=1&{{ query_params }}">&laquo; first</a>
+                <a href="?page={{ rows.previous_page_number }}&{{ query_params }}">previous</a>
+            {% endif %}
+
+            <span class="current">
+                Page {{ rows.number }} of {{ rows.paginator.num_pages }}.
+            </span>
+
+            {% if rows.has_next %}
+                <a href="?page={{ rows.next_page_number }}&{{ query_params }}">next</a>
+                <a href="?page={{ rows.paginator.num_pages }}&{{ query_params }}">last &raquo;</a>
+            {% endif %}
+        </span>
+        <form method="get" class="page-search">
+            <input type="number" name="page" min="1" max="{{ rows.paginator.num_pages }}" placeholder="Page">
+            <input type="hidden" name="course" value="{{ request.GET.course }}">
+            <input type="hidden" name="batch_type" value="{{ request.GET.batch_type }}">
+            <input type="hidden" name="course_status" value="{{ request.GET.course_status }}">
+            <input type="hidden" name="per_page" value="{{ per_page }}">
+            <button type="submit">Go</button>
+        </form>
+    </div>
+    <div class="modal fade" id="feedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update Feedback</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="feedbackRecordId">
+                    <input type="hidden" id="feedbackUpdateUrl">
+                    <div class="mb-3">
+                        <label for="feedbackTextarea" class="form-label">Feedback</label>
+                        <textarea id="feedbackTextarea" class="form-control" rows="4" placeholder="Type feedback..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn-primary" id="saveFeedbackBtn">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        function initTooltips() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(el => {
+                try {
+                    const existing = bootstrap.Tooltip.getInstance(el);
+                    if (existing) { existing.dispose(); }
+                } catch(e) {}
+                if (el.getAttribute('title')) {
+                    new bootstrap.Tooltip(el);
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalEl = document.getElementById('feedbackModal');
+            const modal = new bootstrap.Modal(modalEl);
+            const textarea = document.getElementById('feedbackTextarea');
+            const recordInput = document.getElementById('feedbackRecordId');
+            const urlInput = document.getElementById('feedbackUpdateUrl');
+            initTooltips();
+            document.querySelectorAll('.btn-update-feedback').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const recId = this.getAttribute('data-record');
+                    const existing = this.getAttribute('data-feedback') || '';
+                    const url = this.getAttribute('data-url');
+                    recordInput.value = recId;
+                    urlInput.value = url;
+                    textarea.value = existing;
+                    modal.show();
+                });
+            });
+            document.getElementById('saveFeedbackBtn').addEventListener('click', function() {
+                const url = urlInput.value;
+                const payload = { feedback: textarea.value };
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: new URLSearchParams(payload)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const recId = recordInput.value;
+                        const rowBtn = document.querySelector('.btn-update-feedback[data-record="' + recId + '"]');
+                        if (rowBtn) {
+                            const row = rowBtn.closest('tr');
+                            const cell = row.querySelector('.cell-feedback');
+                            const textVal = textarea.value || '—';
+                            cell.textContent = textVal;
+                            if (textVal === '—') {
+                                cell.removeAttribute('title');
+                            } else {
+                                cell.setAttribute('title', textVal);
+                            }
+                            row.querySelector('.cell-updated-by').textContent = data.updated_by || '—';
+                            row.querySelector('.cell-updated-at').textContent = data.updated_at || '—';
+                            rowBtn.setAttribute('data-feedback', textarea.value);
+                        }
+                        initTooltips();
+                        modal.hide();
+                    }
+                })
+                .catch(() => {});
+            });
+        });
+    </script>
+    <style>
+        .cell-feedback {
+            max-width: 220px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .filters {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .filter-row { display: grid; gap: 12px; }
+        .filter-row-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .filter-row-7 { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+        .filter-group label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+        }
+        .filter-group input,
+        .filter-group select {
+            width: 100%;
+            padding: 8px 10px;
+        }
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 6px;
+        }
+    </style>
+</div>
+{% endblock %}

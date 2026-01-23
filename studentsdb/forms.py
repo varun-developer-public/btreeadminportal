@@ -244,6 +244,15 @@ class StudentFilterForm(forms.Form):
         required=False,
         label="Status"
     )
+    payment_status = forms.ChoiceField(
+        choices=[
+            ('', 'All Statuses'),
+            ('Pending', 'Pending'),
+            ('Paid', 'Fully Paid'),
+        ],
+        required=False,
+        label="Payment Status"
+    )
 class StudentPlacementForm(forms.ModelForm):
     class Meta:
         model = Student

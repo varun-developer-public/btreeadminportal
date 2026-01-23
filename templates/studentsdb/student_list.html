@@ -76,6 +76,10 @@
                 {{ form.status.label_tag }}
                 {{ form.status }}
             </div>
+            <div class="filter-group">
+                {{ form.payment_status.label_tag }}
+                {{ form.payment_status }}
+            </div>
         </div>
         <div class="filter-actions">
             <button type="submit" class="btn-primary">Apply Filters</button>
@@ -183,6 +187,7 @@
         <input type="hidden" name="course_status" value="{{ request.GET.course_status }}">
         <input type="hidden" name="start_date" value="{{ request.GET.start_date }}">
         <input type="hidden" name="end_date" value="{{ request.GET.end_date }}">
+        <input type="hidden" name="payment_status" value="{{ request.GET.payment_status }}">
         <button type="submit">Go</button>
     </form>
 </div>

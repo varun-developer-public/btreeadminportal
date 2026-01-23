@@ -39,6 +39,24 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="filter-group">
+                <label for="course_status">Course Status:</label>
+                <select name="course_status" id="course_status">
+                    <option value="">All Statuses</option>
+                    {% for value, label in course_statuses %}
+                        <option value="{{ value }}" {% if course_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="student_status">Student Status:</label>
+                <select name="student_status" id="student_status">
+                    <option value="">All</option>
+                    {% for value, label in student_statuses %}
+                        <option value="{{ value }}" {% if student_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
         </div>
         <div class="filter-row">
             <div class="filter-group">
@@ -176,6 +194,8 @@
             <input type="hidden" name="search" value="{{ request.GET.search }}">
             <input type="hidden" name="emi_type" value="{{ request.GET.emi_type }}">
             <input type="hidden" name="payment_status" value="{{ request.GET.payment_status }}">
+            <input type="hidden" name="course_status" value="{{ request.GET.course_status }}">
+            <input type="hidden" name="student_status" value="{{ request.GET.student_status }}">
             <input type="hidden" name="date_from" value="{{ request.GET.date_from }}">
             <input type="hidden" name="date_to" value="{{ request.GET.date_to }}">
             <button type="submit">Go</button>

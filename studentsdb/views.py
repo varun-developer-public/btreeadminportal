@@ -94,6 +94,7 @@ def student_list(request):
         start_date = form.cleaned_data.get('start_date')
         end_date = form.cleaned_data.get('end_date')
         status = form.cleaned_data.get('status')
+        payment_status = form.cleaned_data.get('payment_status')
 
         if status:
             student_list = student_list.filter(**{f'{status}': True})
@@ -116,6 +117,11 @@ def student_list(request):
             student_list = student_list.filter(enrollment_date__gte=start_date)
         if end_date:
             student_list = student_list.filter(enrollment_date__lte=end_date)
+        if payment_status:
+            if payment_status == 'Pending':
+                student_list = student_list.filter(payment__total_pending_amount__gt=0).distinct()
+            elif payment_status == 'Paid':
+                student_list = student_list.filter(payment__total_pending_amount__lte=0).distinct()
 
 
     for student in student_list:

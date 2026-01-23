@@ -149,24 +149,20 @@ class Payment(models.Model):
         return []
 
     def get_next_payable_emi(self):
-        """Returns the next EMI number that needs to be paid."""
+        paid_remaining = self.amount_paid or 0
         for i in range(1, 5):
-            amount = getattr(self, f'emi_{i}_amount')
-            if not amount:  # Skip if this EMI doesn't exist
+            emi_amount = getattr(self, f'emi_{i}_amount') or 0
+            if emi_amount == 0:
                 continue
-                
-            paid_amount = getattr(self, f'emi_{i}_paid_amount') or 0
-            if paid_amount < amount:  # If current EMI is not fully paid
-                # For first EMI, return immediately
-                if i == 1:
-                    return 1
-                # For other EMIs, check if previous EMI is fully paid
-                prev_amount = getattr(self, f'emi_{i-1}_amount')
-                prev_paid = getattr(self, f'emi_{i-1}_paid_amount') or 0
-                if prev_amount and prev_paid >= prev_amount:
-                    return i
-                
-        return None  # All EMIs are paid
+            emi_paid = getattr(self, f'emi_{i}_paid_amount') or 0
+            remaining_for_emi = emi_amount - emi_paid
+            if remaining_for_emi <= 0:
+                continue
+            if paid_remaining >= remaining_for_emi:
+                paid_remaining -= remaining_for_emi
+                continue
+            return i
+        return None
 
     def is_emi_fully_paid(self, emi_number):
         """Checks if a specific EMI is fully paid."""
@@ -197,3 +193,167 @@ class Payment(models.Model):
         # Current EMI must exist and not be fully paid
         current_emi_amount = getattr(self, f'emi_{emi_number}_amount')
         return bool(current_emi_amount) and not self.is_emi_fully_paid(emi_number)
+
+class PendingPaymentRecord(models.Model):
+    payment = models.OneToOneField('paymentdb.Payment', on_delete=models.CASCADE, related_name='pending_record')
+    student = models.ForeignKey('studentsdb.Student', on_delete=models.CASCADE)
+    student_code = models.CharField(max_length=10)
+    student_name = models.CharField(max_length=200)
+    mobile = models.CharField(max_length=15, null=True, blank=True)
+    batch_code = models.CharField(max_length=50, null=True, blank=True)
+    batch_type = models.CharField(max_length=10, null=True, blank=True)
+    course_id = models.IntegerField(null=True, blank=True)
+    course_name = models.CharField(max_length=200, null=True, blank=True)
+    course_status = models.CharField(max_length=3)
+    total_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    next_emi_number = models.IntegerField(null=True, blank=True)
+    next_emi_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    next_due_date = models.DateField(null=True, blank=True)
+    consultant_name = models.CharField(max_length=200, null=True, blank=True)
+    trainer_name = models.CharField(max_length=200, null=True, blank=True)
+    course_percentage = models.FloatField(null=True, blank=True)
+    status = models.CharField(max_length=10, choices=[('Pending', 'Pending'), ('Paid', 'Paid')], default='Pending')
+    feedback = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='created_pending_payments')
+    edited_by = models.ForeignKey('accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True, related_name='edited_pending_payments')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def refresh_from_sources(self):
+        s = self.payment.student
+        self.student = s
+        self.student_code = s.student_id
+        self.student_name = f"{s.first_name} {s.last_name or ''}"
+        self.mobile = s.phone
+        active_bs = s.batchstudent_set.filter(is_active=True).select_related('batch').first()
+        self.batch_code = active_bs.batch.batch_id if active_bs else None
+        self.batch_type = active_bs.batch.batch_type if active_bs else None
+        self.course_id = s.course_id
+        self.course_name = s.course.course_name if s.course else None
+        self.course_status = s.course_status
+        total_paid = self.payment.amount_paid or 0
+        for i in range(1, 5):
+            total_paid += getattr(self.payment, f'emi_{i}_paid_amount') or 0
+        self.total_fee = self.payment.total_fees or 0
+        self.amount_paid = total_paid
+        self.pending_amount = self.payment.total_pending_amount or 0
+        next_emi = self.payment.get_next_payable_emi()
+        self.next_emi_number = next_emi
+        self.next_emi_amount = getattr(self.payment, f'emi_{next_emi}_amount') if next_emi else None
+        self.next_due_date = getattr(self.payment, f'emi_{next_emi}_date') if next_emi else None
+        self.consultant_name = s.consultant.name if s.consultant else None
+        self.trainer_name = (active_bs.batch.trainer.name if active_bs and active_bs.batch and active_bs.batch.trainer else (s.trainer.name if s.trainer else None))
+        self.course_percentage = s.course_percentage
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from studentsdb.models import Student
+from batchdb.models import Batch, BatchStudent
+
+@receiver(post_save, sender=Payment)
+def sync_pending_record(sender, instance, created, **kwargs):
+    try:
+        record = instance.pending_record
+    except PendingPaymentRecord.DoesNotExist:
+        record = None
+    if instance.total_pending_amount > 0:
+        if record is None:
+            record = PendingPaymentRecord.objects.create(payment=instance, student=instance.student, course_status=instance.student.course_status)
+        record.refresh_from_sources()
+        record.status = 'Pending'
+        updated_user = None
+        for i in range(1, 5):
+            u = getattr(instance, f'emi_{i}_updated_by')
+            if u:
+                updated_user = u
+        record.edited_by = updated_user
+        if record.created_by is None and updated_user:
+            record.created_by = updated_user
+        record.save()
+    else:
+        if record:
+            record.refresh_from_sources()
+            record.status = 'Paid'
+            record.pending_amount = 0
+            record.next_emi_number = None
+            record.next_emi_amount = None
+            record.next_due_date = None
+            record.save()
+
+@receiver(post_save, sender=Student)
+def sync_pending_record_on_student_change(sender, instance, **kwargs):
+    payments = Payment.objects.filter(student=instance)
+    for p in payments:
+        try:
+            record = p.pending_record
+        except PendingPaymentRecord.DoesNotExist:
+            record = None
+        if p.total_pending_amount > 0:
+            if record is None:
+                record = PendingPaymentRecord.objects.create(payment=p, student=p.student, course_status=p.student.course_status)
+            record.refresh_from_sources()
+            record.status = 'Pending'
+            record.save()
+        else:
+            if record:
+                record.refresh_from_sources()
+                record.status = 'Paid'
+                record.pending_amount = 0
+                record.next_emi_number = None
+                record.next_emi_amount = None
+                record.next_due_date = None
+                record.save()
+
+@receiver(post_save, sender=BatchStudent)
+def sync_pending_record_on_batchstudent_change(sender, instance, **kwargs):
+    student = instance.student
+    payments = Payment.objects.filter(student=student)
+    for p in payments:
+        try:
+            record = p.pending_record
+        except PendingPaymentRecord.DoesNotExist:
+            record = None
+        if p.total_pending_amount > 0:
+            if record is None:
+                record = PendingPaymentRecord.objects.create(payment=p, student=p.student, course_status=p.student.course_status)
+            record.refresh_from_sources()
+            record.status = 'Pending'
+            record.save()
+        else:
+            if record:
+                record.refresh_from_sources()
+                record.status = 'Paid'
+                record.pending_amount = 0
+                record.next_emi_number = None
+                record.next_emi_amount = None
+                record.next_due_date = None
+                record.save()
+
+@receiver(post_save, sender=Batch)
+def sync_pending_record_on_batch_change(sender, instance, **kwargs):
+    active_students = instance.batchstudent_set.filter(is_active=True).select_related('student')
+    for bs in active_students:
+        student = bs.student
+        payments = Payment.objects.filter(student=student)
+        for p in payments:
+            try:
+                record = p.pending_record
+            except PendingPaymentRecord.DoesNotExist:
+                record = None
+            if p.total_pending_amount > 0:
+                if record is None:
+                    record = PendingPaymentRecord.objects.create(payment=p, student=p.student, course_status=p.student.course_status)
+                record.refresh_from_sources()
+                record.status = 'Pending'
+                record.save()
+            else:
+                if record:
+                    record.refresh_from_sources()
+                    record.status = 'Paid'
+                    record.pending_amount = 0
+                    record.next_emi_number = None
+                    record.next_emi_amount = None
+                    record.next_due_date = None
+                    record.save()

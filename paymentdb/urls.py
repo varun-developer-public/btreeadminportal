@@ -6,4 +6,6 @@ urlpatterns = [
     path('<str:payment_id>/update/', views.payment_update, name='payment_update'),
     path('<str:payment_id>/update_emi_date/', views.update_emi_date, name='update_emi_date'),
     path('api/payment-details/<str:student_id>/', views.get_payment_details, name='get_payment_details'),
+    path('pending/', views.PendingPaymentsListView.as_view(), name='pending_payments'),
+    path('pending-records/<int:pk>/update-feedback/', views.update_pending_feedback, name='update_pending_feedback'),
 ]
