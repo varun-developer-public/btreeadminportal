@@ -273,11 +273,15 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
         due_to = request.GET.get('due_to', '').strip()
         course_pct_min = request.GET.get('course_pct_min', '').strip()
         course_pct_max = request.GET.get('course_pct_max', '').strip()
+        updated_by = request.GET.get('updated_by', '').strip()
+        updated_from = request.GET.get('updated_from', '').strip()
+        updated_to = request.GET.get('updated_to', '').strip()
 
+        allowed_statuses = {'YTS', 'IP', 'H', 'D'}
         qs = (
             PendingPaymentRecord.objects
             .select_related('student', 'payment')
-            .filter(status='Pending')
+            .filter(status='Pending', course_status__in=allowed_statuses)
         )
 
         if course_id:
@@ -285,7 +289,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
                 qs = qs.filter(course_id=int(course_id))
             except ValueError:
                 pass
-        if course_status:
+        if course_status and course_status in allowed_statuses:
             qs = qs.filter(course_status=course_status)
         if batch_type:
             qs = qs.filter(batch_type=batch_type)
@@ -336,6 +340,22 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
                 qs = qs.filter(course_percentage__lte=float(course_pct_max))
             except ValueError:
                 pass
+        if updated_by:
+            qs = qs.filter(
+                Q(edited_by__name__icontains=updated_by) |
+                Q(edited_by__email__icontains=updated_by) |
+                Q(edited_by__username__icontains=updated_by)
+            )
+        # Updated date range
+        try:
+            if updated_from:
+                dt_from = datetime.strptime(updated_from, '%Y-%m-%d')
+                qs = qs.filter(updated_at__gte=dt_from)
+            if updated_to:
+                dt_to = datetime.strptime(updated_to, '%Y-%m-%d')
+                qs = qs.filter(updated_at__lte=dt_to)
+        except ValueError:
+            pass
 
         rows = []
         for rec in qs:
@@ -363,7 +383,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
                 'updated_at': rec.updated_at,
             })
 
-        rows.sort(key=lambda r: (r['next_due_date'] is None, r['next_due_date']))
+        rows.sort(key=lambda r: int(r['student_id'][3:]) if r['student_id'] and r['student_id'].startswith('BTR') else 0, reverse=True)
 
         paginator = Paginator(rows, per_page)
         page = request.GET.get('page')
@@ -407,7 +427,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
         context = {
             'rows': page_obj,
             'courses': courses,
-            'course_statuses': Student.COURSE_STATUS_CHOICES,
+            'course_statuses': [('YTS', 'Yet to Start'), ('IP', 'In Progress'), ('D', 'Discontinued'), ('H', 'Hold')],
             'batch_types': [('WD', 'Weekday'), ('WE', 'Weekend'), ('WDWE', 'Weekday & Weekend'), ('Hybrid', 'Hybrid')],
             'per_page': per_page,
             'query_params': query_params.urlencode(),
@@ -427,6 +447,9 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
             'batch_codes': batch_codes,
             'trainer_names': trainer_names,
             'consultant_names': consultant_names,
+            'updated_by': updated_by,
+            'updated_from': updated_from,
+            'updated_to': updated_to,
         }
         return render(request, 'paymentdb/upcoming_payments_list.html', context)
 

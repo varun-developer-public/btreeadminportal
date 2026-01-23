@@ -84,6 +84,20 @@
                 </select>
             </div>
         </div>
+        <div class="filter-row filter-row-4">
+            <div class="filter-group">
+                <label for="updated_by">Updated By</label>
+                <input type="text" id="updated_by" name="updated_by" value="{{ updated_by|default:'' }}" placeholder="User name/email">
+            </div>
+            <div class="filter-group">
+                <label for="updated_from">Updated From</label>
+                <input type="date" id="updated_from" name="updated_from" value="{{ updated_from|default:'' }}">
+            </div>
+            <div class="filter-group">
+                <label for="updated_to">Updated To</label>
+                <input type="date" id="updated_to" name="updated_to" value="{{ updated_to|default:'' }}">
+            </div>
+        </div>
         <div class="filter-row filter-row-7">
             <div class="filter-group">
                 <label for="next_emi">Next EMI No</label>
@@ -246,6 +260,20 @@
             <input type="hidden" name="batch_type" value="{{ request.GET.batch_type }}">
             <input type="hidden" name="course_status" value="{{ request.GET.course_status }}">
             <input type="hidden" name="per_page" value="{{ per_page }}">
+            <input type="hidden" name="q" value="{{ q|default:'' }}">
+            <input type="hidden" name="batch_code" value="{{ batch_code|default:'' }}">
+            <input type="hidden" name="trainer" value="{{ trainer|default:'' }}">
+            <input type="hidden" name="consultant" value="{{ consultant|default:'' }}">
+            <input type="hidden" name="next_emi" value="{{ next_emi|default:'' }}">
+            <input type="hidden" name="due_from" value="{{ due_from|default:'' }}">
+            <input type="hidden" name="due_to" value="{{ due_to|default:'' }}">
+            <input type="hidden" name="pending_min" value="{{ pending_min|default:'' }}">
+            <input type="hidden" name="pending_max" value="{{ pending_max|default:'' }}">
+            <input type="hidden" name="course_pct_min" value="{{ course_pct_min|default:'' }}">
+            <input type="hidden" name="course_pct_max" value="{{ course_pct_max|default:'' }}">
+            <input type="hidden" name="updated_by" value="{{ updated_by|default:'' }}">
+            <input type="hidden" name="updated_from" value="{{ updated_from|default:'' }}">
+            <input type="hidden" name="updated_to" value="{{ updated_to|default:'' }}">
             <button type="submit">Go</button>
         </form>
     </div>

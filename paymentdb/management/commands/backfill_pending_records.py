@@ -12,7 +12,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         dry_run = options.get('dry_run')
         limit = options.get('limit')
-        payments = Payment.objects.select_related('student').filter(student__course_status__in=['YTS', 'IP'])
+        payments = Payment.objects.select_related('student').filter(
+            student__course_status__in=['YTS', 'IP', 'H', 'D']
+        )
         if limit:
             payments = payments[:limit]
         created = 0
