@@ -54,18 +54,18 @@
             </a>
         </li>
         {% endif %}
-        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' or user.role == 'batch_coordination' or user.role == 'placement' %}
+        {% if user.role == 'admin' or user.role == 'staff' or user.role == 'consultant' or user.role == 'batch_coordination' or user.role == 'placement' or user.role == 'trainer' %}
         <li>
             <a href="{% url 'student_list' %}" class="nav-link {% if request.resolver_match.url_name == 'student_list' %}active{% endif %}">
                 <i class="fas fa-book-open"></i><span>Students DB</span>
             </a>
         </li>
+        {% endif %}
         <li>
             <a href="{% url 'student_remarks' %}" class="nav-link {% if request.resolver_match.url_name == 'student_remarks' %}active{% endif %}">
                 <i class="fas fa-file-alt"></i><span>Student Remarks</span>
             </a>
         </li>
-        {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'placement' %}
         <li>
             <a href="{% url 'placementdb:placement_list' %}" class="nav-link {% if request.resolver_match.url_name == 'placement_list' %}active{% endif %}">

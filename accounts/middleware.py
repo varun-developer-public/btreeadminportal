@@ -74,6 +74,9 @@ URL_ROLE_MAPPINGS = {
         'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list','conversation_messages','conversation_send',
         'category_list','get_courses_by_category','get_trainers_for_course','get_trainer_slots','get_students_for_course',
         'get_next_course_code','get_course_duration','batch_report','course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report'
+    ],
+    'student': [
+        'student_remarks'
     ]
 }
 
