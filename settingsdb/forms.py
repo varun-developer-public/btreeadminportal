@@ -29,7 +29,7 @@ class DBBackupImportForm(forms.ModelForm):
             # Check file extension
             ext = os.path.splitext(uploaded_file.name)[1].lower()
             if ext != '.sql':
-                raise forms.ValidationError("Only .sql files are allowed.")
+                raise forms.ValidationError("File extension must be .sql")
             
             # Check file size (limit to 50MB)
             if uploaded_file.size > 50 * 1024 * 1024:  # 50MB in bytes

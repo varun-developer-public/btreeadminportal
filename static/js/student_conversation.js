@@ -84,10 +84,31 @@ function initStudentConversation(studentId) {
   var primaryHost = hostname + port;
   var fallbackHost = hostname + ':8000';
   var attemptedFallback = false;
+  var httpMode = false;
   var socket = new WebSocket(wsScheme + '://' + primaryHost + '/ws/student/' + studentId + '/');
   const messagesEl = document.getElementById('messages-' + studentId);
   const formEl = document.getElementById('conv-form-' + studentId);
   const textarea = formEl ? formEl.querySelector('textarea[name="message"]') : null;
+
+  function loadMessagesHTTP(){
+    fetch('/students/conversation/' + studentId + '/messages/').then(function(r){ return r.json(); }).then(function(d){
+      if (!messagesEl) return;
+      messagesEl.innerHTML = '';
+      messagesEl.setAttribute('data-last-date','');
+      if (Array.isArray(d.messages)) {
+        d.messages.forEach(function(m){ renderMessage(messagesEl, m); });
+      }
+    }).catch(function(){});
+  }
+  function sendMessageHTTP(text){
+    var fd = new FormData();
+    fd.append('message', text);
+    fetch('/students/conversation/' + studentId + '/send/', { method: 'POST', body: fd }).then(function(r){ return r.json(); }).then(function(d){
+      if (d && d.ok && d.message) {
+        renderMessage(messagesEl, d.message);
+      }
+    }).catch(function(){});
+  }
 
   socket.onerror = function(){
     try { console.warn('Conversation socket error - inline'); } catch(e){}
@@ -98,6 +119,9 @@ function initStudentConversation(studentId) {
         socket = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/' + studentId + '/');
         attachInlineHandlers(socket, messagesEl, formEl, textarea);
       } catch(e){}
+    } else {
+      httpMode = true;
+      loadMessagesHTTP();
     }
   };
   socket.onclose = function(){
@@ -108,6 +132,9 @@ function initStudentConversation(studentId) {
         socket = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/' + studentId + '/');
         attachInlineHandlers(socket, messagesEl, formEl, textarea);
       } catch(e){}
+    } else {
+      httpMode = true;
+      loadMessagesHTTP();
     }
   };
   socket.onmessage = function (e) {
@@ -126,11 +153,14 @@ function initStudentConversation(studentId) {
       ev.preventDefault();
       const text = textarea.value.trim();
       if (!text) return;
-      if (socket && socket.readyState === 1) {
+      if (!httpMode && socket && socket.readyState === 1) {
         try {
           socket.send(JSON.stringify({ action: 'send', message: text }));
           textarea.value = '';
         } catch (e) {}
+      } else {
+        sendMessageHTTP(text);
+        textarea.value = '';
       }
     });
   }
@@ -225,29 +255,12 @@ var StudentConversationManager = (function(){
     var hostname = window.location.hostname;
     var port = window.location.port ? (':' + window.location.port) : '';
     var primaryHost = hostname + port;
-    var fallbackHost = hostname + ':8000';
-    var attemptedFallback = false;
     socket = new WebSocket(wsScheme + '://' + primaryHost + '/ws/student/' + id + '/');
     socket.onerror = function(){
       try { console.warn('Conversation socket error - modal'); } catch(e){}
-      if (!attemptedFallback && port && port !== ':8000') {
-        attemptedFallback = true;
-        try { socket.close(); } catch(e){}
-        try {
-          socket = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/' + id + '/');
-          attachModalHandlers(socket, messagesEl);
-        } catch(e){}
-      }
     };
     socket.onclose = function(){
       try { console.warn('Conversation socket closed - modal'); } catch(e){}
-      if (!attemptedFallback && port && port !== ':8000') {
-        attemptedFallback = true;
-        try {
-          socket = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/' + id + '/');
-          attachModalHandlers(socket, messagesEl);
-        } catch(e){}
-      }
     };
     socket.onmessage = function(e){
       var data = JSON.parse(e.data);
@@ -280,11 +293,13 @@ var StudentConversationManager = (function(){
       if (sendBtn) {
         sendBtn.onclick = function(){
           var text = textareaEl.value.trim();
-          if (!text || !socket || socket.readyState !== 1) return;
-          try {
-            socket.send(JSON.stringify({ action: 'send', message: text }));
-            textareaEl.value = '';
-          } catch(e){}
+          if (!text) return;
+          if (socket && socket.readyState === 1) {
+            try {
+              socket.send(JSON.stringify({ action: 'send', message: text }));
+              textareaEl.value = '';
+            } catch(e){}
+          }
         };
       }
       formEl.onsubmit = function(ev){ ev.preventDefault(); };
@@ -292,11 +307,13 @@ var StudentConversationManager = (function(){
         if (ev.key === 'Enter' && !ev.shiftKey) {
           ev.preventDefault();
           var text = textareaEl.value.trim();
-          if (!text || !socket || socket.readyState !== 1) return;
-          try {
-            socket.send(JSON.stringify({ action: 'send', message: text }));
-            textareaEl.value = '';
-          } catch(e){}
+          if (!text) return;
+          if (socket && socket.readyState === 1) {
+            try {
+              socket.send(JSON.stringify({ action: 'send', message: text }));
+              textareaEl.value = '';
+            } catch(e){}
+          }
         }
       });
     }

@@ -424,6 +424,8 @@ def import_db_backup(request):
             
             # Clear all existing data before import
             try:
+                from settingsdb.signals import set_current_user
+                set_current_user(None)
                 logger.info("Clearing all existing data before database import...")
                 for model in models_to_truncate:
                     model.objects.all().delete()
@@ -452,6 +454,11 @@ def import_db_backup(request):
                     # If the user was deleted and not restored, set the importer to null
                     db_import.imported_by = None
 
+                try:
+                    from settingsdb.signals import set_current_user
+                    set_current_user(None)
+                except Exception:
+                    pass
                 db_import.processed_at = timezone.now()
                 db_import.status = 'COMPLETED' if success else 'FAILED'
                 db_import.error_message = None if success else message

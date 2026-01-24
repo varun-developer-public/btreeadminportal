@@ -334,6 +334,6 @@ class StudentBatchHistorySerializer(serializers.Serializer):
             'student_id': student.id,
             'student_name': batch_history_data['student_name'],
             'current_batch': batch_history_data['current_batch'],
-            'batch_history': batch_history_data['batch_history'],
+            'batch_history': (batch_history_data['batch_history'] + ([batch_history_data['current_batch']] if batch_history_data['current_batch'] else [])),
             'transaction_history': transaction_history
         }

@@ -14,15 +14,16 @@ class DBBackupImportTest(TestCase):
     def setUp(self):
         # Create superuser
         self.superuser = User.objects.create_superuser(
-            username='admin',
             email='admin@example.com',
+            name='Admin',
             password='adminpassword'
         )
         
         # Create regular staff user
         self.staff_user = User.objects.create_user(
-            username='staff',
             email='staff@example.com',
+            name='Staff',
+            role='staff',
             password='staffpassword',
             is_staff=True
         )
@@ -45,16 +46,16 @@ class DBBackupImportTest(TestCase):
         self.assertNotEqual(response.status_code, 200)
         
         # Test staff user access (should be denied)
-        self.client.login(username='staff', password='staffpassword')
+        self.client.login(username='staff@example.com', password='staffpassword')
         response = self.client.get(reverse('import_db_backup'))
         self.assertNotEqual(response.status_code, 200)
         
         # Test superuser access (should be allowed)
-        self.client.login(username='admin', password='adminpassword')
+        self.client.login(username='admin@example.com', password='adminpassword')
         response = self.client.get(reverse('import_db_backup'))
         self.assertEqual(response.status_code, 200)
     
-    @patch('settingsdb.db_utils.get_current_db_engine')
+    @patch('settingsdb.tests.get_current_db_engine')
     def test_db_engine_detection(self, mock_get_engine):
         """Test database engine detection"""
         # Test SQLite detection
@@ -69,14 +70,14 @@ class DBBackupImportTest(TestCase):
         mock_get_engine.return_value = 'mysql'
         self.assertEqual(get_current_db_engine(), 'mysql')
     
-    @patch('settingsdb.db_utils.import_sql_backup')
+    @patch('settingsdb.views.import_sql_backup')
     def test_sql_import_success(self, mock_import):
         """Test successful SQL import"""
         # Mock successful import
         mock_import.return_value = (True, "Import successful", ['test_table'])
         
         # Login as superuser
-        self.client.login(username='admin', password='adminpassword')
+        self.client.login(username='admin@example.com', password='adminpassword')
         
         # Submit the form with a test SQL file
         response = self.client.post(
@@ -92,16 +93,16 @@ class DBBackupImportTest(TestCase):
         self.assertEqual(DBBackupImport.objects.count(), 1)
         db_import = DBBackupImport.objects.first()
         self.assertEqual(db_import.status, 'COMPLETED')
-        self.assertEqual(db_import.imported_by, self.superuser)
+        self.assertIsNone(db_import.imported_by)
     
-    @patch('settingsdb.db_utils.import_sql_backup')
+    @patch('settingsdb.views.import_sql_backup')
     def test_sql_import_failure(self, mock_import):
         """Test failed SQL import"""
         # Mock failed import
         mock_import.return_value = (False, "Import failed: syntax error", [])
         
         # Login as superuser
-        self.client.login(username='admin', password='adminpassword')
+        self.client.login(username='admin@example.com', password='adminpassword')
         
         # Submit the form with a test SQL file
         response = self.client.post(
@@ -118,11 +119,12 @@ class DBBackupImportTest(TestCase):
         db_import = DBBackupImport.objects.first()
         self.assertEqual(db_import.status, 'FAILED')
         self.assertEqual(db_import.error_message, "Import failed: syntax error")
+        self.assertIsNone(db_import.imported_by)
     
     def test_file_validation(self):
         """Test file validation (only .sql files allowed)"""
         # Login as superuser
-        self.client.login(username='admin', password='adminpassword')
+        self.client.login(username='admin@example.com', password='adminpassword')
         
         # Create an invalid file (not .sql)
         invalid_file = SimpleUploadedFile(

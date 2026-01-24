@@ -375,7 +375,7 @@ def get_students_for_course(request):
 class BatchViewSet(viewsets.ModelViewSet):
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
-    permission_classes = [IsBatchCoordinator | IsStaff | IsTrainer]
+    permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['batch_id', 'course__name', 'trainer__name']
     ordering_fields = ['start_date', 'end_date', 'created_at', 'batch_id']
@@ -444,6 +444,9 @@ class BatchViewSet(viewsets.ModelViewSet):
     def add_student(self, request, pk=None):
        batch = self.get_object()
        student_ids = request.data.get('student_ids', [])
+       single_student_id = request.data.get('student_id')
+       if not student_ids and single_student_id is not None:
+           student_ids = [single_student_id]
 
        if not student_ids:
            return Response({'error': 'Student IDs are required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -773,13 +776,9 @@ class StudentHistoryViewSet(viewsets.ViewSet):
         if not student_id:
             return Response({'error': 'Student ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            student = Student.objects.get(pk=student_id)
-        except Student.DoesNotExist:
-            return Response({'error': 'Student not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        history_data = student.get_batch_history()
-        return Response(history_data)
+        serializer = StudentBatchHistorySerializer(data={'student_id': student_id})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
 
 # Student History Report
 def student_batch_history(request):

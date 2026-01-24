@@ -23,6 +23,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -30,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'rest_framework',
     'accounts',
     'studentsdb',
     'placementdrive',
@@ -146,6 +148,11 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+}
 
 # Email Configuration from environment variables
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

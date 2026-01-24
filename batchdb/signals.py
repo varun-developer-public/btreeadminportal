@@ -12,6 +12,8 @@ def _get_user_from_instance(instance):
 @receiver(post_save, sender=Batch)
 def log_batch_save(sender, instance, created, **kwargs):
     """Log batch creation and updates automatically via signals"""
+    if getattr(instance, "_skip_signal_log", False):
+        return
     user = _get_user_from_instance(instance)
     if not user:
         return  # Skip if no user context available

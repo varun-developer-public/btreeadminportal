@@ -92,8 +92,8 @@ class RolePermissionsMiddleware:
 
     def __call__(self, request):
         if request.user.is_authenticated:
-            # Bypass for media files
-            if request.path.startswith('/media/') or request.path.startswith('/batches/api/'):
+            # Bypass for media files and all API endpoints
+            if request.path.startswith('/media/') or request.path.startswith('/batches/api/') or request.path.startswith('/api/'):
                 return self.get_response(request)
 
             current_url_name = resolve(request.path_info).url_name

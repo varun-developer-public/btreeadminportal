@@ -117,6 +117,7 @@ class Batch(models.Model):
         user = kwargs.pop('user', None)
         if user:
             self._user = user
+            self._skip_signal_log = True
             
         if not self.batch_id and self.course and self.course.category:
             self.batch_id = self.generate_batch_id(self.course.category, self.course)

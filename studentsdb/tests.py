@@ -64,3 +64,23 @@ class ConversationWebSocketTests(TransactionTestCase):
 
         conv = StudentConversation.objects.get(student=student)
         self.assertEqual(conv.messages.count(), 1)
+
+class ConversationHTTPTests(TestCase):
+    def test_http_send_and_messages_endpoints(self):
+        User = get_user_model()
+        user = User.objects.create_user(email='http@test.com', name='HTTP Tester', role='staff', password='pass12345')
+        student = Student.objects.create(first_name='HTTP', last_name='User', email='http@example.com', mode_of_class='ON', week_type='WD')
+        client = self.client
+        client.login(username='http@test.com', password='pass12345')
+        from django.urls import reverse
+        send_url = reverse('conversation_send', args=[student.pk])
+        resp = client.post(send_url, {'message': 'Hello via HTTP'})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertTrue(data.get('ok'))
+        self.assertEqual(data['message']['message'], 'Hello via HTTP')
+        messages_url = reverse('conversation_messages', args=[student.pk])
+        resp2 = client.get(messages_url)
+        self.assertEqual(resp2.status_code, 200)
+        msgs = resp2.json().get('messages', [])
+        self.assertTrue(any(m.get('message') == 'Hello via HTTP' for m in msgs))

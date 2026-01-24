@@ -6,6 +6,7 @@ from .field_choices import DEGREE_CHOICES, BRANCH_CHOICES
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from settingsdb.signals import get_current_user
  
 class Student(models.Model):
     MODE_CHOICES = [
@@ -167,7 +168,18 @@ def apply_feedback_from_message(message_instance, user=None):
 @receiver(post_save, sender=Student)
 def create_student_conversation(sender, instance, created, **kwargs):
     if created:
-        StudentConversation.objects.get_or_create(student=instance)
+        conv, _ = StudentConversation.objects.get_or_create(student=instance)
+        try:
+            user = get_current_user()
+        except Exception:
+            user = None
+        if user and getattr(user, 'is_authenticated', False):
+            ConversationMessage.objects.create(
+                conversation=conv,
+                sender=user,
+                sender_role=getattr(user, 'role', '') or '',
+                message='Welcome!'
+            )
 
 @receiver(post_save, sender=ConversationMessage)
 def sync_pending_feedback_on_conversation(sender, instance, created, **kwargs):

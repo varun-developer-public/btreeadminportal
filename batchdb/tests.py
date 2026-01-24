@@ -20,7 +20,7 @@ class BatchModelTestCase(TestCase):
         self.user = User.objects.create_user(
             email='test@example.com',
             name='Test User',
-            role='admin',
+            role='staff',
             password='testpassword'
         )
         
@@ -63,7 +63,10 @@ class BatchModelTestCase(TestCase):
     def test_batch_id_generation(self):
         """Test that batch_id is generated correctly"""
         self.assertIsNotNone(self.batch.batch_id)
-        self.assertTrue(self.batch.batch_id.startswith('B'))
+        expected_prefix = self.category.name[0].upper() + self.course.code[-2:].upper()
+        self.assertTrue(self.batch.batch_id.startswith(expected_prefix))
+        import re
+        self.assertRegex(self.batch.batch_id, r'^[A-Z][A-Z0-9]{2}[A-Z]{2}$')
     
     def test_add_student(self):
         """Test adding a student to a batch"""
@@ -286,7 +289,7 @@ class BatchAPITestCase(APITestCase):
     
     def test_batch_list(self):
         """Test retrieving batch list"""
-        url = reverse('batchdb:batch-list')
+        url = reverse('batchdb_api:batch-list')
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -294,7 +297,7 @@ class BatchAPITestCase(APITestCase):
     
     def test_batch_detail(self):
         """Test retrieving batch detail"""
-        url = reverse('batchdb:batch-detail', args=[self.batch.id])
+        url = reverse('batchdb_api:batch-detail', args=[self.batch.id])
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -302,7 +305,7 @@ class BatchAPITestCase(APITestCase):
     
     def test_add_student_to_batch(self):
         """Test adding a student to a batch via API"""
-        url = reverse('batchdb:batch-add-student', args=[self.batch.id])
+        url = reverse('batchdb_api:batch-add-student', args=[self.batch.id])
         data = {'student_id': self.student.id}
         response = self.client.post(url, data)
         
@@ -314,7 +317,7 @@ class BatchAPITestCase(APITestCase):
         # Add student to batch
         BatchStudent.objects.create(batch=self.batch, student=self.student)
         
-        url = reverse('batchdb:student-batch-history')
+        url = reverse('batchdb_api:studenthistory-list')
         response = self.client.get(url, {'student_id': self.student.id})
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -44,6 +44,11 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
             msg, fb = await self.create_message(user, message_text)
             payload = {"action": "new_message", "message": message_to_dict(msg)}
             await self.channel_layer.group_send(self.group_name, {"type": "broadcast", "payload": payload})
+            try:
+                list_payload = {"action": "remarks_list_update", "student_id": int(self.student_id), "message": message_to_dict(msg)}
+                await self.channel_layer.group_send("student_remarks", {"type": "broadcast", "payload": list_payload})
+            except Exception:
+                pass
             if fb:
                 fb_payload = {"action": "feedback_updated", "feedback": fb.get("feedback",""), "updated_by_name": fb.get("updated_by_name",""), "updated_at": fb.get("updated_at","")}
                 await self.channel_layer.group_send(self.group_name, {"type": "broadcast", "payload": fb_payload})
@@ -85,3 +90,26 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
         except Exception:
             fb = None
         return msg, fb
+
+class StudentRemarksConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.group_name = "student_remarks"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        await self.send_json({"action": "remarks_init"})
+        try:
+            user = self.scope.get("user", AnonymousUser())
+            print(f"WS REMARKS CONNECT user={getattr(user, 'email', None)} role={getattr(user, 'role', None)}")
+        except Exception:
+            pass
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def broadcast(self, event):
+        try:
+            payload = event.get("payload", {})
+            print(f"WS REMARKS OUT action={payload.get('action')} student_id={payload.get('student_id')}")
+        except Exception:
+            pass
+        await self.send_json(event["payload"])

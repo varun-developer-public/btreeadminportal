@@ -26,13 +26,15 @@
   #studentRemarks .chat-actions{gap:8px;margin-left:auto;align-items:center}
   #studentRemarks .chat-icon-btn{background:transparent;border:none;color:#6b7280;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
   #studentRemarks .send-btn{border-radius:18px;height:30px;width:36px;display:flex;align-items:center;justify-content:center;padding:0 10px}
-  #studentRemarks .remarks-list{max-height:70vh;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+  #studentRemarks .remarks-list{max-height:70vh;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;background:#fff;-ms-overflow-style:none;scrollbar-width:none}
+  #studentRemarks .remarks-list::-webkit-scrollbar{display:none}
   #studentRemarks .remarks-item{display:flex;gap:12px;padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;align-items:center}
   #studentRemarks .remarks-item:hover{background:#f7f8fb}
   #studentRemarks .remarks-avatar{width:36px;height:36px;border-radius:50%;background:#eef0f5;color:#111827;display:flex;align-items:center;justify-content:center;font-weight:600}
   #studentRemarks .remarks-name{font-weight:600}
   #studentRemarks .remarks-meta{font-size:.8rem;color:#6b7280}
   #studentRemarks .remarks-preview{font-size:.9rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+  #studentRemarks .remarks-time{font-size:.8rem;color:#6b7280;margin-left:8px;white-space:nowrap}
   #studentRemarks .filter-form{gap:.5rem}
   #studentRemarks .remarks-input{width:280px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;outline:none}
   #studentRemarks .remarks-input:focus{border-color:#6f43f5;box-shadow:0 0 0 3px rgba(111,67,245,.15)}
@@ -81,7 +83,18 @@
               <div class="remarks-name">{{ s.first_name }} {{ s.last_name|default:'' }}</div>
               <div class="remarks-meta">{{ s.student_id }}</div>
             </div>
-            <div class="remarks-preview">{% with msg=s.conversation.messages.last %}{% if msg %}{{ msg.message }}{% else %}No remarks{% endif %}{% endwith %}</div>
+            <div class="d-flex justify-content-between">
+              <div class="remarks-preview">
+                {% with msg=s.conversation.messages.last %}
+                  {% if msg %}{{ msg.message }}{% else %}No remarks{% endif %}
+                {% endwith %}
+              </div>
+              <div class="remarks-time">
+                {% with msg=s.conversation.messages.last %}
+                  {% if msg %}{{ msg.created_at|date:"d M, h:i a" }}{% endif %}
+                {% endwith %}
+              </div>
+            </div>
           </div>
         </div>
         {% empty %}
@@ -139,6 +152,31 @@
   (function(){
     var socket = null;
     var currentId = null;
+    function updateListItem(studentId, messageObj){
+      var listEl = document.querySelector('#studentRemarks .remarks-list');
+      if (!listEl || !studentId || !messageObj) return;
+      var sid = String(studentId);
+      var item = listEl.querySelector('.remarks-item[data-student-id="'+sid+'"]');
+      if (!item) return;
+      var preview = item.querySelector('.remarks-preview');
+      if (preview) { preview.textContent = (messageObj.message || '').trim(); }
+      var timeEl = item.querySelector('.remarks-time');
+      try {
+        if (timeEl) {
+          var dt = new Date(messageObj.created_at);
+          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          var dd = ('0' + dt.getDate()).slice(-2);
+          var H = dt.getHours();
+          var hh12 = H % 12 || 12;
+          var ampm = H >= 12 ? 'pm' : 'am';
+          var hh = ('0' + hh12).slice(-2);
+          var mm = ('0' + dt.getMinutes()).slice(-2);
+          timeEl.textContent = dd + ' ' + months[dt.getMonth()] + ', ' + hh + ':' + mm + ' ' + ampm;
+        }
+      } catch(e){}
+      item.setAttribute('data-last-time', messageObj.created_at || '');
+      listEl.insertBefore(item, listEl.firstElementChild);
+    }
     function openChat(id, sname, scode){
       var messagesEl = document.getElementById('remarks-messages');
       var textareaEl = document.getElementById('remarks-textarea');
@@ -186,6 +224,7 @@
           data.messages.forEach(function(m){ renderMessage(messagesEl, m); });
         } else if (data.action === 'new_message' && data.message) {
           renderMessage(messagesEl, data.message);
+          updateListItem(currentId, data.message);
         }
       };
       var sendBtn = document.getElementById('remarks-send');
@@ -226,6 +265,45 @@
       var scode = "{{ selected_student.student_id|default:'' }}";
       if (sid) { openChat(sid, sname, scode); }
     });
+  })();
+</script>
+<script>
+  (function(){
+    var sock = null;
+    function handleUpdate(d){
+      if (!d || !d.student_id || !d.message) return;
+      updateListItem(d.student_id, d.message);
+    }
+    function connect(){
+      var wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+      var hostname = window.location.hostname;
+      var port = window.location.port ? (':' + window.location.port) : '';
+      var primaryHost = hostname + port;
+      var fallbackHost = hostname + ':8000';
+      var attemptedFallback = false;
+      sock = new WebSocket(wsScheme + '://' + primaryHost + '/ws/student/remarks/');
+      sock.onerror = function(){
+        if (!attemptedFallback && port && port !== ':8000') {
+          attemptedFallback = true;
+          try { sock.close(); } catch(e){}
+          try { sock = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/remarks/'); attach(sock); } catch(e){}
+        }
+      };
+      sock.onclose = function(){
+        if (!attemptedFallback && port && port !== ':8000') {
+          attemptedFallback = true;
+          try { sock = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/remarks/'); attach(sock); } catch(e){}
+        }
+      };
+      attach(sock);
+    }
+    function attach(s){
+      s.onmessage = function(e){
+        var d = JSON.parse(e.data);
+        if (d.action === 'remarks_list_update') { handleUpdate(d); }
+      };
+    }
+    window.addEventListener('DOMContentLoaded', connect);
   })();
 </script>
 {% endblock %}
