@@ -11,7 +11,7 @@ from paymentdb.forms import PaymentForm
 from placementdb.forms import PlacementUpdateForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import StudentUpdateForm
 from dateutil.relativedelta import relativedelta
@@ -31,9 +31,9 @@ def student_remarks(request):
     form = StudentFilterForm(request.GET)
     user = request.user
     if hasattr(user, 'consultant_profile'):
-        student_qs = Student.objects.filter(consultant=user.consultant_profile.consultant, conversation__isnull=False).order_by('-id')
+        student_qs = Student.objects.filter(consultant=user.consultant_profile.consultant, conversation__isnull=False)
     else:
-        student_qs = Student.objects.filter(conversation__isnull=False).order_by('-id')
+        student_qs = Student.objects.filter(conversation__isnull=False)
     if form.is_valid():
         query = form.cleaned_data.get('q')
         course_category = form.cleaned_data.get('course_category')
@@ -69,6 +69,7 @@ def student_remarks(request):
                 student_qs = student_qs.filter(payment__total_pending_amount__gt=0).distinct()
             elif payment_status == 'Paid':
                 student_qs = student_qs.filter(payment__total_pending_amount__lte=0).distinct()
+    student_qs = student_qs.annotate(last_msg_time=Max('conversation__messages__created_at')).order_by('-last_msg_time', '-id')
     paginator = Paginator(student_qs, 10)
     page = request.GET.get('page')
     try:
