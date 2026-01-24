@@ -1,0 +1,44 @@
+{% load static %}
+{% if student_id %}
+  {% with sid=student_id %}
+  <div id="conversation-{{ sid }}" class="conversation">
+    <div class="messages" id="messages-{{ sid }}">
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="msg">
+          <strong>{% if msg.sender %}{{ msg.sender.name|default:msg.sender.email }}{% else %}System{% endif %}</strong>
+          <small>({{ msg.sender_role }} | {{ msg.created_at|date:"d M Y h:i A" }})</small>
+          <p>{{ msg.message }}</p>
+        </div>
+      {% endfor %}
+    {% endif %}
+    </div>
+    <form id="conv-form-{{ sid }}">
+    {% csrf_token %}
+    <textarea name="message" required placeholder="Type a message..."></textarea>
+    <button type="submit">Send</button>
+    </form>
+  </div>
+  {% endwith %}
+{% else %}
+  {% with sid=student.id %}
+  <div id="conversation-{{ sid }}" class="conversation">
+    <div class="messages" id="messages-{{ sid }}">
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="msg">
+          <strong>{% if msg.sender %}{{ msg.sender.name|default:msg.sender.email }}{% else %}System{% endif %}</strong>
+          <small>({{ msg.sender_role }} | {{ msg.created_at|date:"d M Y h:i A" }})</small>
+          <p>{{ msg.message }}</p>
+        </div>
+      {% endfor %}
+    {% endif %}
+    </div>
+    <form id="conv-form-{{ sid }}">
+    {% csrf_token %}
+    <textarea name="message" required placeholder="Type a message..."></textarea>
+    <button type="submit">Send</button>
+    </form>
+  </div>
+  {% endwith %}
+{% endif %}

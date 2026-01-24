@@ -60,6 +60,11 @@
                 <i class="fas fa-book-open"></i><span>Students DB</span>
             </a>
         </li>
+        <li>
+            <a href="{% url 'student_remarks' %}" class="nav-link {% if request.resolver_match.url_name == 'student_remarks' %}active{% endif %}">
+                <i class="fas fa-file-alt"></i><span>Student Remarks</span>
+            </a>
+        </li>
         {% endif %}
         {% if user.role == 'admin' or user.role == 'staff' or user.role == 'placement' %}
         <li>

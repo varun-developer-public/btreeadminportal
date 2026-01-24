@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student
+from .models import Student, StudentConversation, ConversationMessage
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -23,3 +23,14 @@ class StudentAdmin(admin.ModelAdmin):
         'mock_interview_completed', 'placement_session_completed', 'certificate_issued',
         'onboardingcalldone', 'interviewquestion_shared', 'resume_template_shared'
     )
+
+@admin.register(StudentConversation)
+class StudentConversationAdmin(admin.ModelAdmin):
+    list_display = ('student', 'created_at')
+    search_fields = ('student__student_id', 'student__first_name', 'student__last_name', 'student__email', 'student__phone')
+
+@admin.register(ConversationMessage)
+class ConversationMessageAdmin(admin.ModelAdmin):
+    list_display = ('conversation', 'sender', 'sender_role', 'created_at')
+    search_fields = ('message', 'sender__name', 'sender__email')
+    list_filter = ('sender_role', 'created_at')

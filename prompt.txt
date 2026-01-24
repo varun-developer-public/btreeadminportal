@@ -1,0 +1,242 @@
+Goal: Create a single shared conversation thread per student (one-to-one), visible & editable from Student Detail, Pending Payments, and Batch Edit pages. Changes must be realtime (WebSocket) across all open pages and must store sender, role, timestamp, message. Auto-create thread when student is created.
+
+Summary / Deliverable
+
+One StudentConversation (OneToOne with Student) and ConversationMessage model.
+
+Realtime updates via Django Channels + Redis channel layer.
+
+WebSocket channel per-student: ws://.../ws/student/<student_id>/
+
+UI component (Django template) reusable across pages: shows messages, author, role, datetime, input box.
+
+Notifications (toast) optional but desired.
+
+Permissions: only authorized roles can post; read access as per role.
+
+Auto-create conversation on Student create (post_save signal).
+
+Ensure migrations, tests, and deployment notes included.
+
+Research tasks (start here)
+
+Inspect existing project structure:
+
+accounts or users app (User model, roles).
+
+studentsdb app (Student model).
+
+Where pending payments list/view is implemented.
+
+Batch edit view template.
+
+Current frontend stack (plain Django templates + JS? jQuery? Alpine?).
+
+Current server: ASGI vs WSGI (if WSGI — need to migrate to ASGI for Channels).
+
+Check installed packages and Python version.
+
+Check whether Redis is available in dev/prod; if not plan for Redis or Channels Redis fallback.
+
+Identify where to add reusable template include (e.g., _student_conversation.html) and static js file.
+
+Implementation checklist (step-by-step)
+A. Models & signal
+
+Add models in studentsdb/models.py:
+
+class StudentConversation(models.Model):
+    student = models.OneToOneField('Student', on_delete=models.CASCADE, related_name='conversation')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class ConversationMessage(models.Model):
+    conversation = models.ForeignKey(StudentConversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    sender_role = models.CharField(max_length=50, blank=True)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+
+Add post_save signal to auto-create the StudentConversation when Student created.
+
+B. Migrations
+
+python manage.py makemigrations studentsdb
+
+python manage.py migrate
+
+C. Serializers / JSON formatter
+
+Create small helper to serialize messages for WebSocket JSON:
+
+def message_to_dict(msg):
+    return {
+        "id": msg.id,
+        "sender": msg.sender.username if msg.sender else "System",
+        "sender_role": msg.sender_role,
+        "message": msg.message,
+        "created_at": msg.created_at.isoformat(),
+    }
+
+D. Django Channels setup
+
+Install: pip install channels channels-redis
+
+Update settings.py:
+
+ASGI_APPLICATION = 'project_name.asgi.application'
+CHANNEL_LAYERS = {
+  "default": {
+    "BACKEND": "channels_redis.core.RedisChannelLayer",
+    "CONFIG": {"hosts": [("127.0.0.1", 6379)]},
+  },
+}
+
+
+Create asgi.py (if not present) and include get_asgi_application() + ProtocolTypeRouter + AuthMiddlewareStack.
+
+E. WebSocket consumer
+
+Add consumer in studentsdb/consumers.py:
+
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.contrib.auth import get_user_model
+from channels.db import database_sync_to_async
+from .models import StudentConversation, ConversationMessage
+from .serializers import message_to_dict
+
+class StudentConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.student_id = self.scope['url_route']['kwargs']['student_id']
+        self.group_name = f"student_{self.student_id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive_json(self, content):
+        # content: {"action": "send", "message": "text"}
+        if content.get("action") == "send":
+            user = self.scope.get("user")
+            message_text = content.get("message", "").strip()
+            if not message_text:
+                return
+            msg = await self.create_message(user, message_text)
+            payload = {"action": "new_message", "message": message_to_dict(msg)}
+            await self.channel_layer.group_send(self.group_name, {"type": "broadcast", "payload": payload})
+
+    async def broadcast(self, event):
+        await self.send_json(event["payload"])
+
+    @database_sync_to_async
+    def create_message(self, user, message_text):
+        conv, _ = StudentConversation.objects.get_or_create(student_id=self.student_id)
+        msg = ConversationMessage.objects.create(
+            conversation=conv,
+            sender=user if user.is_authenticated else None,
+            sender_role=getattr(user, "role", ""),
+            message=message_text
+        )
+        return msg
+
+F. Routing
+
+studentsdb/routing.py
+
+from django.urls import re_path
+from . import consumers
+
+websocket_urlpatterns = [
+    re_path(r'ws/student/(?P<student_id>\d+)/$', consumers.StudentConsumer.as_asgi()),
+]
+
+
+Update project asgi.py to include ProtocolTypeRouter and URLRouter for websocket_urlpatterns with AuthMiddlewareStack.
+
+G. Frontend JS (reusable)
+
+Create static/js/student_conversation.js:
+
+function initStudentConversation(studentId, userName, userRole) {
+  const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+  const socket = new WebSocket(`${wsScheme}://${window.location.host}/ws/student/${studentId}/`);
+
+  socket.onopen = () => console.log("WS open for student", studentId);
+  socket.onmessage = e => {
+    const data = JSON.parse(e.data);
+    if (data.action === "new_message") {
+      renderMessage(data.message);
+    }
+  };
+
+  document.querySelector(`#conv-form-${studentId}`).addEventListener('submit', function(ev){
+    ev.preventDefault();
+    const textarea = this.querySelector('textarea[name="message"]');
+    const text = textarea.value.trim();
+    if(!text) return;
+    socket.send(JSON.stringify({action: "send", message: text}));
+    textarea.value = "";
+  });
+}
+
+
+renderMessage should append message HTML into the container. Keep simple and avoid XSS (escape content).
+
+H. Template include (reusable)
+
+Create studentsdb/templates/studentsdb/_conversation.html:
+
+<div id="conversation-{{ student.id }}" class="conversation">
+  <div class="messages" id="messages-{{ student.id }}">
+    {% for msg in messages %}
+      <div class="msg">
+        <strong>{{ msg.sender.username }}</strong>
+        <small>({{ msg.sender_role }} | {{ msg.created_at|date:"d M Y h:i A" }})</small>
+        <p>{{ msg.message }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <form id="conv-form-{{ student.id }}">
+    {% csrf_token %}
+    <textarea name="message" required></textarea>
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    initStudentConversation({{ student.id }}, "{{ request.user.username }}", "{{ request.user.role|default:'' }}");
+  });
+</script>
+
+
+Include this template in Student detail, Pending Payments, and Batch Edit pages.
+
+I. Server & Deployment
+
+Use Daphne (or Uvicorn) as ASGI server for prod.
+
+Ensure Redis is provisioned and accessible. Configure CHANNEL_LAYERS accordingly.
+
+If behind Nginx, proxy WebSocket to Daphne.
+
+J. Testing & QA
+
+Manual:
+
+Open Student Detail and Pending Payments pages in two browsers, send message in one, verify instant appear in the other.
+
+Create a student — verify conversation created and visible.
+
+Edit batch for student — send message, verify appears everywhere.
+
+Automated (optional):
+
+Unit tests for model creation and signal.
+
+Integration tests for WebSocket consumer using channels.testing.WebsocketCommunicator.

@@ -25,6 +25,16 @@
                     <a href="#" class="sr-download-btn" download="student-report.png" title="Download as Image" style="text-decoration: none; color: inherit;">
                         <i class="fas fa-download"></i>
                     </a>
+                    <a href="#"
+                       class="sr-download-btn btn-conversation"
+                       data-bs-toggle="modal"
+                       data-bs-target="#conversationModal"
+                       data-student-id="{{ student.id }}"
+                       data-student-name="{{ student.first_name }} {{ student.last_name }}"
+                       data-student-code="{{ student.student_id }}"
+                       title="Conversation">
+                        <i class="fas fa-comments"></i>
+                    </a>
                 </div>
             </div>
         </div>
@@ -296,6 +306,8 @@
                 <div id="emi-details-container"></div>
             </div>
         </div>
+
+        
 
         <div class="sr-card{% if company_interview_data %} sr-card-full-width{% endif %}">
             <div class="sr-card-header">Interview Details</div>

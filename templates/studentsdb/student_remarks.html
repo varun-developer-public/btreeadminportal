@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Student Remarks{% endblock %}
+{% load static %}
+{% block content %}
+<style>
+  #studentRemarks .chat-container{background:#f7f8fb;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+  #studentRemarks .chat-container{-ms-overflow-style:none;scrollbar-width:none}
+  #studentRemarks .chat-container::-webkit-scrollbar{display:none}
+  #studentRemarks .msg-row{display:flex;gap:8px;align-items:flex-end}
+  #studentRemarks .msg-row.left{justify-content:flex-start}
+  #studentRemarks .msg-row.right{justify-content:flex-end}
+  #studentRemarks .time-row{margin:2px 8px 10px;opacity:.75}
+  #studentRemarks .time-row.right{text-align:right}
+  #studentRemarks .time-row.left{text-align:left}
+  #studentRemarks .avatar{width:28px;height:28px;border-radius:50%;background:#eef0f5;color:#111827;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.85rem;border:1px solid #e5e7eb}
+  #studentRemarks .msg{max-width:75%;padding:10px 12px;border-radius:14px;line-height:1.4}
+  #studentRemarks .msg-header{font-size:.95rem;margin-bottom:4px}
+  #studentRemarks .msg-text{margin:0}
+  #studentRemarks .msg-time{margin-top:6px;opacity:.75}
+  #studentRemarks .msg-left .msg-time{text-align:left}
+  #studentRemarks .msg-right .msg-time{text-align:right}
+  #studentRemarks .msg-left{align-self:flex-start;background:#ffffff;border:1px solid #eef0f5}
+  #studentRemarks .msg-right{align-self:flex-end;background:#6f43f5;color:#fff}
+  #studentRemarks .date-sep{align-self:center;background:#eef0f5;color:#374151;padding:4px 10px;border-radius:12px;font-size:.85rem;margin:8px 0}
+  #studentRemarks .chat-input{border:1px solid #e5e7eb;border-radius:18px;padding:10px 14px;background:#f7f8fb;display:flex;align-items:center;gap:10px}
+  #studentRemarks .chat-actions{gap:8px;margin-left:auto;align-items:center}
+  #studentRemarks .chat-icon-btn{background:transparent;border:none;color:#6b7280;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+  #studentRemarks .send-btn{border-radius:18px;height:30px;width:36px;display:flex;align-items:center;justify-content:center;padding:0 10px}
+  #studentRemarks .remarks-list{max-height:70vh;overflow-y:auto;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+  #studentRemarks .remarks-item{display:flex;gap:12px;padding:10px 12px;border-bottom:1px solid #f0f0f0;cursor:pointer;align-items:center}
+  #studentRemarks .remarks-item:hover{background:#f7f8fb}
+  #studentRemarks .remarks-avatar{width:36px;height:36px;border-radius:50%;background:#eef0f5;color:#111827;display:flex;align-items:center;justify-content:center;font-weight:600}
+  #studentRemarks .remarks-name{font-weight:600}
+  #studentRemarks .remarks-meta{font-size:.8rem;color:#6b7280}
+  #studentRemarks .remarks-preview{font-size:.9rem;color:#374151;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
+  #studentRemarks .filter-form{gap:.5rem}
+  #studentRemarks .remarks-input{width:280px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;outline:none}
+  #studentRemarks .remarks-input:focus{border-color:#6f43f5;box-shadow:0 0 0 3px rgba(111,67,245,.15)}
+  #studentRemarks .remarks-select{padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;outline:none}
+  #studentRemarks .remarks-select:focus{border-color:#6f43f5;box-shadow:0 0 0 3px rgba(111,67,245,.15)}
+  #studentRemarks .remarks-pagination .pagination{margin:0}
+  #studentRemarks .remarks-pagination .page-link{border-radius:8px;border:1px solid #e5e7eb;color:#374151}
+  #studentRemarks .remarks-pagination .page-item.active .page-link{background:#6f43f5;color:#fff;border-color:#6f43f5}
+  #studentRemarks .remarks-list{margin-top:0}
+  #studentRemarks .remarks-card{height:70vh;display:flex;flex-direction:column}
+  #studentRemarks .remarks-card .card-body{display:flex;flex-direction:column;height:100%}
+  #studentRemarks #remarks-messages{flex:1 1 auto;min-height:0;overflow-y:auto}
+</style>
+<div id="studentRemarks" class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0"><i class="fas fa-file-alt me-2"></i>Student Remarks</h2>
+    <form method="get" class="filter-form d-flex align-items-center gap-2">
+      <input type="text" name="q" value="{{ form.cleaned_data.q|default:'' }}" placeholder="Search by name, email, phone, or Student ID" class="remarks-input">
+      <select name="course_status" class="remarks-select">
+        <option value="">All Statuses</option>
+        {% for val,label in form.fields.course_status.choices %}
+          {% if val %}
+            <option value="{{ val }}" {% if form.cleaned_data.course_status == val %}selected{% endif %}>{{ label }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      <select name="payment_status" class="remarks-select">
+        <option value="">All Statuses</option>
+        <option value="Pending" {% if form.cleaned_data.payment_status == 'Pending' %}selected{% endif %}>Pending</option>
+        <option value="Paid" {% if form.cleaned_data.payment_status == 'Paid' %}selected{% endif %}>Paid</option>
+      </select>
+      <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+    </form>
+  </div>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="remarks-list">
+        {% for s in students %}
+        <div class="remarks-item" 
+             data-student-id="{{ s.id }}"
+             data-student-name="{{ s.first_name }} {{ s.last_name|default:'' }}"
+             data-student-code="{{ s.student_id }}">
+          <div class="remarks-avatar">{{ s.first_name|slice:":1" }}</div>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between">
+              <div class="remarks-name">{{ s.first_name }} {{ s.last_name|default:'' }}</div>
+              <div class="remarks-meta">{{ s.student_id }}</div>
+            </div>
+            <div class="remarks-preview">{% with msg=s.conversation.messages.last %}{% if msg %}{{ msg.message }}{% else %}No remarks{% endif %}{% endwith %}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="p-3 text-muted">No students found.</div>
+        {% endfor %}
+      </div>
+      <nav class="remarks-pagination mt-2">
+        <ul class="pagination">
+          {% if students.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1&{{ query_params }}">&laquo;</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ students.previous_page_number }}&{{ query_params }}">Prev</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+            <li class="page-item disabled"><span class="page-link">Prev</span></li>
+          {% endif %}
+          <li class="page-item active"><span class="page-link">{{ students.number }} / {{ students.paginator.num_pages }}</span></li>
+          {% if students.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ students.next_page_number }}&{{ query_params }}">Next</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ students.paginator.num_pages }}&{{ query_params }}">&raquo;</a></li>
+          {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    <div class="col-md-8">
+      <div class="card remarks-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center">
+              <div class="remarks-avatar me-2" id="remarks-avatar"></div>
+              <div>
+                <div id="remarks-title" class="fw-bold"></div>
+                <div class="text-muted" id="remarks-subtitle"></div>
+              </div>
+            </div>
+          </div>
+          <div id="remarks-messages" class="chat-container" data-current-user-name="{{ request.user.name|default:'' }}" data-current-user-email="{{ request.user.email|default:'' }}"></div>
+          <form id="remarks-form" class="mt-3 chat-input">
+            <button type="button" class="chat-icon-btn" aria-label="Attach"><i class="fas fa-paperclip"></i></button>
+            <textarea id="remarks-textarea" name="message" class="form-control border-0 bg-transparent" rows="1" placeholder="Write a message..." required spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" data-gramm="false"></textarea>
+            <div class="d-flex chat-actions ms-auto align-items-center">
+              <button type="button" class="chat-icon-btn" aria-label="Emoji"><i class="fas fa-smile"></i></button>
+              <button type="button" class="chat-icon-btn" aria-label="Voice"><i class="fas fa-microphone"></i></button>
+              <button type="button" id="remarks-send" class="btn btn-primary send-btn" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  (function(){
+    var socket = null;
+    var currentId = null;
+    function openChat(id, sname, scode){
+      var messagesEl = document.getElementById('remarks-messages');
+      var textareaEl = document.getElementById('remarks-textarea');
+      var titleEl = document.getElementById('remarks-title');
+      var subtitleEl = document.getElementById('remarks-subtitle');
+      var avatarEl = document.getElementById('remarks-avatar');
+      if (socket) { try { socket.close(); } catch(e){} socket = null; }
+      currentId = id;
+      messagesEl.innerHTML = '';
+      messagesEl.setAttribute('data-last-date','');
+      avatarEl.textContent = (sname || scode || 'S').trim().charAt(0).toUpperCase();
+      titleEl.textContent = sname || ('Student ' + id);
+      subtitleEl.textContent = scode ? ('ID: ' + scode) : ('Student ' + id);
+      var wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+      var hostname = window.location.hostname;
+      var port = window.location.port ? (':' + window.location.port) : '';
+      var primaryHost = hostname + port;
+      var fallbackHost = hostname + ':8000';
+      var attemptedFallback = false;
+      socket = new WebSocket(wsScheme + '://' + primaryHost + '/ws/student/' + id + '/');
+      socket.onerror = function(){
+        if (!attemptedFallback && port && port !== ':8000') {
+          attemptedFallback = true;
+          try { socket.close(); } catch(e){}
+          try {
+            socket = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/' + id + '/');
+            attachHandlers(socket, messagesEl);
+          } catch(e){}
+        }
+      };
+      socket.onclose = function(){
+        if (!attemptedFallback && port && port !== ':8000') {
+          attemptedFallback = true;
+          try {
+            socket = new WebSocket(wsScheme + '://' + fallbackHost + '/ws/student/' + id + '/');
+            attachHandlers(socket, messagesEl);
+          } catch(e){}
+        }
+      };
+      socket.onmessage = function(e){
+        var data = JSON.parse(e.data);
+        if (data.action === 'init' && Array.isArray(data.messages)) {
+          messagesEl.innerHTML = '';
+          messagesEl.setAttribute('data-last-date','');
+          data.messages.forEach(function(m){ renderMessage(messagesEl, m); });
+        } else if (data.action === 'new_message' && data.message) {
+          renderMessage(messagesEl, data.message);
+        }
+      };
+      var sendBtn = document.getElementById('remarks-send');
+      if (sendBtn) {
+        sendBtn.onclick = function(){
+          var text = textareaEl.value.trim();
+          if (!text || !socket || socket.readyState !== 1) return;
+          try {
+            socket.send(JSON.stringify({ action: 'send', message: text }));
+            textareaEl.value = '';
+          } catch(e){}
+        };
+      }
+    }
+    function attachHandlers(sock, messagesEl){
+      sock.onmessage = function(e){
+        var data = JSON.parse(e.data);
+        if (data.action === 'init' && Array.isArray(data.messages)) {
+          messagesEl.innerHTML = '';
+          messagesEl.setAttribute('data-last-date','');
+          data.messages.forEach(function(m){ renderMessage(messagesEl, m); });
+        } else if (data.action === 'new_message' && data.message) {
+          renderMessage(messagesEl, data.message);
+        }
+      };
+    }
+    document.addEventListener('click', function(e){
+      var item = e.target.closest('.remarks-item');
+      if (!item) return;
+      var sid = item.getAttribute('data-student-id');
+      var sname = item.getAttribute('data-student-name') || '';
+      var scode = item.getAttribute('data-student-code') || '';
+      openChat(sid, sname, scode);
+    });
+    window.addEventListener('DOMContentLoaded', function(){
+      var sid = "{{ selected_id|default:'' }}";
+      var sname = "{{ selected_student.first_name|default:'' }} {{ selected_student.last_name|default:'' }}".trim();
+      var scode = "{{ selected_student.student_id|default:'' }}";
+      if (sid) { openChat(sid, sname, scode); }
+    });
+  })();
+</script>
+{% endblock %}

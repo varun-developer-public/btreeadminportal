@@ -365,6 +365,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
             student = rec.student
             rows.append({
                 'record_id': rec.id,
+                'student_pk': student.id if student else None,
                 'student_id': rec.student_code,
                 'student_name': rec.student_name,
                 'mobile': rec.mobile,

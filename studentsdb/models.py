@@ -3,6 +3,9 @@ from django.utils import timezone
 from consultantdb.models import Consultant
 from settingsdb.models import SourceOfJoining
 from .field_choices import DEGREE_CHOICES, BRANCH_CHOICES
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
  
 class Student(models.Model):
     MODE_CHOICES = [
@@ -95,3 +98,79 @@ class Student(models.Model):
             else:
                 self.student_id = 'BTR0001'
         super().save(*args, **kwargs)
+
+class StudentConversation(models.Model):
+    student = models.OneToOneField('Student', on_delete=models.CASCADE, related_name='conversation')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class ConversationMessage(models.Model):
+    conversation = models.ForeignKey(StudentConversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
+    sender_role = models.CharField(max_length=50, blank=True)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+def apply_feedback_from_message(message_instance, user=None):
+    try:
+        from paymentdb.models import Payment, PendingPaymentRecord
+        conv = message_instance.conversation
+        student = conv.student
+        payment = Payment.objects.filter(student=student).first()
+        if not payment:
+            return None
+        created_record = False
+        try:
+            record = payment.pending_record
+        except PendingPaymentRecord.DoesNotExist:
+            record = PendingPaymentRecord(
+                payment=payment,
+                student=student,
+                student_code=student.student_id,
+                student_name=f"{student.first_name} {student.last_name or ''}",
+                course_status=getattr(student, 'course_status', '')
+            )
+            record.refresh_from_sources()
+            created_record = True
+        msg_text = (message_instance.message or '').strip()
+        if msg_text:
+            record.feedback = msg_text
+        if user and getattr(user, 'is_authenticated', False):
+            record.edited_by = user
+            if record.created_by is None:
+                record.created_by = user
+        elif message_instance.sender:
+            record.edited_by = message_instance.sender
+        if created_record:
+            record.save()
+        else:
+            if msg_text:
+                record.save(update_fields=['feedback', 'edited_by', 'updated_at'])
+            else:
+                record.save(update_fields=['edited_by', 'updated_at'])
+        updated_by_name = (
+            getattr(record.edited_by, 'name', None)
+            or getattr(record.edited_by, 'email', None)
+            or getattr(record.edited_by, 'username', None)
+        )
+        return {
+            'feedback': record.feedback or '',
+            'updated_by_name': updated_by_name or '',
+            'updated_at': record.updated_at.isoformat(),
+            'student_pk': student.id,
+        }
+    except Exception:
+        return None
+
+@receiver(post_save, sender=Student)
+def create_student_conversation(sender, instance, created, **kwargs):
+    if created:
+        StudentConversation.objects.get_or_create(student=instance)
+
+@receiver(post_save, sender=ConversationMessage)
+def sync_pending_feedback_on_conversation(sender, instance, created, **kwargs):
+    if not created:
+        return
+    apply_feedback_from_message(instance, user=instance.sender)

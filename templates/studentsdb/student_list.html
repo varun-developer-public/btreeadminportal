@@ -144,7 +144,17 @@
             {% if request.user.role != 'batch_coordination' %}
             <td>
                 <div class="d-flex gap-2 justify-content-center">
-                    <a href="{% url 'student_report' student.student_id %}" class="btn-secondary"><i class="fas fa-eye"></i></a>
+                    <button type="button"
+                            class="btn-secondary btn-conversation"
+                            data-bs-toggle="modal"
+                            data-bs-target="#conversationModal"
+                            data-bs-toggle="tooltip"
+                            title="Remarks"
+                            data-student-id="{{ student.id }}"
+                            data-student-name="{{ student.first_name }} {{ student.last_name|default:'' }}"
+                            data-student-code="{{ student.student_id }}">
+                        <i class="fas fa-file-alt"></i>
+                    </button>
                     <a href="{% url 'update_student' student.student_id %}" class="btn-update"><i class="fas fa-edit"></i></a>
                     {% if request.user.role == 'admin' %}
                     <a href="{% url 'delete_student' student.student_id %}" class="btn-danger"><i class="fas fa-trash"></i></a>

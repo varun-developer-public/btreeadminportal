@@ -18,9 +18,88 @@ from dateutil.relativedelta import relativedelta
 from placementdb.models import CompanyInterview, Placement
 
 import pandas as pd
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_http_methods
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .serializers import message_to_dict
 from django.db import transaction
 from datetime import datetime
+
+@login_required
+def student_remarks(request):
+    form = StudentFilterForm(request.GET)
+    user = request.user
+    if hasattr(user, 'consultant_profile'):
+        student_qs = Student.objects.filter(consultant=user.consultant_profile.consultant, conversation__isnull=False).order_by('-id')
+    else:
+        student_qs = Student.objects.filter(conversation__isnull=False).order_by('-id')
+    if form.is_valid():
+        query = form.cleaned_data.get('q')
+        course_category = form.cleaned_data.get('course_category')
+        course = form.cleaned_data.get('course')
+        course_status = form.cleaned_data.get('course_status')
+        start_date = form.cleaned_data.get('start_date')
+        end_date = form.cleaned_data.get('end_date')
+        status = form.cleaned_data.get('status')
+        payment_status = form.cleaned_data.get('payment_status')
+        if status:
+            student_qs = student_qs.filter(**{f'{status}': True})
+        if query:
+            student_qs = student_qs.filter(
+                Q(first_name__icontains=query) |
+                Q(last_name__icontains=query) |
+                Q(email__icontains=query) |
+                Q(phone__icontains=query) |
+                Q(student_id__icontains=query)
+            )
+        if course:
+            student_qs = student_qs.filter(course_id=course.id)
+        elif course_category:
+            course_ids = Course.objects.filter(category=course_category).values_list('id', flat=True)
+            student_qs = student_qs.filter(course_id__in=course_ids)
+        if course_status:
+            student_qs = student_qs.filter(course_status=course_status)
+        if start_date:
+            student_qs = student_qs.filter(enrollment_date__gte=start_date)
+        if end_date:
+            student_qs = student_qs.filter(enrollment_date__lte=end_date)
+        if payment_status:
+            if payment_status == 'Pending':
+                student_qs = student_qs.filter(payment__total_pending_amount__gt=0).distinct()
+            elif payment_status == 'Paid':
+                student_qs = student_qs.filter(payment__total_pending_amount__lte=0).distinct()
+    paginator = Paginator(student_qs, 10)
+    page = request.GET.get('page')
+    try:
+        students = paginator.page(page)
+    except PageNotAnInteger:
+        students = paginator.page(1)
+    except EmptyPage:
+        students = paginator.page(paginator.num_pages)
+    selected_id = request.GET.get('sid')
+    selected_student = None
+    if not selected_id and students:
+        try:
+            selected_id = students[0].id
+        except Exception:
+            selected_id = None
+    if selected_id:
+        try:
+            selected_student = Student.objects.get(pk=int(selected_id))
+        except (Student.DoesNotExist, ValueError, TypeError):
+            selected_student = None
+    query_params = request.GET.copy()
+    if 'page' in query_params:
+        del query_params['page']
+    context = {
+        'students': students,
+        'form': form,
+        'selected_student': selected_student,
+        'selected_id': selected_id,
+        'query_params': query_params.urlencode(),
+    }
+    return render(request, 'studentsdb/student_remarks.html', context)
 
 @login_required
 def create_student(request):
@@ -599,6 +678,9 @@ def student_report(request, student_id):
     # Latest batch & trainer
     latest_batch = student.batches.order_by('-start_date').first()
     trainer = latest_batch.trainer if latest_batch else None
+    from .models import StudentConversation
+    conv, _ = StudentConversation.objects.get_or_create(student=student)
+    conv_messages = list(conv.messages.select_related('sender').order_by('created_at'))
 
     context = {
         'student': student,
@@ -608,6 +690,53 @@ def student_report(request, student_id):
         'placement': placement,
         'trainer': trainer,
         'placed_interview_status': placed_interview_status,
+        'messages': conv_messages,
     }
 
     return render(request, 'studentsdb/student_report.html', context)
+
+@login_required
+@require_http_methods(["GET"])
+def conversation_messages(request, student_pk):
+    try:
+        student = Student.objects.get(pk=int(student_pk))
+    except (Student.DoesNotExist, ValueError, TypeError):
+        return JsonResponse({"messages": []}, status=404)
+    from .models import StudentConversation
+    conv, _ = StudentConversation.objects.get_or_create(student=student)
+    qs = conv.messages.select_related("sender").order_by("-created_at")[:50]
+    data = [message_to_dict(m) for m in reversed(list(qs))]
+    return JsonResponse({"messages": data})
+
+def _can_post_http(user):
+    if not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+    role = getattr(user, "role", None)
+    return role in {'admin', 'staff', 'batch_coordination', 'consultant', 'trainer'}
+
+@login_required
+@require_http_methods(["POST"])
+def conversation_send(request, student_pk):
+    message_text = str(request.POST.get("message", "")).strip()
+    if not message_text:
+        return JsonResponse({"ok": False, "reason": "empty"}, status=400)
+    if not _can_post_http(request.user):
+        return JsonResponse({"ok": False, "reason": "unauthorized"}, status=403)
+    from .models import StudentConversation, ConversationMessage
+    conv, _ = StudentConversation.objects.get_or_create(student_id=student_pk)
+    msg = ConversationMessage.objects.create(
+        conversation=conv,
+        sender=request.user if getattr(request.user, "is_authenticated", False) else None,
+        sender_role=getattr(request.user, "role", "") or "",
+        message=message_text
+    )
+    payload = {"action": "new_message", "message": message_to_dict(msg)}
+    try:
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(f"student_{student_pk}", {"type": "broadcast", "payload": payload})
+    except Exception:
+        pass
+    return JsonResponse({"ok": True, "message": message_to_dict(msg)})

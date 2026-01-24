@@ -146,24 +146,11 @@
                                             {% endfor %}
                                         </select>
                                     </td>
-                                    <td style="min-width: 260px;">
-                                        <div class="input-group input-group-sm remarks-group justify-content-center align-items-center gap-3">
-                                            <input type="text"
-                                                   name="student_{{ student.id }}_remarks"
-                                                   class="form-control remarks-input"
-                                                   value="{{ bs.update_remarks|default:'' }}"
-                                                   placeholder="Remarks for changes"
-                                                   readonly
-                                                   data-bs-toggle="tooltip"
-                                                   data-bs-placement="top"
-                                                   title="{{ bs.update_remarks|default:'' }}">
-                                            <button type="button"
-                                                    class="btn btn-secondary btn-compact edit-remarks-btn"
-                                                    data-student-id="{{ student.id }}"
-                                                    aria-label="Edit remarks">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                        </div>
+
+                                    <td>
+                                        <button class="btn btn-secondary btn-compact btn-conversation" type="button" data-bs-toggle="modal" data-bs-target="#conversationModal" data-student-id="{{ student.id }}" data-student-name="{{ student.first_name }}{% if student.last_name %} {{ student.last_name }}{% endif %}" data-student-code="{{ student.student_id }}">
+                                            <i class="fas fa-comments"></i>
+                                        </button>
                                     </td>
                                 </tr>
                                 {% endwith %}

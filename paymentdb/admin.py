@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Payment
+from .models import Payment, PendingPaymentRecord
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
@@ -16,3 +16,9 @@ class PaymentAdmin(admin.ModelAdmin):
         'emi_4_amount', 'emi_4_date', 'emi_4_paid_amount', 'emi_4_paid_date', 'emi_4_proof', 'emi_4_updated_by',
         'total_pending_amount'
     )
+
+@admin.register(PendingPaymentRecord)
+class PendingPaymentRecordAdmin(admin.ModelAdmin):
+    list_display = ('student', 'course_status', 'trainer_type', 'status', 'pending_amount', 'next_emi_number', 'next_due_date')
+    search_fields = ('student__student_id', 'student_name', 'mobile', 'batch_code')
+    list_filter = ('course_status', 'trainer_type', 'status')

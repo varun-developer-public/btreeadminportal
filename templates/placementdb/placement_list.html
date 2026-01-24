@@ -221,7 +221,18 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'placementdb:update_placement' placement.pk %}" class="btn btn-primary"><i class="fas fa-edit"></i></a>
+                        <a href="{% url 'placementdb:update_placement' placement.pk %}" class="btn btn-primary" title="Edit"><i class="fas fa-edit"></i></a>
+                        <button 
+                            type="button" 
+                            class="btn btn-secondary btn-conversation" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#conversationModal" 
+                            data-student-id="{{ placement.student.id }}" 
+                            data-student-name="{{ placement.student.first_name }} {{ placement.student.last_name|default:'' }}" 
+                            data-student-code="{{ placement.student.student_id }}"
+                            title="Remarks">
+                            <i class="fas fa-file-alt"></i>
+                        </button>
                         <a href="{% url 'placementdb:delete_placement' placement.pk %}" class="btn btn-danger btn-delete"><i class="fas fa-trash"></i></a>
                     </td>
                 </tr>

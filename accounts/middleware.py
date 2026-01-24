@@ -7,7 +7,7 @@ URL_ROLE_MAPPINGS = {
     'staff': [
         'staff_dashboard', 'student_list', 'create_student', 'update_student', 'import_students', 'download_student_template', 'download_error_report',
         'batch_list', 'create_batch', 'update_batch', 'import_batches', 'download_batch_template', 'download_error_report_batch',
-        'payment_list', 'payment_update', 'update_emi_date',
+        'payment_list', 'payment_update', 'update_emi_date', 'pending_payments',
         'placement_list', 'update_placement',
         'consultant_list', 'create_consultant', 'update_consultant',
         'settings_dashboard', 'source_list', 'payment_account_list', 'remove_source', 'remove_payment_account',
@@ -22,27 +22,28 @@ URL_ROLE_MAPPINGS = {
         'trainerhandover-list','trainerhandover-detail',
         'batchtransaction-list','batchtransaction-detail',
         'studenthistory-list','studenthistory-detail','batch_report','interview_list',
-        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','requests_list','student_report'
+        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','requests_list','student_report',
+        'student_remarks'
     ],
     'placement': [
         'placement_dashboard',
         'placement_list', 'update_placement', 'pending_resumes_list',
-        'student_list', 'update_student',
+        'student_list', 'update_student', 'student_remarks',
         'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses',
         'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
-        'ajax_load_students','postpone_interview_round', 'restart_interview_cycle','student_report','api_courses_by_category','edit_resume_shared_status',
+        'ajax_load_students','postpone_interview_round', 'restart_interview_cycle','student_report','conversation_messages','api_courses_by_category','edit_resume_shared_status',
         'delete_placement','batch_report','interview_list','placed_students_list'
     ],
     'trainer': [
         'trainer_dashboard',
-        'batch_list',
-        'student_list','batch_report','student_report',
+        'batch_list', 'student_remarks',
+        'student_list','batch_report','student_report','conversation_messages','conversation_send',
         'batch_list','update_batch','course_list','category_list','course_create','course_update','get_next_course_code','get_courses_by_category'
     ],
     'batch_coordination': [
         'batch_coordination_dashboard',
         'batch_list', 'create_batch', 'update_batch',
-        'student_list',
+        'student_list', 'student_remarks', 'pending_payments',
         'trainer_list', 'create_trainer', 'update_trainer',
         'update_user',
         'password_change',
@@ -63,14 +64,14 @@ URL_ROLE_MAPPINGS = {
         'transferrequest-list','transferrequest-detail',
         'trainerhandover-list','trainerhandover-detail',
         'batchtransaction-list','batchtransaction-detail',
-        'studenthistory-list','studenthistory-detail','batch_report',
+        'studenthistory-list','studenthistory-detail','batch_report','conversation_messages','conversation_send',
         'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report'
     ],
     'consultant': [
         'consultant_profile',
-        'student_list',
+        'student_list', 'student_remarks',
         'payment_list', 'payment_update',
-        'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list',
+        'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list','conversation_messages','conversation_send',
         'category_list','get_courses_by_category','get_trainers_for_course','get_trainer_slots','get_students_for_course',
         'get_next_course_code','get_course_duration','batch_report','course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report'
     ]
@@ -97,7 +98,7 @@ class RolePermissionsMiddleware:
             print("DEBUG URL NAME:", current_url_name, request.path)
 
             # Bypass for public URLs and admin users
-            if current_url_name in PUBLIC_URLS or request.user.role in ['admin', 'staff']:
+            if current_url_name in PUBLIC_URLS or request.user.role in ['admin', 'staff'] or getattr(request.user, 'is_superuser', False):
                 return self.get_response(request)
 
             # Check permissions for other roles

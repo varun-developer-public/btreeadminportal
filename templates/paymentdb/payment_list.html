@@ -161,7 +161,18 @@
                     </td>
 
                     <td>
-                        <a href="{% url 'payment_update' payment_id=payment.payment_id %}" class="btn-update">Update</a>
+                        <a href="{% url 'payment_update' payment_id=payment.payment_id %}" class="btn-update"><i class="fas fa-edit"></i></a>
+                        <button 
+                            type="button" 
+                            class="btn-secondary btn-conversation" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#conversationModal" 
+                            data-student-id="{{ payment.student.id }}" 
+                            data-student-name="{{ payment.student.first_name }} {{ payment.student.last_name|default:'' }}" 
+                            data-student-code="{{ payment.student.student_id }}"
+                            title="Remarks">
+                            <i class="fas fa-file-alt"></i>
+                        </button>
                     </td>
                 </tr>
                 {% empty %}
