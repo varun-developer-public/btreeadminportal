@@ -149,19 +149,16 @@ class Payment(models.Model):
         return []
 
     def get_next_payable_emi(self):
-        paid_remaining = self.amount_paid or 0
+        # Find the first EMI that is not fully paid
         for i in range(1, 5):
             emi_amount = getattr(self, f'emi_{i}_amount') or 0
             if emi_amount == 0:
                 continue
+            
             emi_paid = getattr(self, f'emi_{i}_paid_amount') or 0
-            remaining_for_emi = emi_amount - emi_paid
-            if remaining_for_emi <= 0:
-                continue
-            if paid_remaining >= remaining_for_emi:
-                paid_remaining -= remaining_for_emi
-                continue
-            return i
+            # If paid amount is less than due amount, this is the next payable EMI
+            if emi_paid < emi_amount:
+                return i
         return None
 
     def is_emi_fully_paid(self, emi_number):
@@ -242,8 +239,14 @@ class PendingPaymentRecord(models.Model):
         self.pending_amount = self.payment.total_pending_amount or 0
         next_emi = self.payment.get_next_payable_emi()
         self.next_emi_number = next_emi
-        self.next_emi_amount = getattr(self.payment, f'emi_{next_emi}_amount') if next_emi else None
-        self.next_due_date = getattr(self.payment, f'emi_{next_emi}_date') if next_emi else None
+        if next_emi:
+            amount = getattr(self.payment, f'emi_{next_emi}_amount') or 0
+            paid = getattr(self.payment, f'emi_{next_emi}_paid_amount') or 0
+            self.next_emi_amount = amount - paid
+            self.next_due_date = getattr(self.payment, f'emi_{next_emi}_date')
+        else:
+            self.next_emi_amount = None
+            self.next_due_date = None
         self.consultant_name = s.consultant.name if s.consultant else None
         self.trainer_name = (active_bs.batch.trainer.name if active_bs and active_bs.batch and active_bs.batch.trainer else (s.trainer.name if s.trainer else None))
         self.trainer_type = (active_bs.batch.trainer.employment_type if active_bs and active_bs.batch and active_bs.batch.trainer else (s.trainer.employment_type if s.trainer else None))
