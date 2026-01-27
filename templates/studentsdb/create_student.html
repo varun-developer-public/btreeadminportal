@@ -535,11 +535,9 @@
         </div>
 
         <div class="form-actions">
+            <div id="emi-error-message" class="error-message mb-3" style="display: none; width: 100%; text-align: center;"></div>
             <button type="submit" class="btn btn-primary" id="submit-button">Create Student</button>
             <a href="{% url 'student_list' %}" class="btn btn-secondary">Cancel</a>
-        </div>
-            </form>
-            <div id="emi-error-message" class="error-message" style="display: none;"></div>
         </div>
     </form>
 </div>
@@ -857,33 +855,8 @@ $(document).ready(function () {
         return isValid;
     }
     
-    // Form submission with validation
-    $('.student-form').on('submit', function(e) {
-        if (!validateForm()) {
-            e.preventDefault();
-            // Scroll to the first error
-            const firstError = $('.error-message:visible').first();
-            if (firstError.length) {
-                $('html, body').animate({
-                    scrollTop: firstError.offset().top - 100
-                }, 500);
-            }
-        } else {
-            // Show loading state on submit button
-            const submitBtn = $('#submit-button');
-            const originalText = submitBtn.html();
-            submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
-            submitBtn.prop('disabled', true);
-            
-            // Re-enable after 10 seconds in case of network issues
-            setTimeout(function() {
-                if (submitBtn.prop('disabled')) {
-                    submitBtn.html(originalText);
-                    submitBtn.prop('disabled', false);
-                }
-            }, 10000);
-        }
-    });
+    // Form submission with validation logic moved to combined handler
+
 });
 </script>
 <script>

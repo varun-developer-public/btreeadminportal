@@ -62,7 +62,7 @@ body {
 .content-container {
     flex: 1;
     margin-left: 250px;
-    padding: 30px;
+    padding: 0 30px;
     overflow-x: auto;
 }
 

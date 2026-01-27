@@ -7,6 +7,8 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from settingsdb.signals import get_current_user
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
  
 class Student(models.Model):
     MODE_CHOICES = [
@@ -102,17 +104,52 @@ class Student(models.Model):
 
 class StudentConversation(models.Model):
     student = models.OneToOneField('Student', on_delete=models.CASCADE, related_name='conversation')
+    is_priority = models.BooleanField(default=False)
+    priority_level = models.IntegerField(default=0)  # 1-5, 0 for none
+    last_message = models.TextField(blank=True, default='')
+    last_message_at = models.DateTimeField(null=True, blank=True)
+    last_message_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name='last_message_conversations')
+    unread_count = models.PositiveIntegerField(default=0)
+    # New fields to track priority derived ONLY from the latest message
+    last_message_priority = models.BooleanField(default=False)
+    last_message_priority_level = models.IntegerField(default=0)
+    last_message_hashtag = models.CharField(max_length=20, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"Conversation with {self.student.student_id}"
+
 class ConversationMessage(models.Model):
+    MESSAGE_TYPE_CHOICES = (
+        ("text", "Text"),
+        ("file", "File"),
+    )
     conversation = models.ForeignKey(StudentConversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     sender_role = models.CharField(max_length=50, blank=True)
-    message = models.TextField()
+    hashtag = models.CharField(max_length=20, blank=True, choices=[('placement', 'Placement'), ('class', 'Class'), ('payment', 'Payment')], default='')
+    priority = models.CharField(max_length=10, blank=True, choices=[('high', 'High'), ('medium', 'Medium'), ('low', 'Low')], default='')
+    message_type = models.CharField(max_length=10, choices=MESSAGE_TYPE_CHOICES, default="text")
+    message = models.TextField(blank=True)
+    file = models.FileField(upload_to="student_conversation/", null=True, blank=True)
+    file_name = models.CharField(max_length=255, blank=True)
+    file_size = models.PositiveIntegerField(null=True, blank=True)
+    file_mime = models.CharField(max_length=100, blank=True)
+    is_edited = models.BooleanField(default=False)
+    edited_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['created_at']
+
+class MessageReadStatus(models.Model):
+    message = models.ForeignKey(ConversationMessage, on_delete=models.CASCADE, related_name='read_statuses')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    read_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('message', 'user')
+
 
 def apply_feedback_from_message(message_instance, user=None):
     try:
@@ -169,16 +206,36 @@ def apply_feedback_from_message(message_instance, user=None):
 def create_student_conversation(sender, instance, created, **kwargs):
     if created:
         conv, _ = StudentConversation.objects.get_or_create(student=instance)
+
+def send_payment_onboarding_message(sender, instance, created, **kwargs):
+    if created:
+        # instance is Payment
+        student = instance.student
+        conv, _ = StudentConversation.objects.get_or_create(student=student)
+        
         try:
             user = get_current_user()
         except Exception:
             user = None
+            
         if user and getattr(user, 'is_authenticated', False):
+            course_name = "N/A"
+            if student.course:
+                course_name = student.course.course_name
+            
+            student_name = f"{student.first_name} {student.last_name or ''}".strip()
+            emi_count = instance.emi_type if instance.emi_type != 'NONE' else '0'
+            
+            message_text = (
+                f"I have onboarded the student {student_name} - {student.student_id} today for the course {course_name} "
+                f"with {emi_count} EMI split. "
+            )
+
             ConversationMessage.objects.create(
                 conversation=conv,
                 sender=user,
                 sender_role=getattr(user, 'role', '') or '',
-                message='Welcome!'
+                message=message_text
             )
 
 @receiver(post_save, sender=ConversationMessage)
@@ -186,3 +243,65 @@ def sync_pending_feedback_on_conversation(sender, instance, created, **kwargs):
     if not created:
         return
     apply_feedback_from_message(instance, user=instance.sender)
+
+@receiver(post_save, sender=ConversationMessage)
+def update_conversation_stats(sender, instance, created, **kwargs):
+    if not created:
+        return
+    
+    conv = instance.conversation
+    conv.last_message = instance.message
+    conv.last_message_at = instance.created_at
+    conv.last_message_by = instance.sender
+    
+    # Increment unread count ONLY if the message is NOT from an admin/staff user
+    # We assume if sender is set (User), it's an admin/staff. 
+    # If sender is None or role is 'student', it's the student.
+    if instance.sender is None or instance.sender_role == 'student':
+        conv.unread_count += 1
+    
+    # Update priority derived ONLY from this latest message
+    # Reset first
+    conv.last_message_priority = False
+    conv.last_message_priority_level = 0
+    conv.last_message_hashtag = instance.hashtag or ''
+    
+    if instance.priority:
+        conv.last_message_priority = True
+        if instance.priority == 'high':
+            conv.last_message_priority_level = 3
+        elif instance.priority == 'medium':
+            conv.last_message_priority_level = 2
+        elif instance.priority == 'low':
+            conv.last_message_priority_level = 1
+            
+    # Also update the legacy/cumulative priority fields to match this latest message logic
+    # The user requested that star/background come only based on the last message.
+    # So we overwrite the cumulative fields with the latest message's state.
+    conv.is_priority = conv.last_message_priority
+    conv.priority_level = conv.last_message_priority_level
+            
+    conv.save()
+    
+    # Send WebSocket update
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        "student_remarks",
+        {
+            "type": "broadcast",
+            "payload": {
+                "action": "remarks_list_update",
+                "student_id": conv.student.id,
+                "message": {
+                    "message": conv.last_message,
+                    "created_at": conv.last_message_at.isoformat() if conv.last_message_at else "",
+                    "sender_id": instance.sender.id if instance.sender else None,
+                    "priority": instance.priority,
+                    "hashtag": instance.hashtag
+                },
+                "unread_count": conv.unread_count,
+                "is_priority": conv.is_priority,
+                "priority_level": conv.priority_level
+            }
+        }
+    )

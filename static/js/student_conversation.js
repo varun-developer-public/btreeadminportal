@@ -1,3 +1,130 @@
+// Context Menu Logic
+(function(){
+  var menuId = 'chat-context-menu';
+  var menu = document.getElementById(menuId);
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = menuId;
+    menu.style.position = 'absolute';
+    menu.style.display = 'none';
+    menu.style.zIndex = '9999';
+    menu.style.backgroundColor = '#fff';
+    menu.style.border = '1px solid #ccc';
+    menu.style.borderRadius = '4px';
+    menu.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+    menu.style.minWidth = '120px';
+    document.body.appendChild(menu);
+    
+    // Global click to close menu
+    document.addEventListener('click', function(){
+      menu.style.display = 'none';
+    });
+  }
+
+  window.showContextMenu = function(e, msg, mine) {
+    e.preventDefault();
+    menu.innerHTML = '';
+    var list = document.createElement('ul');
+    list.style.listStyle = 'none';
+    list.style.margin = '0';
+    list.style.padding = '5px 0';
+    
+    // Info Option (Read Receipts)
+    var infoItem = document.createElement('li');
+    infoItem.style.padding = '6px 12px';
+    infoItem.style.cursor = 'pointer';
+    infoItem.style.fontSize = '14px';
+    infoItem.innerHTML = '<i class="fas fa-info-circle me-2"></i> Info';
+    infoItem.onmouseover = function(){ this.style.backgroundColor = '#f3f4f6'; };
+    infoItem.onmouseout = function(){ this.style.backgroundColor = 'transparent'; };
+    infoItem.onclick = function() {
+      showMsgInfo(msg);
+    };
+    list.appendChild(infoItem);
+
+    // Edit Option (Only if mine and text)
+    if (mine && msg.type !== 'file') {
+      var editItem = document.createElement('li');
+      editItem.style.padding = '6px 12px';
+      editItem.style.cursor = 'pointer';
+      editItem.style.fontSize = '14px';
+      editItem.innerHTML = '<i class="fas fa-pencil-alt me-2"></i> Edit Message';
+      editItem.onmouseover = function(){ this.style.backgroundColor = '#f3f4f6'; };
+      editItem.onmouseout = function(){ this.style.backgroundColor = 'transparent'; };
+      editItem.onclick = function() {
+        startEditing(msg.id);
+      };
+      list.appendChild(editItem);
+    }
+
+    menu.appendChild(list);
+    
+    // Position menu
+    var x = e.pageX;
+    var y = e.pageY;
+    
+    // Boundary checks (basic)
+    if (x + 150 > window.innerWidth) x -= 150;
+    
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+    menu.style.display = 'block';
+  };
+})();
+
+function showMsgInfo(msg) {
+  var modalId = 'msg-info-modal';
+  var modal = document.getElementById(modalId);
+  if (modal) modal.remove();
+  
+  var curName = document.body.getAttribute('data-current-name') || '';
+  var curEmail = document.body.getAttribute('data-current-email') || '';
+
+  // Build Read List
+  var readListHtml = '<p class="text-muted small p-2 m-0">No read receipts yet.</p>';
+  if (msg.read_by && msg.read_by.length > 0) {
+    var others = msg.read_by.filter(function(r){ 
+        return r.user !== curName && r.user !== curEmail; 
+    });
+    
+    if (others.length > 0) {
+        readListHtml = '<ul class="list-group list-group-flush">';
+        others.forEach(function(r){
+          var t = new Date(r.read_at);
+          var timeStr = t.toLocaleDateString() + ' ' + t.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+          readListHtml += '<li class="list-group-item d-flex justify-content-between align-items-center small">' +
+            '<span>' + escapeHTML(r.user) + '</span>' +
+            '<span class="text-muted" style="font-size:0.8em">' + timeStr + '</span>' +
+            '</li>';
+        });
+        readListHtml += '</ul>';
+    }
+  }
+
+  var modalHtml = 
+    '<div class="modal fade" id="' + modalId + '" tabindex="-1" style="z-index: 10000;">' +
+      '<div class="modal-dialog modal-dialog-centered modal-sm">' +
+        '<div class="modal-content">' +
+          '<div class="modal-header">' +
+            '<h6 class="modal-title">Message Info</h6>' +
+            '<button type="button" class="btn-close" data-bs-dismiss="modal"></button>' +
+          '</div>' +
+          '<div class="modal-body p-0">' +
+             readListHtml +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+    
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+  var modalEl = document.getElementById(modalId);
+  var bsModal = new bootstrap.Modal(modalEl);
+  bsModal.show();
+  modalEl.addEventListener('hidden.bs.modal', function(){
+    modalEl.remove();
+  });
+}
+
 function escapeHTML(str) {
   return str.replace(/[&<>"']/g, function (m) {
     return ({
@@ -9,6 +136,82 @@ function escapeHTML(str) {
     })[m];
   });
 }
+
+window.selectHashtag = function(val, mode) {
+  var idPrefix = mode === 'remarks' ? 'remarks-' : 'conv-modal-';
+  var btnId = mode === 'remarks' ? 'remarksHashtagBtn' : 'convModalHashtagBtn';
+  var badgeId = idPrefix + 'hashtag-badge';
+  var inputEl = document.getElementById(idPrefix + 'hashtag-val');
+  var btnEl = document.getElementById(btnId);
+  var badgeEl = document.getElementById(badgeId);
+  
+  if (inputEl) inputEl.value = val;
+  if (btnEl) {
+    if (val) btnEl.classList.add('text-primary');
+    else btnEl.classList.remove('text-primary');
+  }
+  if (badgeEl) {
+    if (!val) {
+      badgeEl.innerHTML = '';
+      badgeEl.className = 'ms-1 align-self-center';
+    } else {
+      var badgeClass = 'badge rounded-pill ';
+      var text = val;
+      if (val === 'placement') {
+        badgeClass += 'bg-primary';
+        text = 'Placement';
+      } else if (val === 'class') {
+        badgeClass += 'bg-info text-dark';
+        text = 'Class';
+      } else if (val === 'payment') {
+        badgeClass += 'bg-success';
+        text = 'Payment';
+      } else {
+        badgeClass += 'bg-secondary';
+      }
+      badgeEl.className = 'ms-1 align-self-center ' + badgeClass;
+      badgeEl.textContent = '#' + text;
+    }
+  }
+};
+
+window.selectPriority = function(val, mode) {
+  var idPrefix = mode === 'remarks' ? 'remarks-' : 'conv-modal-';
+  var btnId = mode === 'remarks' ? 'remarksPriorityBtn' : 'convModalPriorityBtn';
+  var badgeId = idPrefix + 'priority-badge';
+  var inputEl = document.getElementById(idPrefix + 'priority-val');
+  var btnEl = document.getElementById(btnId);
+  var badgeEl = document.getElementById(badgeId);
+
+  if (inputEl) inputEl.value = val;
+  if (btnEl) {
+    if (val) btnEl.classList.add('text-primary');
+    else btnEl.classList.remove('text-primary');
+  }
+  if (badgeEl) {
+    if (!val) {
+      badgeEl.innerHTML = '';
+      badgeEl.className = 'ms-1 align-self-center';
+    } else {
+      var badgeClass = 'badge rounded-pill ';
+      var text = val;
+      if (val === 'high') {
+        badgeClass += 'bg-danger';
+        text = 'High';
+      } else if (val === 'medium') {
+        badgeClass += 'bg-warning text-dark';
+        text = 'Medium';
+      } else if (val === 'low') {
+        badgeClass += 'bg-success';
+        text = 'Low';
+      } else {
+        badgeClass += 'bg-secondary';
+      }
+      badgeEl.className = 'ms-1 align-self-center ' + badgeClass;
+      badgeEl.textContent = '!' + text;
+    }
+  }
+};
 
 function formatDateLabel(dt){
   var d = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
@@ -43,22 +246,164 @@ function getAvatarText(nameOrEmail){
   return m2 ? m2[0].toUpperCase() : s[0];
 }
 
+function formatFileSize(bytes) {
+  if (typeof bytes !== 'number') return '';
+  if (bytes < 1024) return bytes + ' B';
+  else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+window.revealImage = function(btn, url, msgId) {
+  try {
+    var wrapper = btn.closest('.chat-media-wrapper');
+    if (!wrapper) return;
+    var img = wrapper.querySelector('.chat-image-content');
+    if (img) {
+      img.src = url;
+      img.style.display = 'block';
+    }
+    var overlay = wrapper.querySelector('.chat-media-blur-overlay');
+    if (overlay) overlay.style.display = 'none';
+    if (msgId) {
+      localStorage.setItem('img_downloaded_' + msgId, 'true');
+    }
+  } catch(e){ console.error(e); }
+};
+
+window.startEditing = function(msgId) {
+  var msgTextEl = document.getElementById('msg-text-' + msgId);
+  if (!msgTextEl) return;
+  
+  var currentText = msgTextEl.getAttribute('data-raw-text') || msgTextEl.innerText;
+  
+  // Find student ID from container
+  var container = msgTextEl.closest('[data-student-id]');
+  var sid = container ? container.getAttribute('data-student-id') : null;
+
+  // Create edit container
+  var editContainer = document.createElement('div');
+  editContainer.className = 'edit-container mt-2';
+  editContainer.id = 'edit-container-' + msgId;
+  
+  var textarea = document.createElement('textarea');
+  textarea.className = 'form-control mb-2';
+  textarea.value = msgTextEl.innerText; 
+  textarea.rows = 2;
+  
+  var btnGroup = document.createElement('div');
+  btnGroup.className = 'd-flex justify-content-end gap-2';
+  
+  var cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-sm btn-secondary';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.onclick = function() { cancelEdit(msgId); };
+  
+  var saveBtn = document.createElement('button');
+  saveBtn.className = 'btn btn-sm btn-primary';
+  saveBtn.textContent = 'Save';
+  saveBtn.onclick = function() { saveEdit(msgId, textarea.value, sid); };
+  
+  btnGroup.appendChild(cancelBtn);
+  btnGroup.appendChild(saveBtn);
+  
+  editContainer.appendChild(textarea);
+  editContainer.appendChild(btnGroup);
+  
+  // Hide original text, show edit container
+  msgTextEl.style.display = 'none';
+  msgTextEl.parentNode.insertBefore(editContainer, msgTextEl.nextSibling);
+};
+
+window.cancelEdit = function(msgId) {
+  var msgTextEl = document.getElementById('msg-text-' + msgId);
+  var editContainer = document.getElementById('edit-container-' + msgId);
+  if (msgTextEl) msgTextEl.style.display = 'block';
+  if (editContainer) editContainer.remove();
+};
+
+window.saveEdit = function(msgId, newText, studentId) {
+  document.dispatchEvent(new CustomEvent('conversation:edit_message', { 
+    detail: { messageId: msgId, newText: newText, studentId: studentId } 
+  }));
+};
+
 function renderMessage(containerEl, msg) {
   const sender = escapeHTML(msg.sender || 'System');
   const role = escapeHTML(msg.sender_role || '');
   const text = escapeHTML(msg.message || '');
+  const hashtag = escapeHTML(msg.hashtag || '');
+  const priority = escapeHTML(msg.priority || '');
   const dt = new Date(msg.created_at);
   const timeStr = dt.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
   appendDateSeparatorIfNeeded(containerEl, dt);
   const row = document.createElement('div');
-  var curName = containerEl.getAttribute('data-current-user-name') || '';
-  var curEmail = containerEl.getAttribute('data-current-user-email') || '';
+  row.id = 'msg-row-' + msg.id;
+  var curName = containerEl.getAttribute('data-current-user-name') || document.body.getAttribute('data-current-name') || '';
+  var curEmail = containerEl.getAttribute('data-current-user-email') || document.body.getAttribute('data-current-email') || '';
   var mine = sender === curName || sender === curEmail;
   row.className = mine ? 'msg-row right' : 'msg-row left';
   const bubble = document.createElement('div');
   bubble.className = mine ? 'msg msg-right' : 'msg msg-left';
   var nameLine = role ? (sender + ' - ' + role) : sender;
-  bubble.innerHTML = '<div class="msg-header"><strong>' + nameLine + '</strong></div><p class="msg-text">' + text + '</p>';
+  var metaHtml = '';
+  var tags = [];
+  if (hashtag) tags.push('#' + hashtag);
+  if (priority) tags.push('#' + priority);
+  
+  if (tags.length > 0) {
+    var tagStyle = mine 
+      ? 'font-size:0.85em; color: #e0e7ff; opacity: 0.9;' 
+      : 'font-size:0.85em; color: #4b5563; font-weight: 600;';
+    metaHtml = '<div class="mb-1" style="' + tagStyle + '">' + tags.join(' ') + '</div>';
+  }
+  
+  var contentHtml = '';
+  if (msg.type === 'file' && msg.file_url) {
+    var fileUrl = msg.file_url;
+    var fileName = escapeHTML(msg.file_name || 'File');
+    var fileMime = msg.file_mime || '';
+    var fileSize = msg.file_size || 0;
+    
+    if (fileMime.indexOf('image/') === 0) {
+      var isDownloaded = false;
+      if (msg.id) {
+        isDownloaded = localStorage.getItem('img_downloaded_' + msg.id) === 'true';
+      }
+      
+      // If it's my message or already downloaded, show image directly
+      if (mine || isDownloaded) {
+        contentHtml = '<div class="mb-2"><a href="' + fileUrl + '" target="_blank"><img src="' + fileUrl + '" alt="' + fileName + '" style="max-width: 200px; max-height: 200px; border-radius: 4px;" class="img-fluid"></a></div>';
+      } else {
+        var sizeStr = formatFileSize(fileSize);
+        contentHtml = '<div class="mb-2 chat-media-wrapper">' +
+           '<div class="chat-media-blur-overlay" onclick="revealImage(this, \'' + fileUrl + '\', ' + (msg.id || 'null') + ')">' +
+             '<button class="chat-download-btn"><i class="fas fa-download"></i> ' + sizeStr + '</button>' +
+           '</div>' +
+           '<img src="" data-src="' + fileUrl + '" alt="' + fileName + '" class="chat-image-content" style="display:none; max-width: 200px; max-height: 200px; border-radius: 4px;">' +
+           '</div>';
+      }
+    } else {
+      contentHtml = '<div class="mb-2 p-2 bg-light border rounded"><a href="' + fileUrl + '" target="_blank" class="text-decoration-none text-dark d-flex align-items-center"><i class="fas fa-file me-2 text-primary"></i> <span class="text-truncate" style="max-width: 200px;">' + fileName + '</span> <i class="fas fa-download ms-auto text-muted"></i></a></div>';
+    }
+    if (text) {
+      contentHtml += '<p class="msg-text mt-1" id="msg-text-' + msg.id + '">' + text + '</p>';
+    }
+  } else {
+    contentHtml = '<p class="msg-text" id="msg-text-' + msg.id + '">' + text + '</p>';
+  }
+
+  // Edited indicator
+  if (msg.is_edited) {
+    contentHtml += '<div class="text-end" style="line-height:1;"><small style="font-size: 0.7rem; opacity: 0.8;">(edited)</small></div>';
+  }
+
+  bubble.innerHTML = '<div class="msg-header"><strong>' + nameLine + '</strong></div>' + metaHtml + contentHtml;
+  
+  // Context Menu Trigger
+  bubble.addEventListener('contextmenu', function(e) {
+      showContextMenu(e, msg, mine);
+  });
+
   const avatar = document.createElement('div');
   avatar.className = 'avatar';
   avatar.textContent = getAvatarText(sender);
@@ -72,9 +417,102 @@ function renderMessage(containerEl, msg) {
   containerEl.appendChild(row);
   const timeRow = document.createElement('div');
   timeRow.className = mine ? 'time-row right' : 'time-row left';
-  timeRow.innerHTML = '<small>' + timeStr + '</small>';
+  
+  // Read receipts (visual only, detail in context menu)
+  var extrasHtml = '';
+  if (mine) {
+      // Edit button REMOVED (now in context menu)
+      
+      // Read receipts
+      if (msg.read_by && msg.read_by.length > 0) {
+          // Filter out myself
+          var others = msg.read_by.filter(function(r){ 
+              return r.user !== curName && r.user !== curEmail; 
+          });
+          if (others.length > 0) {
+              extrasHtml += '<span class="ms-2 text-primary"><i class="fas fa-check-double" style="font-size: 0.8rem;"></i></span>';
+          } else {
+              extrasHtml += '<span class="ms-2 text-muted"><i class="fas fa-check" style="font-size: 0.8rem;"></i></span>';
+          }
+      } else {
+          extrasHtml += '<span class="ms-2 text-muted"><i class="fas fa-check" style="font-size: 0.8rem;"></i></span>';
+      }
+  } else {
+      // Mark read logic for received messages
+       if (msg.id) {
+           // Only mark as read if we are in the active chat window for this student
+           // We can check this by seeing if the container is visible or matches current student
+           // But since this script is running, we assume we are processing messages for the active view.
+           // However, if we have multiple lists/chats, we need to be careful.
+           // For now, we assume renderMessage is called only for the active chat or during init.
+           
+           if (!window.pendingReadMarks) window.pendingReadMarks = new Map();
+           var sid = containerEl.getAttribute('data-student-id');
+           window.pendingReadMarks.set(msg.id, sid);
+           
+           clearTimeout(window.readMarkTimeout);
+           window.readMarkTimeout = setTimeout(function(){
+             var byStudent = {};
+             window.pendingReadMarks.forEach(function(sId, mId){
+                 if (!sId) return;
+                 if (!byStudent[sId]) byStudent[sId] = [];
+                 byStudent[sId].push(mId);
+             });
+             window.pendingReadMarks.clear();
+             
+             for (var sId in byStudent) {
+                 document.dispatchEvent(new CustomEvent('conversation:mark_read', { 
+                     detail: { messageIds: byStudent[sId], studentId: sId } 
+                 }));
+             }
+           }, 1000);
+       }
+   }
+ 
+   timeRow.innerHTML = '<small>' + timeStr + extrasHtml + '</small>';
   containerEl.appendChild(timeRow);
   containerEl.scrollTop = containerEl.scrollHeight;
+}
+
+function updateMessageUI(containerEl, msg) {
+    var row = document.getElementById('msg-row-' + msg.id);
+    if (row) {
+        var temp = document.createElement('div');
+        temp.setAttribute('data-current-user-name', containerEl.getAttribute('data-current-user-name'));
+        temp.setAttribute('data-current-user-email', containerEl.getAttribute('data-current-user-email'));
+        temp.setAttribute('data-student-id', containerEl.getAttribute('data-student-id'));
+        
+        renderMessage(temp, msg);
+        var newRow = temp.firstElementChild;
+        var newTimeRow = temp.lastElementChild;
+        
+        var next = row.nextSibling;
+        containerEl.replaceChild(newRow, row);
+        if (next && next.classList.contains('time-row')) {
+            containerEl.replaceChild(newTimeRow, next);
+        }
+    }
+}
+
+function updateReadStatusUI(containerEl, msgIds, readBy) {
+    msgIds.forEach(function(mid){
+        var row = document.getElementById('msg-row-' + mid);
+        if (row) {
+            var timeRow = row.nextSibling;
+            if (timeRow && timeRow.classList.contains('time-row')) {
+                var icon = timeRow.querySelector('.fa-check');
+                if (icon) {
+                    icon.classList.remove('fa-check');
+                    icon.classList.add('fa-check-double');
+                    icon.parentElement.classList.remove('text-muted');
+                    icon.parentElement.classList.add('text-primary');
+                    
+                    // No longer updating title tooltip as we use context menu for details
+                    // But we could still update it if we wanted to support both
+                }
+            }
+        }
+    });
 }
 
 function initStudentConversation(studentId) {
@@ -87,27 +525,53 @@ function initStudentConversation(studentId) {
   var httpMode = false;
   var socket = new WebSocket(wsScheme + '://' + primaryHost + '/ws/student/' + studentId + '/');
   const messagesEl = document.getElementById('messages-' + studentId);
+  if (messagesEl) {
+    messagesEl.setAttribute('data-student-id', studentId);
+  }
   const formEl = document.getElementById('conv-form-' + studentId);
   const textarea = formEl ? formEl.querySelector('textarea[name="message"]') : null;
 
   function loadMessagesHTTP(){
-    fetch('/students/conversation/' + studentId + '/messages/').then(function(r){ return r.json(); }).then(function(d){
+    fetch('/students/conversation/' + studentId + '/messages/')
+    .then(function(r){ 
+        if (!r.ok) { throw new Error(r.statusText); }
+        return r.json(); 
+    })
+    .then(function(d){
       if (!messagesEl) return;
       messagesEl.innerHTML = '';
       messagesEl.setAttribute('data-last-date','');
       if (Array.isArray(d.messages)) {
         d.messages.forEach(function(m){ renderMessage(messagesEl, m); });
       }
-    }).catch(function(){});
+    }).catch(function(e){ console.error(e); });
   }
   function sendMessageHTTP(text){
     var fd = new FormData();
     fd.append('message', text);
+    var tagVal = '';
+    var prVal = '';
+    var tInput = document.getElementById('conv-modal-hashtag-val');
+    var pInput = document.getElementById('conv-modal-priority-val');
+    if (tInput) tagVal = tInput.value;
+    if (pInput) prVal = pInput.value;
+    if (tagVal) { fd.append('hashtag', tagVal); }
+    if (prVal) { fd.append('priority', prVal); }
     fetch('/students/conversation/' + studentId + '/send/', { method: 'POST', body: fd }).then(function(r){ return r.json(); }).then(function(d){
-      if (d && d.ok && d.message) {
-        renderMessage(messagesEl, d.message);
-      }
-    }).catch(function(){});
+        if (d && d.ok && d.message) {
+          renderMessage(messagesEl, d.message);
+          if (tInput) tInput.value = '';
+          if (pInput) pInput.value = '';
+          var hBtn = document.getElementById('convModalHashtagBtn');
+          var pBtn = document.getElementById('convModalPriorityBtn');
+          if (hBtn) hBtn.classList.remove('text-primary');
+          if (pBtn) pBtn.classList.remove('text-primary');
+          var hBadge = document.getElementById('conv-modal-hashtag-badge');
+          var pBadge = document.getElementById('conv-modal-priority-badge');
+          if (hBadge) { hBadge.innerHTML = ''; hBadge.className = 'ms-1 align-self-center'; }
+          if (pBadge) { pBadge.innerHTML = ''; pBadge.className = 'ms-1 align-self-center'; }
+        }
+      }).catch(function(){});
   }
 
   socket.onerror = function(){
@@ -248,6 +712,7 @@ var StudentConversationManager = (function(){
       socket = null;
     }
     currentId = id;
+    if (messagesEl) messagesEl.setAttribute('data-student-id', id);
     tableRowEl = rowEl || null;
     messagesEl.innerHTML = '';
     messagesEl.setAttribute('data-last-date','');
@@ -296,8 +761,23 @@ var StudentConversationManager = (function(){
           if (!text) return;
           if (socket && socket.readyState === 1) {
             try {
-              socket.send(JSON.stringify({ action: 'send', message: text }));
+              var tagVal = document.getElementById('conv-modal-hashtag-val').value;
+              var prVal = document.getElementById('conv-modal-priority-val').value;
+              var payload = { action: 'send', message: text };
+              if (tagVal) { payload.hashtag = tagVal; }
+              if (prVal) { payload.priority = prVal; }
+              socket.send(JSON.stringify(payload));
               textareaEl.value = '';
+              document.getElementById('conv-modal-hashtag-val').value = '';
+              document.getElementById('conv-modal-priority-val').value = '';
+              var hBtn = document.getElementById('convModalHashtagBtn');
+              var pBtn = document.getElementById('convModalPriorityBtn');
+              if (hBtn) hBtn.classList.remove('text-primary');
+              if (pBtn) pBtn.classList.remove('text-primary');
+              var hBadge = document.getElementById('conv-modal-hashtag-badge');
+              var pBadge = document.getElementById('conv-modal-priority-badge');
+              if (hBadge) { hBadge.innerHTML = ''; hBadge.className = 'ms-1 align-self-center'; }
+              if (pBadge) { pBadge.innerHTML = ''; pBadge.className = 'ms-1 align-self-center'; }
             } catch(e){}
           }
         };
@@ -310,8 +790,23 @@ var StudentConversationManager = (function(){
           if (!text) return;
           if (socket && socket.readyState === 1) {
             try {
-              socket.send(JSON.stringify({ action: 'send', message: text }));
+              var tagVal = document.getElementById('conv-modal-hashtag-val').value;
+              var prVal = document.getElementById('conv-modal-priority-val').value;
+              var payload = { action: 'send', message: text };
+              if (tagVal) { payload.hashtag = tagVal; }
+              if (prVal) { payload.priority = prVal; }
+              socket.send(JSON.stringify(payload));
               textareaEl.value = '';
+              document.getElementById('conv-modal-hashtag-val').value = '';
+              document.getElementById('conv-modal-priority-val').value = '';
+              var hBtn = document.getElementById('convModalHashtagBtn');
+              var pBtn = document.getElementById('convModalPriorityBtn');
+              if (hBtn) hBtn.classList.remove('text-primary');
+              if (pBtn) pBtn.classList.remove('text-primary');
+              var hBadge = document.getElementById('conv-modal-hashtag-badge');
+              var pBadge = document.getElementById('conv-modal-priority-badge');
+              if (hBadge) { hBadge.innerHTML = ''; hBadge.className = 'ms-1 align-self-center'; }
+              if (pBadge) { pBadge.innerHTML = ''; pBadge.className = 'ms-1 align-self-center'; }
             } catch(e){}
           }
         }
@@ -372,3 +867,169 @@ var StudentConversationManager = (function(){
     open: openModal
   };
 })();
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+window.selectPreviewHashtag = function(val, prefix) {
+  var labelEl = document.getElementById(prefix + '-preview-hashtag-label');
+  var inputEl = document.getElementById(prefix + '-preview-hashtag-val');
+  var btnEl = document.getElementById(prefix + 'PreviewHashtagBtn');
+  if (inputEl) inputEl.value = val;
+  if (labelEl) {
+      if (!val) labelEl.textContent = 'Tag';
+      else if (val === 'placement') labelEl.textContent = 'Placement';
+      else if (val === 'class') labelEl.textContent = 'Class';
+      else if (val === 'payment') labelEl.textContent = 'Payment';
+      else labelEl.textContent = val;
+  }
+  if (btnEl) {
+      if (val) btnEl.classList.add('text-primary');
+      else btnEl.classList.remove('text-primary');
+  }
+};
+
+window.selectPreviewPriority = function(val, prefix) {
+  var labelEl = document.getElementById(prefix + '-preview-priority-label');
+  var inputEl = document.getElementById(prefix + '-preview-priority-val');
+  var btnEl = document.getElementById(prefix + 'PreviewPriorityBtn');
+  if (inputEl) inputEl.value = val;
+  if (labelEl) {
+      if (!val) labelEl.textContent = 'Priority';
+      else if (val === 'high') labelEl.textContent = 'High';
+      else if (val === 'medium') labelEl.textContent = 'Medium';
+      else if (val === 'low') labelEl.textContent = 'Low';
+      else labelEl.textContent = val;
+  }
+  if (btnEl) {
+      if (val) btnEl.classList.add('text-primary');
+      else btnEl.classList.remove('text-primary');
+  }
+};
+
+var currentUploadFile = null;
+var currentUploadPrefix = null;
+var currentUploadStudentId = null;
+
+window.closePreviewModal = function(prefix) {
+  var modal = document.getElementById(prefix + '-preview-modal');
+  if (modal) modal.style.display = 'none';
+  currentUploadFile = null;
+  currentUploadPrefix = null;
+  currentUploadStudentId = null;
+  
+  // Clear file input
+  var fileInput = document.getElementById(prefix + '-file-input');
+  if (fileInput) fileInput.value = '';
+};
+
+window.confirmUpload = function(prefix) {
+    if (!currentUploadFile || !currentUploadStudentId) return;
+    
+    // Extra safety check for invalid ID
+    if (String(currentUploadStudentId).trim().toLowerCase() === 'null' || String(currentUploadStudentId).trim().toLowerCase() === 'undefined') {
+        alert('Invalid student conversation ID. Please select a conversation again.');
+        return;
+    }
+    
+    var caption = document.getElementById(prefix + '-preview-caption').value.trim();
+    var hashtag = document.getElementById(prefix + '-preview-hashtag-val').value;
+    var priority = document.getElementById(prefix + '-preview-priority-val').value;
+    
+    var fd = new FormData();
+    fd.append('file', currentUploadFile);
+    fd.append('message', caption);
+    if (hashtag) fd.append('hashtag', hashtag);
+    if (priority) fd.append('priority', priority);
+    
+    // Capture ID locally before closing modal (which clears the global)
+    var uploadStudentId = currentUploadStudentId;
+
+    // Show uploading state if needed, or just close modal
+    closePreviewModal(prefix);
+    
+    fetch('/students/conversation/' + uploadStudentId + '/upload/', { 
+      method: 'POST', 
+      body: fd,
+      headers: {
+          'X-CSRFToken': getCookie('csrftoken')
+      }
+    })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.ok === false) {
+        alert(d.reason || 'Upload failed');
+      } else if (d && d.id) {
+        // Auto-mark as downloaded for sender
+        localStorage.setItem('img_downloaded_' + d.id, 'true');
+      }
+    })
+    .catch(function(e){ 
+      console.error(e); 
+      alert('Upload error');
+    });
+};
+
+window.uploadFile = function(inputEl, studentId) {
+  if (!inputEl || !inputEl.files || inputEl.files.length === 0) return;
+  
+  // Normalize ID checking
+  var sId = String(studentId || '').trim();
+  if (!sId || sId.toLowerCase() === 'null' || sId.toLowerCase() === 'undefined') {
+    alert('Please select a student conversation first.');
+    inputEl.value = '';
+    return;
+  }
+  
+  var file = inputEl.files[0];
+  
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File too large. Max 10MB.');
+    inputEl.value = '';
+    return;
+  }
+  
+  // Identify prefix from inputEl ID: "{prefix}-file-input"
+  var prefix = inputEl.id.replace('-file-input', '');
+  
+  currentUploadFile = file;
+  currentUploadPrefix = prefix;
+  currentUploadStudentId = studentId;
+  
+  var modal = document.getElementById(prefix + '-preview-modal');
+  var body = document.getElementById(prefix + '-preview-body');
+  var title = document.getElementById(prefix + '-preview-title');
+  var caption = document.getElementById(prefix + '-preview-caption');
+  
+  // Reset fields
+  if (caption) caption.value = '';
+  selectPreviewHashtag('', prefix);
+  selectPreviewPriority('', prefix);
+  
+  if (modal && body) {
+      body.innerHTML = '';
+      if (file.type.indexOf('image/') === 0) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+              body.innerHTML = '<img src="' + e.target.result + '" class="preview-img">';
+          };
+          reader.readAsDataURL(file);
+      } else {
+          body.innerHTML = '<div class="preview-file-icon"><i class="fas fa-file fa-3x mb-3"></i><br>' + escapeHTML(file.name) + '<br><small>' + formatFileSize(file.size) + '</small></div>';
+      }
+      title.textContent = 'Preview'; // Could add file name
+      modal.style.display = 'flex';
+  }
+};

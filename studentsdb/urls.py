@@ -9,7 +9,7 @@ from .views import (
     import_students,
     download_error_report,
     delete_all_students,
-    student_report, conversation_messages, conversation_send
+    student_report, conversation_messages, conversation_send, conversation_upload
 )
 
 urlpatterns = [
@@ -25,4 +25,5 @@ urlpatterns = [
     path('delete-all/', delete_all_students, name='delete_all_students'),
     path('conversation/<int:student_pk>/messages/', conversation_messages, name='conversation_messages'),
     path('conversation/<int:student_pk>/send/', conversation_send, name='conversation_send'),
+    path('conversation/<int:student_pk>/upload/', conversation_upload, name='conversation_upload'),
 ]

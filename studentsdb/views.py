@@ -11,7 +11,7 @@ from paymentdb.forms import PaymentForm
 from placementdb.forms import PlacementUpdateForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Max
+from django.db.models import Q, Max, Case, When, BooleanField, Value, IntegerField
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import StudentUpdateForm
 from dateutil.relativedelta import relativedelta
@@ -69,7 +69,37 @@ def student_remarks(request):
                 student_qs = student_qs.filter(payment__total_pending_amount__gt=0).distinct()
             elif payment_status == 'Paid':
                 student_qs = student_qs.filter(payment__total_pending_amount__lte=0).distinct()
-    student_qs = student_qs.annotate(last_msg_time=Max('conversation__messages__created_at')).order_by('-last_msg_time', '-id')
+    
+    # Priority and Hashtag filters
+    priority_filter = request.GET.get('priority')
+    hashtag_filter = request.GET.get('hashtag')
+    
+    if priority_filter:
+        priority_map = {'high': 3, 'medium': 2, 'low': 1}
+        level = priority_map.get(priority_filter)
+        if level:
+            student_qs = student_qs.filter(conversation__last_message_priority_level=level)
+            
+    if hashtag_filter:
+        student_qs = student_qs.filter(conversation__last_message_hashtag=hashtag_filter)
+
+    student_qs = student_qs.select_related('conversation').annotate(
+        has_unread=Case(
+            When(conversation__unread_count__gt=0, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        ),
+        effective_priority=Case(
+            When(conversation__unread_count__gt=0, then='conversation__priority_level'),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+    ).order_by(
+        '-has_unread', 
+        '-effective_priority',
+        '-conversation__last_message_at',
+        '-id'
+    )
     paginator = Paginator(student_qs, 10)
     page = request.GET.get('page')
     try:
@@ -80,11 +110,7 @@ def student_remarks(request):
         students = paginator.page(paginator.num_pages)
     selected_id = request.GET.get('sid')
     selected_student = None
-    if not selected_id and students:
-        try:
-            selected_id = students[0].id
-        except Exception:
-            selected_id = None
+    # Removed default selection of first student
     if selected_id:
         try:
             selected_student = Student.objects.get(pk=int(selected_id))
@@ -93,12 +119,32 @@ def student_remarks(request):
     query_params = request.GET.copy()
     if 'page' in query_params:
         del query_params['page']
+
+    # Prepare JSON data for client-side rendering
+    students_data = []
+    for s in students:
+        conv = s.conversation
+        students_data.append({
+            'id': s.id,
+            'first_name': s.first_name,
+            'last_name': s.last_name or '',
+            'student_id': s.student_id,
+            'unread_count': conv.unread_count,
+            'is_priority': conv.last_message_priority, # Use the last-message-only derived flag
+            'priority_level': conv.last_message_priority_level, # Use the last-message-only derived flag
+            'last_message': conv.last_message,
+            'last_message_time': conv.last_message_at.isoformat() if conv.last_message_at else None,
+        })
+
     context = {
         'students': students,
+        'students_data': students_data,
         'form': form,
         'selected_student': selected_student,
         'selected_id': selected_id,
         'query_params': query_params.urlencode(),
+        'selected_priority': priority_filter,
+        'selected_hashtag': hashtag_filter,
     }
     return render(request, 'studentsdb/student_remarks.html', context)
 
@@ -712,10 +758,7 @@ def conversation_messages(request, student_pk):
 def _can_post_http(user):
     if not getattr(user, "is_authenticated", False):
         return False
-    if getattr(user, "is_superuser", False):
-        return True
-    role = getattr(user, "role", None)
-    return role in {'admin', 'staff', 'batch_coordination', 'consultant', 'trainer'}
+    return True
 
 @login_required
 @require_http_methods(["POST"])
@@ -725,14 +768,34 @@ def conversation_send(request, student_pk):
         return JsonResponse({"ok": False, "reason": "empty"}, status=400)
     if not _can_post_http(request.user):
         return JsonResponse({"ok": False, "reason": "unauthorized"}, status=403)
+    
+    hashtag = str(request.POST.get("hashtag", "") or "").strip().lower()
+    priority = str(request.POST.get("priority", "") or "").strip().lower()
+    
+    ALLOWED_HASHTAGS = {'placement', 'class', 'payment'}
+    ALLOWED_PRIORITIES = {'high', 'medium', 'low'}
+    
+    if hashtag not in ALLOWED_HASHTAGS:
+        hashtag = ""
+    if priority not in ALLOWED_PRIORITIES:
+        priority = ""
+
     from .models import StudentConversation, ConversationMessage
     conv, _ = StudentConversation.objects.get_or_create(student_id=student_pk)
     msg = ConversationMessage.objects.create(
         conversation=conv,
         sender=request.user if getattr(request.user, "is_authenticated", False) else None,
         sender_role=getattr(request.user, "role", "") or "",
-        message=message_text
+        message=message_text,
+        hashtag=hashtag,
+        priority=priority
     )
+    try:
+        from .models import apply_feedback_from_message
+        apply_feedback_from_message(msg, user=request.user)
+    except Exception:
+        pass
+
     payload = {"action": "new_message", "message": message_to_dict(msg)}
     try:
         channel_layer = get_channel_layer()
@@ -741,3 +804,70 @@ def conversation_send(request, student_pk):
     except Exception:
         pass
     return JsonResponse({"ok": True, "message": message_to_dict(msg)})
+
+@login_required
+@require_http_methods(["POST"])
+def conversation_upload(request, student_pk):
+    if not _can_post_http(request.user):
+        return JsonResponse({"ok": False, "reason": "unauthorized"}, status=403)
+    
+    file_obj = request.FILES.get('file')
+    if not file_obj:
+        return JsonResponse({"ok": False, "reason": "no file"}, status=400)
+    
+    # 10MB limit
+    if file_obj.size > 10 * 1024 * 1024:
+        return JsonResponse({"ok": False, "reason": "file too large (max 10MB)"}, status=400)
+
+    allowed_types = [
+        'image/jpeg', 'image/png', 'image/gif', 
+        'application/pdf', 
+        'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/plain'
+    ]
+    if file_obj.content_type not in allowed_types:
+        # Fallback to extension check if content_type is generic or missing
+        ext = file_obj.name.split('.')[-1].lower() if '.' in file_obj.name else ''
+        allowed_exts = {'jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt'}
+        if ext not in allowed_exts:
+             return JsonResponse({"ok": False, "reason": "Unsupported file type"}, status=400)
+
+    from .models import StudentConversation, ConversationMessage
+    conv, _ = StudentConversation.objects.get_or_create(student_id=student_pk)
+    
+    msg_text = request.POST.get('message', '')
+    hashtag = request.POST.get('hashtag', '')
+    priority = request.POST.get('priority', '')
+
+    msg = ConversationMessage.objects.create(
+        conversation=conv,
+        sender=request.user,
+        sender_role=getattr(request.user, "role", "") or "",
+        message_type="file",
+        message=msg_text,
+        hashtag=hashtag,
+        priority=priority,
+        file=file_obj,
+        file_name=file_obj.name,
+        file_size=file_obj.size,
+        file_mime=file_obj.content_type
+    )
+
+    payload = {"action": "new_message", "message": message_to_dict(msg)}
+    try:
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(f"student_{student_pk}", {"type": "broadcast", "payload": payload})
+            
+            # Also update remarks list
+            remarks_payload = {
+                "action": "remarks_list_update",
+                "student_id": int(student_pk),
+                "message": message_to_dict(msg)
+            }
+            async_to_sync(channel_layer.group_send)("student_remarks", {"type": "broadcast", "payload": remarks_payload})
+    except Exception:
+        pass
+        
+    return JsonResponse(message_to_dict(msg))

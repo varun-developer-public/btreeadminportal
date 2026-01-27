@@ -1,0 +1,215 @@
+<style>
+    .chat-media-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        background-color: #e0e0e0; /* Placeholder color */
+        min-width: 150px;
+        min-height: 150px;
+        display: inline-block;
+    }
+    .chat-media-blur-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 10;
+        cursor: pointer;
+        transition: opacity 0.3s;
+    }
+    .chat-download-btn {
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.2s;
+    }
+    .chat-download-btn:hover {
+        background: rgba(0, 0, 0, 0.8);
+    }
+    .chat-image-content {
+        display: block;
+        max-width: 100%;
+        height: auto;
+    }
+    .preview-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.85);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .preview-modal-content {
+        background: #1e1e1e;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 500px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+    }
+    .preview-header {
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: #fff;
+        background: rgba(255,255,255,0.05);
+    }
+    .preview-body {
+        padding: 0;
+        background: #000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 200px;
+        max-height: 50vh;
+        overflow: auto;
+    }
+    .preview-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+    .preview-file-icon {
+        color: #fff;
+        text-align: center;
+        padding: 40px;
+    }
+    .preview-footer {
+        padding: 16px;
+        background: #1e1e1e;
+    }
+    .preview-input-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+    .preview-actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
+<div id="{{ chat_id_prefix }}-messages" class="chat-container" 
+     data-current-user-name="{{ request.user.name|default:'' }}" 
+     data-current-user-email="{{ request.user.email|default:'' }}"></div>
+
+<form id="{{ chat_id_prefix }}-form" class="mt-3">
+    <div class="chat-input d-flex align-items-center">
+        <input type="file" id="{{ chat_id_prefix }}-file-input" style="display: none;" 
+               accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+               onchange="uploadFile(this, document.getElementById('{{ chat_id_prefix }}-messages').getAttribute('data-student-id'))">
+        <button type="button" class="chat-icon-btn" aria-label="Attach" 
+                onclick="document.getElementById('{{ chat_id_prefix }}-file-input').click()">
+            <i class="fas fa-paperclip"></i>
+        </button>
+        
+        <div class="dropdown d-inline-block">
+            <button class="chat-icon-btn" type="button" id="{{ chat_id_prefix }}HashtagBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Hashtag">
+                <i class="fas fa-hashtag"></i>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="{{ chat_id_prefix }}HashtagBtn">
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('placement', '{{ chat_context }}')">Placement</a></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('class', '{{ chat_context }}')">Class</a></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('payment', '{{ chat_context }}')">Payment</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('', '{{ chat_context }}')">None</a></li>
+            </ul>
+        </div>
+        <span id="{{ chat_id_prefix }}-hashtag-badge" class="ms-1 align-self-center"></span>
+
+        <textarea id="{{ chat_id_prefix }}-textarea" name="message" class="form-control border-0 bg-transparent" rows="1" placeholder="Write a message..." required spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="none" data-gramm="false"></textarea>
+
+        <div class="d-flex chat-actions ms-auto align-items-center">
+            <div class="dropdown d-inline-block">
+                <button class="chat-icon-btn" type="button" id="{{ chat_id_prefix }}PriorityBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Priority">
+                    <i class="fas fa-exclamation-circle"></i>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="{{ chat_id_prefix }}PriorityBtn">
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPriority('high', '{{ chat_context }}')">High</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPriority('medium', '{{ chat_context }}')">Medium</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPriority('low', '{{ chat_context }}')">Low</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPriority('', '{{ chat_context }}')">None</a></li>
+                </ul>
+            </div>
+            <span id="{{ chat_id_prefix }}-priority-badge" class="ms-1 align-self-center"></span>
+            
+            <input type="hidden" id="{{ chat_id_prefix }}-hashtag-val" value="">
+            <input type="hidden" id="{{ chat_id_prefix }}-priority-val" value="">
+            
+            <button type="button" id="{{ chat_id_prefix }}-send" class="btn btn-primary send-btn" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</form>
+
+<!-- Upload Preview Modal -->
+<div id="{{ chat_id_prefix }}-preview-modal" class="preview-modal-overlay" style="display: none;">
+    <div class="preview-modal-content">
+        <div class="preview-header">
+            <h6 class="m-0" id="{{ chat_id_prefix }}-preview-title">Preview</h6>
+            <button type="button" class="btn-close btn-close-white" onclick="closePreviewModal('{{ chat_id_prefix }}')"></button>
+        </div>
+        <div class="preview-body" id="{{ chat_id_prefix }}-preview-body">
+            <!-- Image or file icon will be injected here -->
+        </div>
+        <div class="preview-footer">
+            <div class="preview-input-row">
+                <textarea id="{{ chat_id_prefix }}-preview-caption" class="form-control bg-dark text-light border-secondary" rows="1" placeholder="Add a caption..."></textarea>
+            </div>
+            <div class="preview-actions">
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-light" type="button" id="{{ chat_id_prefix }}PreviewHashtagBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-hashtag"></i> <span id="{{ chat_id_prefix }}-preview-hashtag-label">Tag</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('placement', '{{ chat_id_prefix }}')">Placement</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('class', '{{ chat_id_prefix }}')">Class</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('payment', '{{ chat_id_prefix }}')">Payment</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('', '{{ chat_id_prefix }}')">None</a></li>
+                        </ul>
+                        <input type="hidden" id="{{ chat_id_prefix }}-preview-hashtag-val">
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-light" type="button" id="{{ chat_id_prefix }}PreviewPriorityBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-exclamation-circle"></i> <span id="{{ chat_id_prefix }}-preview-priority-label">Priority</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewPriority('high', '{{ chat_id_prefix }}')">High</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewPriority('medium', '{{ chat_id_prefix }}')">Medium</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewPriority('low', '{{ chat_id_prefix }}')">Low</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewPriority('', '{{ chat_id_prefix }}')">None</a></li>
+                        </ul>
+                        <input type="hidden" id="{{ chat_id_prefix }}-preview-priority-val">
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary rounded-circle p-2" style="width: 40px; height: 40px;" onclick="confirmUpload('{{ chat_id_prefix }}')">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

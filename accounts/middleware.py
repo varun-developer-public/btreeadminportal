@@ -83,7 +83,8 @@ URL_ROLE_MAPPINGS = {
 # URLs accessible to all authenticated users
 PUBLIC_URLS = [
     'home', 'logout', 'login',
-    'password_change', 'password_change_done','manage_2fa','verify_2fa'
+    'password_change', 'password_change_done','manage_2fa','verify_2fa',
+    'conversation_messages', 'conversation_send', 'conversation_upload'
 ]
 
 class RolePermissionsMiddleware:
