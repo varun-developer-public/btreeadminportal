@@ -254,10 +254,20 @@ def update_conversation_stats(sender, instance, created, **kwargs):
     conv.last_message_at = instance.created_at
     conv.last_message_by = instance.sender
     
-    # Increment unread count ONLY if the message is NOT from an admin/staff user
-    # We assume if sender is set (User), it's an admin/staff. 
-    # If sender is None or role is 'student', it's the student.
-    if instance.sender is None or instance.sender_role == 'student':
+    # Increment unread count logic:
+    # Any message that is NOT from an admin/staff/internal role should increment unread count.
+    # We check both the user flags and the role string.
+    is_internal_sender = False
+    if instance.sender:
+        # Check Django flags
+        if instance.sender.is_staff or instance.sender.is_superuser:
+            is_internal_sender = True
+        # Check explicit role
+        elif instance.sender_role and instance.sender_role.lower() in ['admin', 'staff', 'batch_coordination', 'consultant', 'trainer', 'placement']:
+            is_internal_sender = True
+            
+    # If sender is None (Anonymous) or not internal, treat as student message
+    if not is_internal_sender:
         conv.unread_count += 1
     
     # Update priority derived ONLY from this latest message
