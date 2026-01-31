@@ -932,39 +932,57 @@ $(document).ready(function() {
         }
     });
 
-    var $countryCodeSelect = $('#id_country_code');
-    var $countryCodeHidden = $('input[name="country_code"]');
+    var $countryCodeSelect = $('#id_country_code_select');
+    var $countryCodeHidden = $('#id_country_code');
 
     $countryCodeSelect.on('change', function() {
         var selectedOption = $(this).find('option:selected');
         var countryCode = selectedOption.data('code');
+        if (countryCode && !String(countryCode).startsWith('+')) {
+            countryCode = '+' + countryCode;
+        }
         $countryCodeHidden.val(countryCode);
     });
 
     // Set initial value for hidden input
     var initialSelectedOption = $countryCodeSelect.find('option:selected');
     if (initialSelectedOption.length) {
-        $countryCodeHidden.val(initialSelectedOption.data('code'));
+        var countryCode = initialSelectedOption.data('code');
+        if (countryCode && !String(countryCode).startsWith('+')) {
+            countryCode = '+' + countryCode;
+        }
+        $countryCodeHidden.val(countryCode);
     } else {
         // Set default to India (+91)
-        $countryCodeSelect.val('IN').trigger('change');
-        $countryCodeHidden.val('91');
+        $countryCodeSelect.val('in').trigger('change');
+        $countryCodeHidden.val('+91');
     }
 
 
-    var $altCountryCodeSelect = $('#id_alternative_country_code');
-    var $altCountryCodeHidden = $('input[name="alternative_country_code"]');
+    var $altCountryCodeSelect = $('#id_alternative_country_code_select');
+    var $altCountryCodeHidden = $('#id_alternative_country_code');
 
     $altCountryCodeSelect.on('change', function() {
         var selectedOption = $(this).find('option:selected');
         var countryCode = selectedOption.data('code');
+        if (countryCode && !String(countryCode).startsWith('+')) {
+            countryCode = '+' + countryCode;
+        }
         $altCountryCodeHidden.val(countryCode);
     });
 
     // Set initial value for hidden input
     var initialAltSelectedOption = $altCountryCodeSelect.find('option:selected');
     if (initialAltSelectedOption.length) {
-        $altCountryCodeHidden.val(initialAltSelectedOption.data('code'));
+        var countryCode = initialAltSelectedOption.data('code');
+        if (countryCode && !String(countryCode).startsWith('+')) {
+            countryCode = '+' + countryCode;
+        }
+        $altCountryCodeHidden.val(countryCode);
+    } else {
+         // Set default to India (+91)
+        $altCountryCodeSelect.val('in').trigger('change');
+        $altCountryCodeHidden.val('+91');
     }
 });
 </script>

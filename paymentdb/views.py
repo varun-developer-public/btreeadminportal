@@ -9,6 +9,7 @@ import json
 from datetime import datetime
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth import get_user_model
 
 from .models import Payment, PendingPaymentRecord
 from studentsdb.models import Student
@@ -82,7 +83,7 @@ def payment_list(request):
         payments = filtered_payments
 
     # Calculate total pending amount
-    total_pending_amount = Payment.objects.filter(total_pending_amount__gt=0).aggregate(Sum('total_pending_amount'))['total_pending_amount__sum'] or 0
+    total_pending_amount = Payment.objects.filter(total_pending_amount__gt=0).exclude(student__course_status__in=['R', 'D']).aggregate(Sum('total_pending_amount'))['total_pending_amount__sum'] or 0
 
     # Process payments to include status
     processed_payments = []
@@ -278,7 +279,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
         updated_from = request.GET.get('updated_from', '').strip()
         updated_to = request.GET.get('updated_to', '').strip()
 
-        allowed_statuses = {'YTS', 'IP', 'H', 'D'}
+        allowed_statuses = {'YTS', 'IP', 'H'}
         qs = (
             PendingPaymentRecord.objects
             .select_related('student', 'payment')
@@ -343,12 +344,8 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
                 qs = qs.filter(course_percentage__lte=float(course_pct_max))
             except ValueError:
                 pass
-        if updated_by:
-            qs = qs.filter(
-                Q(edited_by__name__icontains=updated_by) |
-                Q(edited_by__email__icontains=updated_by) |
-                Q(edited_by__username__icontains=updated_by)
-            )
+        if updated_by and updated_by.isdigit():
+            qs = qs.filter(edited_by__id=int(updated_by))
         # Updated date range
         try:
             if updated_from:
@@ -383,6 +380,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
                 'trainer_name': rec.trainer_name,
                 'trainer_type': rec.trainer_type,
                 'course_percentage': rec.course_percentage,
+                'joining_date': student.enrollment_date if student else None,
                 'feedback': rec.feedback,
                 'updated_by_name': rec.edited_by.name if rec.edited_by else None,
                 'updated_at': rec.updated_at,
@@ -429,6 +427,10 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
             .order_by('consultant_name')
         )
 
+        User = get_user_model()
+        updated_by_ids = PendingPaymentRecord.objects.filter(status='Pending').values_list('edited_by', flat=True).distinct()
+        updated_by_users = User.objects.filter(id__in=updated_by_ids).order_by('name')
+
         context = {
             'rows': page_obj,
             'courses': courses,
@@ -453,6 +455,7 @@ class PendingPaymentsListView(LoginRequiredMixin, UserPassesTestMixin, View):
             'batch_codes': batch_codes,
             'trainer_names': trainer_names,
             'consultant_names': consultant_names,
+            'updated_by_users': updated_by_users,
             'trainer_types': [('FT', 'Full Time'), ('FL', 'Freelancer')],
             'updated_by': updated_by,
             'updated_from': updated_from,

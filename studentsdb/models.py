@@ -56,7 +56,8 @@ class Student(models.Model):
         ('R', 'Refund'),
         ('D', 'Discontinued'),
         ('H', 'Hold'),
-        ('P', 'Placed')
+        ('P', 'Placed'),
+        ('IA', 'In Active')
     ]
     course_status = models.CharField(max_length=3, choices=COURSE_STATUS_CHOICES, default='YTS')
     course_id = models.IntegerField(null=True, blank=True)
@@ -70,6 +71,7 @@ class Student(models.Model):
     mode_of_class = models.CharField(max_length=3, choices=MODE_CHOICES)
     week_type = models.CharField(max_length=2, choices=WEEK_TYPE)
     consultant = models.ForeignKey(Consultant, on_delete=models.SET_NULL, null=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_students')
 
     # Placement Status
     mock_interview_completed = models.BooleanField(default=False, blank=True, null=True)
@@ -113,7 +115,7 @@ class StudentConversation(models.Model):
     # New fields to track priority derived ONLY from the latest message
     last_message_priority = models.BooleanField(default=False)
     last_message_priority_level = models.IntegerField(default=0)
-    last_message_hashtag = models.CharField(max_length=20, blank=True, default='')
+    last_message_hashtag = models.CharField(max_length=100, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -127,7 +129,7 @@ class ConversationMessage(models.Model):
     conversation = models.ForeignKey(StudentConversation, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     sender_role = models.CharField(max_length=50, blank=True)
-    hashtag = models.CharField(max_length=20, blank=True, choices=[('placement', 'Placement'), ('class', 'Class'), ('payment', 'Payment')], default='')
+    hashtag = models.CharField(max_length=100, blank=True, default='')
     priority = models.CharField(max_length=10, blank=True, choices=[('high', 'High'), ('medium', 'Medium'), ('low', 'Low')], default='')
     message_type = models.CharField(max_length=10, choices=MESSAGE_TYPE_CHOICES, default="text")
     message = models.TextField(blank=True)

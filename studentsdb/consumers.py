@@ -7,7 +7,7 @@ from .models import StudentConversation, ConversationMessage, Student
 from .serializers import message_to_dict
 
 ALLOWED_POST_ROLES = {'admin', 'staff', 'batch_coordination', 'consultant', 'trainer'}
-ALLOWED_HASHTAGS = {'placement', 'class', 'payment'}
+ALLOWED_HASHTAGS = {'placement', 'class', 'payment', 'followups', 'important'}
 ALLOWED_PRIORITIES = {'high', 'medium', 'low'}
 
 class StudentConsumer(AsyncJsonWebsocketConsumer):
@@ -68,9 +68,13 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
             if not await self.can_post(user):
                 await self.send_json({"action": "error", "reason": "unauthorized"})
                 return
-            hashtag = str(content.get("hashtag", "") or "").strip().lower()
+            raw_hashtag = str(content.get("hashtag", "") or "").strip().lower()
             priority = str(content.get("priority", "") or "").strip().lower()
-            if hashtag not in ALLOWED_HASHTAGS:
+            if raw_hashtag:
+                tags = [t.strip() for t in raw_hashtag.split(',') if t.strip()]
+                valid_tags = [t for t in tags if t in ALLOWED_HASHTAGS]
+                hashtag = ",".join(valid_tags)
+            else:
                 hashtag = ""
             if priority not in ALLOWED_PRIORITIES:
                 priority = ""
@@ -83,13 +87,13 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
             # Automatically mark as read by sender
             await self.mark_message_read(msg.id, user)
             
-            payload = {"action": "new_message", "message": message_to_dict(msg)}
+            payload = {"action": "new_message", "message": await self.serialize_message(msg)}
             await self.channel_layer.group_send(self.group_name, {"type": "broadcast", "payload": payload})
             try:
                 list_payload = {
                     "action": "remarks_list_update", 
                     "student_id": int(self.student_id), 
-                    "message": message_to_dict(msg),
+                    "message": await self.serialize_message(msg),
                     "unread_count": conv_stats.get("unread_count", 0),
                     "is_priority": conv_stats.get("is_priority", False),
                     "priority_level": conv_stats.get("priority_level", 0)
@@ -109,7 +113,7 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
             
             success, msg = await self.update_message(msg_id, user, new_text)
             if success and msg:
-                payload = {"action": "message_updated", "message": message_to_dict(msg)}
+                payload = {"action": "message_updated", "message": await self.serialize_message(msg)}
                 await self.channel_layer.group_send(self.group_name, {"type": "broadcast", "payload": payload})
 
         elif action == "mark_conversation_read":
@@ -164,6 +168,10 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
 
     async def broadcast(self, event):
         await self.send_json(event["payload"])
+
+    @database_sync_to_async
+    def serialize_message(self, msg):
+        return message_to_dict(msg)
 
     @database_sync_to_async
     def can_post(self, user):

@@ -129,9 +129,12 @@
                 <i class="fas fa-hashtag"></i>
             </button>
             <ul class="dropdown-menu" aria-labelledby="{{ chat_id_prefix }}HashtagBtn">
-                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('placement', '{{ chat_context }}')">Placement</a></li>
-                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('class', '{{ chat_context }}')">Class</a></li>
-                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('payment', '{{ chat_context }}')">Payment</a></li>
+                <li><h6 class="dropdown-header">Hashtag</h6></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectHashtag('placement', '{{ chat_context }}')">#Placement</a></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectHashtag('class', '{{ chat_context }}')">#Class</a></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectHashtag('payment', '{{ chat_context }}')">#Payment</a></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectHashtag('followups', '{{ chat_context }}')">#Followups</a></li>
+                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectHashtag('important', '{{ chat_context }}')">#Important</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectHashtag('', '{{ chat_context }}')">None</a></li>
             </ul>
@@ -184,9 +187,12 @@
                             <i class="fas fa-hashtag"></i> <span id="{{ chat_id_prefix }}-preview-hashtag-label">Tag</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-dark">
-                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('placement', '{{ chat_id_prefix }}')">Placement</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('class', '{{ chat_id_prefix }}')">Class</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('payment', '{{ chat_id_prefix }}')">Payment</a></li>
+                            <li><h6 class="dropdown-header">Hashtag</h6></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectPreviewHashtag('placement', '{{ chat_id_prefix }}')">#Placement</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectPreviewHashtag('class', '{{ chat_id_prefix }}')">#Class</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectPreviewHashtag('payment', '{{ chat_id_prefix }}')">#Payment</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectPreviewHashtag('followups', '{{ chat_id_prefix }}')">#Followups</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectPreviewHashtag('important', '{{ chat_id_prefix }}')">#Important</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); selectPreviewHashtag('', '{{ chat_id_prefix }}')">None</a></li>
                         </ul>

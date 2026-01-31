@@ -130,9 +130,11 @@
       </select>
       <select name="hashtag" class="remarks-select" onchange="this.form.submit()">
         <option value="">Hashtag</option>
-        <option value="placement" {% if selected_hashtag == 'placement' %}selected{% endif %}>Placement</option>
-        <option value="class" {% if selected_hashtag == 'class' %}selected{% endif %}>Class</option>
-        <option value="payment" {% if selected_hashtag == 'payment' %}selected{% endif %}>Payment</option>
+        <option value="placement" {% if selected_hashtag == 'placement' %}selected{% endif %}>#Placement</option>
+        <option value="class" {% if selected_hashtag == 'class' %}selected{% endif %}>#Class</option>
+        <option value="payment" {% if selected_hashtag == 'payment' %}selected{% endif %}>#Payment</option>
+        <option value="followups" {% if selected_hashtag == 'followups' %}selected{% endif %}>#Followups</option>
+        <option value="important" {% if selected_hashtag == 'important' %}selected{% endif %}>#Important</option>
       </select>
       <a href="{% url 'student_remarks' %}" class="btn btn-secondary" title="Reset Filters"><i class="fas fa-redo"></i></a>
     </form>
@@ -505,12 +507,7 @@
           try {
             socket.send(JSON.stringify(payload));
             textareaEl.value = '';
-            document.getElementById('remarks-hashtag-val').value = '';
-            document.getElementById('remarks-priority-val').value = '';
-            var hBtn = document.getElementById('remarksHashtagBtn');
-            var pBtn = document.getElementById('remarksPriorityBtn');
-            if (hBtn) hBtn.classList.remove('text-primary');
-            if (pBtn) pBtn.classList.remove('text-primary');
+            window.resetMsgInputs('remarks');
           } catch(e){}
         };
       }
@@ -566,12 +563,7 @@
             try {
               socket.send(JSON.stringify(payload));
               textareaEl.value = '';
-              document.getElementById('remarks-hashtag-val').value = '';
-              document.getElementById('remarks-priority-val').value = '';
-              var hBtn = document.getElementById('remarksHashtagBtn');
-              var pBtn = document.getElementById('remarksPriorityBtn');
-              if (hBtn) hBtn.classList.remove('text-primary');
-              if (pBtn) pBtn.classList.remove('text-primary');
+              window.resetMsgInputs('remarks');
             } catch(e){}
           }
        });

@@ -63,7 +63,7 @@
                             <select id="id_country_code_select" class="form-control country-code-select">
                                 {% get_country_codes as countries %}
                                 {% for code, name, alpha2 in countries %}
-                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.country_code == code %}selected{% endif %}>{{ name }}</option>
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.country_code == code or not form.instance.country_code and code == '+91' %}selected{% endif %}>{{ name }}</option>
                                 {% endfor %}
                             </select>
                             {{ form.country_code }}
@@ -87,7 +87,7 @@
                             <select id="id_alternative_country_code_select" class="form-control country-code-select">
                                 {% get_country_codes as countries %}
                                 {% for code, name, alpha2 in countries %}
-                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.alternative_country_code == code %}selected{% endif %}>{{ name }}</option>
+                                    <option value="{{ alpha2 }}" data-code="{{ code }}" {% if form.instance.alternative_country_code == code or not form.instance.alternative_country_code and code == '+91' %}selected{% endif %}>{{ name }}</option>
                                 {% endfor %}
                             </select>
                             {{ form.alternative_country_code }}

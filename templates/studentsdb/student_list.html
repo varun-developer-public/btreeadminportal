@@ -13,7 +13,9 @@
     .batch-list-cell::-webkit-scrollbar {
         display: none;
     }
-    
+    .consultant-dropdown-limit .select2-results__options {
+        max-height: 150px !important;
+    }
 </style>
 {% if messages %}
 <div class="messages mb-4">
@@ -60,6 +62,12 @@
                 {{ form.course.label_tag }}
                 {{ form.course }}
             </div>
+            {% if request.user.role != 'consultant' %}
+            <div class="filter-group">
+                {{ form.consultant.label_tag }}
+                {{ form.consultant }}
+            </div>
+            {% endif %}
             <div class="filter-group">
                 {{ form.course_status.label_tag }}
                 {{ form.course_status }}
@@ -104,9 +112,7 @@
             <th>Course Status</th>
             <th>Enrollment Date</th>
             <th>Status</th>
-            {% if request.user.role != 'batch_coordination' %}
             <th>Actions</th>
-            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -141,7 +147,6 @@
                     <span class="indicator indicator-certificate {% if student.certificate_issued %}highlighted{% endif %}" title="Certificate Issued"></span>
                 </div>
             </td>
-            {% if request.user.role != 'batch_coordination' %}
             <td>
                 <div class="d-flex gap-2 justify-content-center">
                     <button type="button"
@@ -161,7 +166,6 @@
                     {% endif %}
                 </div>
             </td>
-            {% endif %}
         </tr>
     {% empty %}
         <tr><td colspan="10" class="text-center py-4 text-muted">
@@ -205,6 +209,16 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    $(document).ready(function() {
+        $('#id_consultant').select2({
+            dropdownCssClass: 'consultant-dropdown-limit',
+            width: '100%',
+            placeholder: "All Consultants",
+            allowClear: true
+        });
+    });
+</script>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const categorySelect = document.getElementById("id_course_category");

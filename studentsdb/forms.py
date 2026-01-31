@@ -216,6 +216,12 @@ class StudentFilterForm(forms.Form):
         required=False,
         empty_label="All Courses"
     )
+    consultant = forms.ModelChoiceField(
+        queryset=Consultant.objects.all(),
+        required=False,
+        empty_label="All Consultants",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
     course_status = forms.ChoiceField(
         choices=[('', 'All Statuses')] + Student.COURSE_STATUS_CHOICES,
         required=False,

@@ -52,7 +52,7 @@
                 </select>
             </div>
         </div>
-        <div class="filter-row filter-row-5">
+        <div class="filter-row filter-row-4">
             <div class="filter-group">
                 <label for="q">Search</label>
                 <input type="text" id="q" name="q" value="{{ q|default:'' }}" placeholder="ID, Name, Mobile, Batch, Course, Trainer, Consultant, Feedback">
@@ -66,15 +66,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="filter-group">
-                <label for="trainer">Trainer</label>
-                <select id="trainer" name="trainer">
-                    <option value="">All</option>
-                    {% for t in trainer_names %}
-                        <option value="{{ t }}" {% if trainer == t %}selected{% endif %}>{{ t }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+
             <div class="filter-group">
                 <label for="trainer_type">Trainer Type</label>
                 <select id="trainer_type" name="trainer_type">
@@ -97,28 +89,15 @@
         <div class="filter-row filter-row-4">
             <div class="filter-group">
                 <label for="updated_by">Updated By</label>
-                <input type="text" id="updated_by" name="updated_by" value="{{ updated_by|default:'' }}" placeholder="User name/email">
-            </div>
-            <div class="filter-group">
-                <label for="updated_from">Updated From</label>
-                <input type="date" id="updated_from" name="updated_from" value="{{ updated_from|default:'' }}">
-            </div>
-            <div class="filter-group">
-                <label for="updated_to">Updated To</label>
-                <input type="date" id="updated_to" name="updated_to" value="{{ updated_to|default:'' }}">
-            </div>
-            <div class="filter-group">
-                <label for="next_emi">Next EMI No</label>
-                <select id="next_emi" name="next_emi">
+                <select id="updated_by" name="updated_by">
                     <option value="">All</option>
-                    <option value="1" {% if next_emi == '1' %}selected{% endif %}>1</option>
-                    <option value="2" {% if next_emi == '2' %}selected{% endif %}>2</option>
-                    <option value="3" {% if next_emi == '3' %}selected{% endif %}>3</option>
-                    <option value="4" {% if next_emi == '4' %}selected{% endif %}>4</option>
+                    {% for u in updated_by_users %}
+                        <option value="{{ u.id }}" {% if updated_by == u.id|stringformat:"s" %}selected{% endif %}>
+                            {{ u.name|default:u.email }}
+                        </option>
+                    {% endfor %}
                 </select>
             </div>
-        </div>
-        <div class="filter-row filter-row-7">
             <div class="filter-group">
                 <label for="due_from">Due From</label>
                 <input type="date" id="due_from" name="due_from" value="{{ due_from|default:'' }}">
@@ -126,22 +105,6 @@
             <div class="filter-group">
                 <label for="due_to">Due To</label>
                 <input type="date" id="due_to" name="due_to" value="{{ due_to|default:'' }}">
-            </div>
-            <div class="filter-group">
-                <label for="pending_min">Pending Min</label>
-                <input type="number" step="0.01" id="pending_min" name="pending_min" value="{{ pending_min|default:'' }}">
-            </div>
-            <div class="filter-group">
-                <label for="pending_max">Pending Max</label>
-                <input type="number" step="0.01" id="pending_max" name="pending_max" value="{{ pending_max|default:'' }}">
-            </div>
-            <div class="filter-group">
-                <label for="course_pct_min">Course % Min</label>
-                <input type="number" step="1" id="course_pct_min" name="course_pct_min" value="{{ course_pct_min|default:'' }}">
-            </div>
-            <div class="filter-group">
-                <label for="course_pct_max">Course % Max</label>
-                <input type="number" step="1" id="course_pct_max" name="course_pct_max" value="{{ course_pct_max|default:'' }}">
             </div>
         </div>
         <div class="filter-actions">
@@ -164,6 +127,7 @@
                     <th>Trainer</th>
                     <th>Trainer Type</th>
                     <th>Course %</th>
+                    <th>Joining Date</th>
                     <th>Total Fee</th>
                     <th>Till Paid</th>
                     <th>Pending Amount</th>
@@ -206,6 +170,11 @@
                     <td>
                         {% if r.course_percentage is not None %}
                             {{ r.course_percentage|floatformat:0 }}%
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if r.joining_date %}
+                            {{ r.joining_date|date:"d M Y" }}
                         {% else %}—{% endif %}
                     </td>
                     <td>₹{{ r.total_fee|floatformat:2 }}</td>
@@ -279,19 +248,15 @@
             <input type="hidden" name="per_page" value="{{ per_page }}">
             <input type="hidden" name="q" value="{{ q|default:'' }}">
             <input type="hidden" name="batch_code" value="{{ batch_code|default:'' }}">
-            <input type="hidden" name="trainer" value="{{ trainer|default:'' }}">
+
             <input type="hidden" name="trainer_type" value="{{ request.GET.trainer_type|default:'' }}">
             <input type="hidden" name="consultant" value="{{ consultant|default:'' }}">
-            <input type="hidden" name="next_emi" value="{{ next_emi|default:'' }}">
+
             <input type="hidden" name="due_from" value="{{ due_from|default:'' }}">
             <input type="hidden" name="due_to" value="{{ due_to|default:'' }}">
-            <input type="hidden" name="pending_min" value="{{ pending_min|default:'' }}">
-            <input type="hidden" name="pending_max" value="{{ pending_max|default:'' }}">
-            <input type="hidden" name="course_pct_min" value="{{ course_pct_min|default:'' }}">
-            <input type="hidden" name="course_pct_max" value="{{ course_pct_max|default:'' }}">
+
             <input type="hidden" name="updated_by" value="{{ updated_by|default:'' }}">
-            <input type="hidden" name="updated_from" value="{{ updated_from|default:'' }}">
-            <input type="hidden" name="updated_to" value="{{ updated_to|default:'' }}">
+
             <button type="submit">Go</button>
         </form>
     </div>

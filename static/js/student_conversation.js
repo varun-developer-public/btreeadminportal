@@ -137,6 +137,39 @@ function escapeHTML(str) {
   });
 }
 
+
+window.resetMsgInputs = function(prefix) {
+  // 1. Clear Hidden Inputs
+  var tagInput = document.getElementById(prefix + '-hashtag-val');
+  var prInput = document.getElementById(prefix + '-priority-val');
+  if (tagInput) tagInput.value = '';
+  if (prInput) prInput.value = '';
+
+  // 2. Reset Buttons
+  var hBtn = document.getElementById(prefix + 'HashtagBtn');
+  var pBtn = document.getElementById(prefix + 'PriorityBtn');
+  if (hBtn) hBtn.classList.remove('text-primary');
+  if (pBtn) pBtn.classList.remove('text-primary');
+
+  // 3. Reset Badges
+  var hBadge = document.getElementById(prefix + '-hashtag-badge');
+  var pBadge = document.getElementById(prefix + '-priority-badge');
+  if (hBadge) { hBadge.innerHTML = ''; hBadge.className = 'ms-1 align-self-center'; }
+  if (pBadge) { pBadge.innerHTML = ''; pBadge.className = 'ms-1 align-self-center'; }
+
+  // 4. Clear Active State in Dropdowns
+  if (hBtn && hBtn.nextElementSibling) {
+      hBtn.nextElementSibling.querySelectorAll('.dropdown-item').forEach(function(item){
+          item.classList.remove('active');
+      });
+  }
+  if (pBtn && pBtn.nextElementSibling) {
+      pBtn.nextElementSibling.querySelectorAll('.dropdown-item').forEach(function(item){
+          item.classList.remove('active');
+      });
+  }
+};
+
 window.selectHashtag = function(val, mode) {
   var idPrefix = mode === 'remarks' ? 'remarks-' : 'conv-modal-';
   var btnId = mode === 'remarks' ? 'remarksHashtagBtn' : 'convModalHashtagBtn';
@@ -145,32 +178,84 @@ window.selectHashtag = function(val, mode) {
   var btnEl = document.getElementById(btnId);
   var badgeEl = document.getElementById(badgeId);
   
-  if (inputEl) inputEl.value = val;
+  if (!inputEl) return;
+  
+  var currentVal = inputEl.value ? inputEl.value.split(',') : [];
+  
+  if (val === '') {
+      currentVal = [];
+  } else {
+      var index = currentVal.indexOf(val);
+      if (index > -1) {
+          currentVal.splice(index, 1);
+      } else {
+          currentVal.push(val);
+      }
+  }
+  
+  var newVal = currentVal.join(',');
+  inputEl.value = newVal;
+
   if (btnEl) {
-    if (val) btnEl.classList.add('text-primary');
+    if (currentVal.length > 0) btnEl.classList.add('text-primary');
     else btnEl.classList.remove('text-primary');
+    
+    // Update active state in dropdown
+    var dropdownMenu = btnEl.nextElementSibling;
+    if (dropdownMenu) {
+        var items = dropdownMenu.querySelectorAll('.dropdown-item');
+        items.forEach(function(item) {
+            var onclick = item.getAttribute('onclick');
+            if (onclick) {
+                var match = onclick.match(/selectHashtag\('([^']+)'/);
+                if (match && match[1]) {
+                    var itemVal = match[1];
+                    if (itemVal) {
+                        if (currentVal.includes(itemVal)) item.classList.add('active');
+                        else item.classList.remove('active');
+                    } else if (val === '') {
+                        // Clear all active if None selected
+                         item.classList.remove('active');
+                    }
+                }
+            }
+        });
+    }
   }
   if (badgeEl) {
-    if (!val) {
+    if (currentVal.length === 0) {
       badgeEl.innerHTML = '';
       badgeEl.className = 'ms-1 align-self-center';
     } else {
-      var badgeClass = 'badge rounded-pill ';
-      var text = val;
-      if (val === 'placement') {
-        badgeClass += 'bg-primary';
-        text = 'Placement';
-      } else if (val === 'class') {
-        badgeClass += 'bg-info text-dark';
-        text = 'Class';
-      } else if (val === 'payment') {
-        badgeClass += 'bg-success';
-        text = 'Payment';
-      } else {
-        badgeClass += 'bg-secondary';
-      }
-      badgeEl.className = 'ms-1 align-self-center ' + badgeClass;
-      badgeEl.textContent = '#' + text;
+      badgeEl.innerHTML = '';
+      badgeEl.className = 'ms-1 align-self-center';
+      
+      currentVal.forEach(function(tag) {
+          var span = document.createElement('span');
+          var badgeClass = 'badge rounded-pill me-1 ';
+          var text = tag;
+          if (tag === 'placement') {
+            badgeClass += 'bg-primary';
+            text = 'Placement';
+          } else if (tag === 'class') {
+            badgeClass += 'bg-info text-dark';
+            text = 'Class';
+          } else if (tag === 'payment') {
+            badgeClass += 'bg-success';
+            text = 'Payment';
+          } else if (tag === 'followups') {
+            badgeClass += 'bg-secondary';
+            text = 'Followups';
+          } else if (tag === 'important') {
+            badgeClass += 'bg-danger';
+            text = 'Important';
+          } else {
+            badgeClass += 'bg-secondary';
+          }
+          span.className = badgeClass;
+          span.textContent = '#' + text;
+          badgeEl.appendChild(span);
+      });
     }
   }
 };
@@ -560,16 +645,7 @@ function initStudentConversation(studentId) {
     fetch('/students/conversation/' + studentId + '/send/', { method: 'POST', body: fd }).then(function(r){ return r.json(); }).then(function(d){
         if (d && d.ok && d.message) {
           renderMessage(messagesEl, d.message);
-          if (tInput) tInput.value = '';
-          if (pInput) pInput.value = '';
-          var hBtn = document.getElementById('convModalHashtagBtn');
-          var pBtn = document.getElementById('convModalPriorityBtn');
-          if (hBtn) hBtn.classList.remove('text-primary');
-          if (pBtn) pBtn.classList.remove('text-primary');
-          var hBadge = document.getElementById('conv-modal-hashtag-badge');
-          var pBadge = document.getElementById('conv-modal-priority-badge');
-          if (hBadge) { hBadge.innerHTML = ''; hBadge.className = 'ms-1 align-self-center'; }
-          if (pBadge) { pBadge.innerHTML = ''; pBadge.className = 'ms-1 align-self-center'; }
+          window.resetMsgInputs('conv-modal');
         }
       }).catch(function(){});
   }
@@ -619,8 +695,20 @@ function initStudentConversation(studentId) {
       if (!text) return;
       if (!httpMode && socket && socket.readyState === 1) {
         try {
-          socket.send(JSON.stringify({ action: 'send', message: text }));
+          var tagVal = '';
+          var prVal = '';
+          var tInput = document.getElementById('conv-modal-hashtag-val');
+          var pInput = document.getElementById('conv-modal-priority-val');
+          if (tInput) tagVal = tInput.value;
+          if (pInput) prVal = pInput.value;
+          
+          var payload = { action: 'send', message: text };
+          if (tagVal) payload.hashtag = tagVal;
+          if (prVal) payload.priority = prVal;
+          
+          socket.send(JSON.stringify(payload));
           textarea.value = '';
+          window.resetMsgInputs('conv-modal');
         } catch (e) {}
       } else {
         sendMessageHTTP(text);
@@ -738,6 +826,11 @@ var StudentConversationManager = (function(){
         updateRowCells(tableRowEl, data.message);
       } else if (data.action === 'feedback_updated' && (data.feedback || data.updated_by_name)) {
         updateRowCells(tableRowEl, data);
+      } else if (data.action === 'message_updated' && data.message) {
+        if (window.updateMessageBubble) {
+           window.updateMessageBubble(data.message);
+        }
+        updateRowCells(tableRowEl, data.message);
       } else if (data.action === 'error') {
         try { console.warn('Conversation action error: ' + (data.reason || '')); } catch(e){}
       }
@@ -768,16 +861,7 @@ var StudentConversationManager = (function(){
               if (prVal) { payload.priority = prVal; }
               socket.send(JSON.stringify(payload));
               textareaEl.value = '';
-              document.getElementById('conv-modal-hashtag-val').value = '';
-              document.getElementById('conv-modal-priority-val').value = '';
-              var hBtn = document.getElementById('convModalHashtagBtn');
-              var pBtn = document.getElementById('convModalPriorityBtn');
-              if (hBtn) hBtn.classList.remove('text-primary');
-              if (pBtn) pBtn.classList.remove('text-primary');
-              var hBadge = document.getElementById('conv-modal-hashtag-badge');
-              var pBadge = document.getElementById('conv-modal-priority-badge');
-              if (hBadge) { hBadge.innerHTML = ''; hBadge.className = 'ms-1 align-self-center'; }
-              if (pBadge) { pBadge.innerHTML = ''; pBadge.className = 'ms-1 align-self-center'; }
+              window.resetMsgInputs('conv-modal');
             } catch(e){}
           }
         };
@@ -797,16 +881,7 @@ var StudentConversationManager = (function(){
               if (prVal) { payload.priority = prVal; }
               socket.send(JSON.stringify(payload));
               textareaEl.value = '';
-              document.getElementById('conv-modal-hashtag-val').value = '';
-              document.getElementById('conv-modal-priority-val').value = '';
-              var hBtn = document.getElementById('convModalHashtagBtn');
-              var pBtn = document.getElementById('convModalPriorityBtn');
-              if (hBtn) hBtn.classList.remove('text-primary');
-              if (pBtn) pBtn.classList.remove('text-primary');
-              var hBadge = document.getElementById('conv-modal-hashtag-badge');
-              var pBadge = document.getElementById('conv-modal-priority-badge');
-              if (hBadge) { hBadge.innerHTML = ''; hBadge.className = 'ms-1 align-self-center'; }
-              if (pBadge) { pBadge.innerHTML = ''; pBadge.className = 'ms-1 align-self-center'; }
+              window.resetMsgInputs('conv-modal');
             } catch(e){}
           }
         }
@@ -837,32 +912,55 @@ var StudentConversationManager = (function(){
     var formEl = document.getElementById('conv-modal-form');
     var textareaEl = document.getElementById('conv-modal-textarea');
     var titleEl = document.getElementById('conv-modal-title');
+    
+    // Connect WebSocket
     connect(id, messagesEl, formEl, textareaEl, titleEl, sname, scode, rowEl);
-    if (modalInstance) {
-      try { modalInstance.hide(); } catch(e){}
-      modalInstance = null;
-    }
-    var modal = new bootstrap.Modal(modalEl, {backdrop: true, keyboard: true, focus: true});
+    
+    // Get or create modal instance
+    var modal = bootstrap.Modal.getOrCreateInstance(modalEl, {backdrop: true, keyboard: true, focus: true});
     modalInstance = modal;
+    
+    // Attach cleanup listener only once
     if (!modalEl.getAttribute('data-cleanup-listener')) {
-      modalEl.addEventListener('hidden.bs.modal', function(){ cleanup(); });
-      modalEl.addEventListener('hide.bs.modal', function(){ setTimeout(cleanup, 10); });
-      document.addEventListener('hidden.bs.modal', function(){ cleanup(); });
-      document.addEventListener('hide.bs.modal', function(){ setTimeout(cleanup, 10); });
-      var closeBtn = modalEl.querySelector('.btn-close');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', function(){
-          try {
-            var inst = bootstrap.Modal.getInstance(modalEl) || modalInstance;
-            if (inst) { inst.hide(); if (inst.dispose) inst.dispose(); }
-          } catch(e){}
-          setTimeout(cleanup, 30);
-        });
-      }
+      modalEl.addEventListener('hidden.bs.modal', function(){ 
+        cleanup(); 
+      });
       modalEl.setAttribute('data-cleanup-listener', '1');
     }
+    
     modal.show();
   }
+
+  // Listen for edit message events (Global for modal)
+  document.addEventListener('conversation:edit_message', function(e){
+    if (!socket || socket.readyState !== 1) return;
+    var d = e.detail;
+    // Ensure we are sending to the correct student socket
+    if (d.studentId && currentId && String(d.studentId) !== String(currentId)) return;
+    
+    try {
+       socket.send(JSON.stringify({
+         action: 'edit_message',
+         message_id: d.messageId,
+         new_text: d.newText
+       }));
+     } catch(err){ console.error(err); }
+  });
+
+  // Listen for mark read events (Global for modal)
+  document.addEventListener('conversation:mark_read', function(e){
+    if (!socket || socket.readyState !== 1) return;
+    var d = e.detail;
+    if (d.studentId && currentId && String(d.studentId) !== String(currentId)) return;
+    
+    try {
+      socket.send(JSON.stringify({
+        action: 'mark_read',
+        message_ids: d.messageIds
+      }));
+    } catch(err){ console.error(err); }
+  });
+
   return {
     open: openModal
   };
@@ -887,17 +985,61 @@ window.selectPreviewHashtag = function(val, prefix) {
   var labelEl = document.getElementById(prefix + '-preview-hashtag-label');
   var inputEl = document.getElementById(prefix + '-preview-hashtag-val');
   var btnEl = document.getElementById(prefix + 'PreviewHashtagBtn');
-  if (inputEl) inputEl.value = val;
+  
+  if (!inputEl) return;
+  
+  var currentVal = inputEl.value ? inputEl.value.split(',') : [];
+  
+  if (val === '') {
+      currentVal = [];
+  } else {
+      var index = currentVal.indexOf(val);
+      if (index > -1) {
+          currentVal.splice(index, 1);
+      } else {
+          currentVal.push(val);
+      }
+  }
+  
+  var newVal = currentVal.join(',');
+  inputEl.value = newVal;
+
   if (labelEl) {
-      if (!val) labelEl.textContent = 'Tag';
-      else if (val === 'placement') labelEl.textContent = 'Placement';
-      else if (val === 'class') labelEl.textContent = 'Class';
-      else if (val === 'payment') labelEl.textContent = 'Payment';
-      else labelEl.textContent = val;
+      if (currentVal.length === 0) labelEl.textContent = 'Tag';
+      else if (currentVal.length === 1) {
+          var v = currentVal[0];
+          if (v === 'placement') labelEl.textContent = 'Placement';
+          else if (v === 'class') labelEl.textContent = 'Class';
+          else if (v === 'payment') labelEl.textContent = 'Payment';
+          else if (v === 'followups') labelEl.textContent = 'Followups';
+          else if (v === 'important') labelEl.textContent = 'Important';
+          else labelEl.textContent = v;
+      } else {
+          labelEl.textContent = currentVal.length + ' Tags';
+      }
   }
   if (btnEl) {
-      if (val) btnEl.classList.add('text-primary');
+      if (currentVal.length > 0) btnEl.classList.add('text-primary');
       else btnEl.classList.remove('text-primary');
+      
+      // Update active classes in dropdown
+      var dropdownMenu = btnEl.nextElementSibling;
+      if (dropdownMenu) {
+          var items = dropdownMenu.querySelectorAll('.dropdown-item');
+          items.forEach(function(item) {
+              var onclick = item.getAttribute('onclick');
+              if (onclick) {
+                  var match = onclick.match(/selectPreviewHashtag\('([^']+)'/);
+                  if (match && match[1]) {
+                      var itemVal = match[1];
+                      if (itemVal) {
+                          if (currentVal.includes(itemVal)) item.classList.add('active');
+                          else item.classList.remove('active');
+                      }
+                  }
+              }
+          });
+      }
   }
 };
 
@@ -1031,5 +1173,37 @@ window.uploadFile = function(inputEl, studentId) {
       }
       title.textContent = 'Preview'; // Could add file name
       modal.style.display = 'flex';
+  }
+};
+
+window.updateMessageBubble = function(msg) {
+  if (!msg || !msg.id) return;
+  var msgTextEl = document.getElementById('msg-text-' + msg.id);
+  if (!msgTextEl) return;
+  
+  var newText = msg.message || '';
+  
+  // Update text
+  msgTextEl.innerText = newText;
+  msgTextEl.style.display = 'block';
+  
+  // Remove edit container if exists
+  var editContainer = document.getElementById('edit-container-' + msg.id);
+  if (editContainer) editContainer.remove();
+  
+  // Add edited indicator if missing
+  var parent = msgTextEl.parentNode;
+  var hasEdited = false;
+  var smalls = parent.querySelectorAll('small');
+  smalls.forEach(function(s){
+    if (s.textContent.indexOf('(edited)') > -1) hasEdited = true;
+  });
+  
+  if (!hasEdited) {
+    var editedDiv = document.createElement('div');
+    editedDiv.className = 'text-end';
+    editedDiv.style.lineHeight = '1';
+    editedDiv.innerHTML = '<small style="font-size: 0.7rem; opacity: 0.8;">(edited)</small>';
+    parent.appendChild(editedDiv);
   }
 };

@@ -4,7 +4,7 @@
    {% block extra_css %}
    <link rel="stylesheet" href="{% static 'css/admin_dashboard.css' %}">
    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
+   
    <link rel="stylesheet" href="{% static 'css/batch_coordination.css' %}">
    {% endblock %}
    
@@ -160,119 +160,54 @@
            </div>
        </div>
    
-       <!-- Calendar Section -->
-       <div class="bcd-card bcd-calendar-card">
-           <h2 class="bcd-batch-title bcd-mb-2">Calendar</h2>
-           
-               <div class="bcd-calendar-header">
-                   <div class="bcd-month-navigation">
-                       <button class="bcd-month-nav-btn" id="prev-month"><i class="fas fa-chevron-left"></i></button>
-                       <div class="bcd-current-month" id="current-month">-</div>
-                       <button class="bcd-month-nav-btn" id="next-month"><i class="fas fa-chevron-right"></i></button>
-                   </div>
-               </div>
-               <div class="bcd-week-calendar">
-                   <div class="bcd-week-header">
-                       <div class="bcd-day-column bcd-time-column"></div>
-                       <button class="bcd-week-nav-btn" id="prev-week"><i class="fas fa-chevron-left"></i></button>
-                       <div class="bcd-day-column">
-                           <div class="bcd-day-name">Mon</div>
-                           <div class="bcd-day-number">-</div>
-                       </div>
-                       <div class="bcd-day-column">
-                           <div class="bcd-day-name">Tue</div>
-                           <div class="bcd-day-number">-</div>
-                       </div>
-                       <div class="bcd-day-column">
-                           <div class="bcd-day-name">Wed</div>
-                           <div class="bcd-day-number">-</div>
-                       </div>
-                       <div class="bcd-day-column">
-                           <div class="bcd-day-name">Thu</div>
-                           <div class="bcd-day-number">-</div>
-                       </div>
-                       <div class="bcd-day-column">
-                           <div class="bcd-day-name">Fri</div>
-                           <div class="bcd-day-number">-</div>
-                       </div>
-                       <div class="bcd-day-column">
-                           <div class="bcd-day-name">Sat</div>
-                           <div class="bcd-day-number">-</div>
-                       </div>
-                       <div class="bcd-day-column">
-                           <div class="bcd-day-name">Sun</div>
-                           <div class="bcd-day-number">-</div>
-                       </div>
-                       <button class="bcd-week-nav-btn" id="next-week"><i class="fas fa-chevron-right"></i></button>
-                   </div>
-                   <div class="bcd-week-body">
-                       <div class="bcd-time-row">
-                           <div class="bcd-time-label">9:00 am - 10:30 am</div>
-                           <div class="bcd-time-slots">
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                           </div>
-                       </div>
-                       <div class="bcd-time-row">
-                           <div class="bcd-time-label">10:30 am - 12:00 pm</div>
-                           <div class="bcd-time-slots">
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                           </div>
-                       </div>
-                       <div class="bcd-time-row">
-                           <div class="bcd-time-label">12:00 pm - 1:30 pm</div>
-                           <div class="bcd-time-slots">
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                           </div>
-                       </div>
-                       <div class="bcd-time-row">
-                           <div class="bcd-time-label">3:00 pm - 4:30 pm</div>
-                           <div class="bcd-time-slots">
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                           </div>
-                       </div>
-                       <div id="calendar" style="display: none;"></div>
-                       <div class="bcd-time-row">
-                           <div class="bcd-time-label">4:30 pm - 6:00 pm</div>
-                           <div class="bcd-time-slots">
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                               <div class="bcd-time-slot"></div>
-                           </div>
-                       </div>
-                   </div>
-               </div>
-           
-       </div>
-   
-       <!-- Trainers by Course Section -->
+       <!-- Performance Section -->
+    <div class="bcd-card bcd-performance-card" style="margin-bottom: 1.5rem;">
+        <div class="bcd-batch-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h2 class="bcd-batch-title" style="margin: 0;">Performance</h2>
+            <form method="get" class="bcd-year-filter">
+                <select name="year" onchange="this.form.submit()" class="bcd-search-input" style="padding: 0.5rem; width: auto; cursor: pointer;">
+                    {% for year in year_range %}
+                        <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+        
+        <div class="bcd-table-container">
+            <table class="bcd-batches-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Joinings</th>
+                        <th>Revenue Received</th>
+                        <th>Pending Amount</th>
+                        <th>Growth %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for data in performance_data %}
+                    <tr>
+                        <td>{{ data.month_name }}</td>
+                        <td>{{ data.joinings }}</td>
+                        <td>₹{{ data.revenue|floatformat:2 }}</td>
+                        <td>₹{{ data.pending|floatformat:2 }}</td>
+                        <td>
+                            {% if data.growth > 0 %}
+                                <span style="color: green;">▲ {{ data.growth }}%</span>
+                            {% elif data.growth < 0 %}
+                                <span style="color: red;">▼ {{ data.growth }}%</span>
+                            {% else %}
+                                <span style="color: gray;">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Trainers by Course Section -->
        <div class="bcd-card" style="margin-bottom: 1.5rem;">
            <div class="bcd-availability-header">
                <h2 class="bcd-batch-title">Trainers by Course</h2>
@@ -358,8 +293,7 @@
    
    {% block extra_js %}
    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.js"></script>
-   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.2/main.min.css">
+   
    
    <script>
    document.addEventListener('DOMContentLoaded', function() {
@@ -463,179 +397,7 @@
            return slots.findIndex(slot => startTime.startsWith(slot));
        }
    
-       // Initialize Calendar (Week View Only)
-       function initCalendar() {
-           const weekCalendar = document.querySelector('.bcd-week-calendar');
-   
-           // Header
-           const currentMonthEl = document.getElementById('current-month');
-           const prevMonthBtn = document.getElementById('prev-month');
-           const nextMonthBtn = document.getElementById('next-month');
-   
-           let currentDate = new Date();
-           updateCalendarHeader();
-   
-           // Navigation buttons
-           const prevWeekBtn = document.getElementById('prev-week');
-           const nextWeekBtn = document.getElementById('next-week');
-   
-           prevMonthBtn.addEventListener('click', function() {
-               currentDate.setMonth(currentDate.getMonth() - 1);
-               updateCalendarHeader();
-               updateWeekCalendar();
-           });
-   
-           nextMonthBtn.addEventListener('click', function() {
-               currentDate.setMonth(currentDate.getMonth() + 1);
-               updateCalendarHeader();
-               updateWeekCalendar();
-           });
-   
-           prevWeekBtn.addEventListener('click', function() {
-               currentDate.setDate(currentDate.getDate() - 7);
-               updateCalendarHeader();   // ✅ also refresh header
-               updateWeekCalendar();
-           });
-   
-           nextWeekBtn.addEventListener('click', function() {
-               currentDate.setDate(currentDate.getDate() + 7);
-               updateCalendarHeader();   // ✅ also refresh header
-               updateWeekCalendar();
-           });
-   
-           function updateCalendarHeader() {
-               const monthNames = [
-                   "January", "February", "March", "April", "May", "June",
-                   "July", "August", "September", "October", "November", "December"
-               ];
-               currentMonthEl.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-           }
-   
-           function updateWeekCalendar() {
-               // Get Monday of current week
-               const firstDay = new Date(currentDate);
-               const day = firstDay.getDay();
-               const diff = firstDay.getDate() - day + (day === 0 ? -6 : 1);
-               firstDay.setDate(diff);
-   
-               // Update day headers
-               const dayColumns = document.querySelectorAll('.bcd-day-number');
-               const dayNames = document.querySelectorAll('.bcd-day-name');
-               const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-               for (let i = 0; i < dayColumns.length; i++) {
-                   const date = new Date(firstDay);
-                   date.setDate(firstDay.getDate() + i);
-                   dayColumns[i].textContent = date.getDate();
-                   dayNames[i].textContent = days[i];
-               }
-   
-               // Clear events
-               document.querySelectorAll('.bcd-event').forEach(event => {
-                   if (!event.classList.contains('bcd-event-team-sync') &&
-                       !event.classList.contains('bcd-event-onboarding')) {
-                       event.remove();
-                   }
-               });
-   
-               // 🔹 Add batch events (start and end separate)
-               batchesData.forEach(batch => {
-                   const batchStartDate = parseDate(batch.startDate);
-                   const batchEndDate = parseDate(batch.endDate);
-   
-                   // Batch Start
-                   const daysBetween = (date1, date2) => {
-                       const d1 = new Date(Date.UTC(date1.getFullYear(), date1.getMonth(), date1.getDate()));
-                       const d2 = new Date(Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate()));
-                       return Math.round((d1 - d2) / (1000 * 60 * 60 * 24));
-                   };
-   
-                   // Batch Start
-                   if (batchStartDate) {
-                       const startDayDiff = daysBetween(batchStartDate, firstDay);
-                       if (startDayDiff >= 0 && startDayDiff < 7) {
-                           addBatchEvent(startDayDiff, batch, 'start');
-                       }
-                   }
-   
-                   // Batch End
-                   if (batchEndDate) {
-                       const endDayDiff = daysBetween(batchEndDate, firstDay);
-                       if (endDayDiff >= 0 && endDayDiff < 7) {
-                           addBatchEvent(endDayDiff, batch, 'end');
-                       }
-                   }
-               });
-   
-           }
-   
-           function addBatchEvent(dayIndex, batch, eventType) {
-               const timeRows = document.querySelectorAll('.bcd-time-row');
-               let targetSlot = null;
-   
-               // Determine batch time based on event type
-               const batchTime = batch.startTime; // Both start and end events should use the start time
-               if (!batchTime) return; // no time, skip
-   
-               const [batchHour, batchMinute] = batchTime.split(':').map(Number);
-               const batchTotalMinutes = batchHour * 60 + batchMinute;
-   
-               // Loop through all time rows
-               for (let i = 0; i < timeRows.length; i++) {
-                   const timeLabel = timeRows[i].querySelector('.bcd-time-label').textContent;
-                   const [startTime, endTime] = timeLabel.split(' - ').map(t => t.trim());
-   
-                   const parseTime = (timeStr) => {
-                       const parts = timeStr.match(/(\d+):(\d+)\s*(am|pm)/i);
-                       if (!parts) return 0;
-                       let hours = parseInt(parts[1], 10);
-                       const minutes = parseInt(parts[2], 10);
-                       const modifier = parts[3].toLowerCase();
-   
-                       if (modifier === 'pm' && hours < 12) {
-                           hours += 12;
-                       }
-                       if (modifier === 'am' && hours === 12) {
-                           hours = 0; // Midnight case
-                       }
-                       return hours * 60 + minutes;
-                   };
-   
-                   const startTotalMinutes = parseTime(startTime);
-                   const endTotalMinutes = parseTime(endTime);
-   
-                   if (batchTotalMinutes >= startTotalMinutes && batchTotalMinutes < endTotalMinutes) {
-                       targetSlot = timeRows[i].querySelectorAll('.bcd-time-slot')[dayIndex];
-                       break;
-                   }
-               }
-   
-               // Fallback to first row if no slot matched
-               if (!targetSlot) {
-                   targetSlot = timeRows[0].querySelectorAll('.bcd-time-slot')[dayIndex];
-               }
-   
-               // Create and append the event
-               if (targetSlot) {
-                   const batchEvent = document.createElement('div');
-                   batchEvent.className = `bcd-event ${eventType === 'start' ? 'bcd-event-start' : 'bcd-event-end'}`;
-                   batchEvent.innerHTML = `
-                       <div class="bcd-event-title">${batch.batch_id}: ${batch.course}</div>
-                       <div class="bcd-event-description">${eventType === 'start' ? '🚀 Batch Starting' : '✅ Batch Ending'}</div>
-                       <div class="bcd-event-attendees">
-                           <div class="bcd-attendee-avatar">${batch.trainer.name}</div>
-                       </div>
-                   `;
-                   targetSlot.appendChild(batchEvent);
-   
-                   // Click to view details
-                   batchEvent.addEventListener('click', () => viewBatchDetails(batch.batch_id));
-               }
-           }
-   
-           // 🚀 Always load Week View
-           weekCalendar.style.display = 'block';
-           updateWeekCalendar();
-       }
+
    
    
        // Initialize Trainer Availability
@@ -841,9 +603,8 @@
        });
    
        // Initialize all components
-       initBatchesTable();
-       initCalendar();
-       initTrainerAvailability();
+    initBatchesTable();
+    initTrainerAvailability();
        initNotifications();
     //    initStudentTransferModal();
    

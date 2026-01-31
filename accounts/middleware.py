@@ -43,7 +43,7 @@ URL_ROLE_MAPPINGS = {
     'batch_coordination': [
         'batch_coordination_dashboard',
         'batch_list', 'create_batch', 'update_batch',
-        'student_list', 'student_remarks', 'pending_payments',
+        'student_list', 'student_remarks', 'pending_payments', 'update_student',
         'trainer_list', 'create_trainer', 'update_trainer',
         'update_user',
         'password_change',
@@ -65,7 +65,8 @@ URL_ROLE_MAPPINGS = {
         'trainerhandover-list','trainerhandover-detail',
         'batchtransaction-list','batchtransaction-detail',
         'studenthistory-list','studenthistory-detail','batch_report','conversation_messages','conversation_send',
-        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report'
+        'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report',
+        'get_payment_details'
     ],
     'consultant': [
         'consultant_profile',

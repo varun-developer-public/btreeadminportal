@@ -38,6 +38,7 @@ def student_remarks(request):
         query = form.cleaned_data.get('q')
         course_category = form.cleaned_data.get('course_category')
         course = form.cleaned_data.get('course')
+        consultant = form.cleaned_data.get('consultant')
         course_status = form.cleaned_data.get('course_status')
         start_date = form.cleaned_data.get('start_date')
         end_date = form.cleaned_data.get('end_date')
@@ -58,6 +59,8 @@ def student_remarks(request):
         elif course_category:
             course_ids = Course.objects.filter(category=course_category).values_list('id', flat=True)
             student_qs = student_qs.filter(course_id__in=course_ids)
+        if consultant:
+            student_qs = student_qs.filter(consultant=consultant)
         if course_status:
             student_qs = student_qs.filter(course_status=course_status)
         if start_date:
@@ -81,7 +84,7 @@ def student_remarks(request):
             student_qs = student_qs.filter(conversation__last_message_priority_level=level)
             
     if hashtag_filter:
-        student_qs = student_qs.filter(conversation__last_message_hashtag=hashtag_filter)
+        student_qs = student_qs.filter(conversation__last_message_hashtag__icontains=hashtag_filter)
 
     student_qs = student_qs.select_related('conversation').annotate(
         has_unread=Case(
@@ -216,6 +219,7 @@ def student_list(request):
         query = form.cleaned_data.get('q')
         course_category = form.cleaned_data.get('course_category')
         course = form.cleaned_data.get('course')
+        consultant = form.cleaned_data.get('consultant')
         course_status = form.cleaned_data.get('course_status')
         start_date = form.cleaned_data.get('start_date')
         end_date = form.cleaned_data.get('end_date')
@@ -237,6 +241,8 @@ def student_list(request):
         elif course_category:
             course_ids = Course.objects.filter(category=course_category).values_list('id', flat=True)
             student_list = student_list.filter(course_id__in=course_ids)
+        if consultant:
+            student_list = student_list.filter(consultant=consultant)
         if course_status:
             student_list = student_list.filter(course_status=course_status)
         if start_date:
@@ -769,14 +775,19 @@ def conversation_send(request, student_pk):
     if not _can_post_http(request.user):
         return JsonResponse({"ok": False, "reason": "unauthorized"}, status=403)
     
-    hashtag = str(request.POST.get("hashtag", "") or "").strip().lower()
+    raw_hashtag = str(request.POST.get("hashtag", "") or "").strip().lower()
     priority = str(request.POST.get("priority", "") or "").strip().lower()
     
-    ALLOWED_HASHTAGS = {'placement', 'class', 'payment'}
+    ALLOWED_HASHTAGS = {'placement', 'class', 'payment', 'followups', 'important'}
     ALLOWED_PRIORITIES = {'high', 'medium', 'low'}
     
-    if hashtag not in ALLOWED_HASHTAGS:
+    if raw_hashtag:
+        tags = [t.strip() for t in raw_hashtag.split(',') if t.strip()]
+        valid_tags = [t for t in tags if t in ALLOWED_HASHTAGS]
+        hashtag = ",".join(valid_tags)
+    else:
         hashtag = ""
+
     if priority not in ALLOWED_PRIORITIES:
         priority = ""
 
@@ -837,8 +848,16 @@ def conversation_upload(request, student_pk):
     conv, _ = StudentConversation.objects.get_or_create(student_id=student_pk)
     
     msg_text = request.POST.get('message', '')
-    hashtag = request.POST.get('hashtag', '')
+    raw_hashtag = str(request.POST.get('hashtag', '') or '').strip().lower()
     priority = request.POST.get('priority', '')
+    
+    ALLOWED_HASHTAGS = {'placement', 'class', 'payment', 'followups', 'important'}
+    if raw_hashtag:
+        tags = [t.strip() for t in raw_hashtag.split(',') if t.strip()]
+        valid_tags = [t for t in tags if t in ALLOWED_HASHTAGS]
+        hashtag = ",".join(valid_tags)
+    else:
+        hashtag = ""
 
     msg = ConversationMessage.objects.create(
         conversation=conv,

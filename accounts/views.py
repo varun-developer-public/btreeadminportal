@@ -48,7 +48,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 def admin_dashboard(request):
     # Basic Statistics
     total_students = Student.objects.count()
-    total_pending_amount = Payment.objects.aggregate(total_pending=Sum('total_pending_amount'))['total_pending'] or 0
+    total_pending_amount = Payment.objects.exclude(student__course_status__in=['R', 'D']).aggregate(total_pending=Sum('total_pending_amount'))['total_pending'] or 0
     active_trainers = Trainer.objects.count()  # Count all trainers since there's no active status
 
     # Get placement rate using course_status field
@@ -85,7 +85,7 @@ def admin_dashboard(request):
         first_day_of_month = current_date.replace(day=1)
         current_date = first_day_of_month - timedelta(days=1)
 
-    pending_payments = Payment.objects.filter(total_pending_amount__gt=0)
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).exclude(student__course_status__in=['R', 'D'])
 
     for payment in pending_payments:
         for i in range(1, 5):
@@ -115,7 +115,7 @@ def admin_dashboard(request):
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
 
     # Fetch upcoming payments
-    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__consultant')
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).exclude(student__course_status__in=['R', 'D']).select_related('student', 'student__consultant')
     
     # Get all unique course IDs from the students in pending payments
     student_course_ids = [p.student.course_id for p in pending_payments if p.student and p.student.course_id]
@@ -183,7 +183,7 @@ def admin_dashboard(request):
 def staff_dashboard(request):
     # Basic Statistics
     total_students = Student.objects.count()
-    total_pending_amount = Payment.objects.aggregate(total_pending=Sum('total_pending_amount'))['total_pending'] or 0
+    total_pending_amount = Payment.objects.exclude(student__course_status__in=['R', 'D']).aggregate(total_pending=Sum('total_pending_amount'))['total_pending'] or 0
     active_trainers = Trainer.objects.count()  # Count all trainers since there's no active status
 
     # Get placement rate using course_status field
@@ -220,7 +220,7 @@ def staff_dashboard(request):
         first_day_of_month = current_date.replace(day=1)
         current_date = first_day_of_month - timedelta(days=1)
 
-    pending_payments = Payment.objects.filter(total_pending_amount__gt=0)
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).exclude(student__course_status__in=['R', 'D'])
 
     for payment in pending_payments:
         for i in range(1, 5):
@@ -250,7 +250,7 @@ def staff_dashboard(request):
     recent_students = Student.objects.order_by('-enrollment_date')[:5]
     
     # Fetch upcoming payments
-    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).select_related('student', 'student__consultant')
+    pending_payments = Payment.objects.filter(total_pending_amount__gt=0).exclude(student__course_status__in=['R', 'D']).select_related('student', 'student__consultant')
 
     # Get all unique course IDs from the students in pending payments
     student_course_ids = [p.student.course_id for p in pending_payments if p.student and p.student.course_id]
@@ -408,12 +408,99 @@ def consultant_dashboard(request):
     if hasattr(request.user, 'consultant_profile'):
         # Consultant user → only their data
         consultant = request.user.consultant_profile.consultant
-        total_students = Student.objects.filter(consultant=consultant).count()
+        from django.db.models import Q
+        # Base query for students belonging to this consultant
+        student_qs = Student.objects.filter(Q(consultant=consultant) | Q(created_by=request.user)).distinct()
+        total_students = student_qs.count()
+        
+        # --- Performance Section Logic ---
+        try:
+            selected_year = int(request.GET.get('year', timezone.now().year))
+        except ValueError:
+            selected_year = timezone.now().year
+            
+        performance_data = []
+        months = range(1, 13)
+        previous_month_revenue = 0
+        
+        for month in months:
+            # Get students joined in this month/year
+            # Using enrollment_date as the joining date
+            monthly_students = student_qs.filter(
+                enrollment_date__year=selected_year,
+                enrollment_date__month=month
+            )
+            
+            joinings_count = monthly_students.count()
+            
+            # Calculate revenue and pending for this cohort
+            # Revenue = amount_paid + all emi_paid_amounts
+            # Pending = total_pending_amount
+            
+            total_revenue = 0
+            total_pending = 0
+            
+            if joinings_count > 0:
+                payments = Payment.objects.filter(student__in=monthly_students)
+                
+                # Aggregate revenue
+                # We need to sum up all paid components
+                payment_aggs = payments.aggregate(
+                    initial=Sum('amount_paid'),
+                    e1=Sum('emi_1_paid_amount'),
+                    e2=Sum('emi_2_paid_amount'),
+                    e3=Sum('emi_3_paid_amount'),
+                    e4=Sum('emi_4_paid_amount')
+                )
+
+                # Exclude refunded and discontinued students from pending amount
+                pending_aggs = payments.exclude(student__course_status__in=['R', 'D']).aggregate(
+                    pending=Sum('total_pending_amount')
+                )
+                
+                total_revenue = (
+                    (payment_aggs['initial'] or 0) +
+                    (payment_aggs['e1'] or 0) +
+                    (payment_aggs['e2'] or 0) +
+                    (payment_aggs['e3'] or 0) +
+                    (payment_aggs['e4'] or 0)
+                )
+                total_pending = pending_aggs['pending'] or 0
+
+            # Calculate Growth %
+            growth_percentage = 0
+            if previous_month_revenue > 0:
+                growth_percentage = ((total_revenue - previous_month_revenue) / previous_month_revenue) * 100
+            elif previous_month_revenue == 0 and total_revenue > 0:
+                growth_percentage = 100 # 100% growth if starting from 0
+            
+            # For January, growth compared to Dec of prev year is tricky without fetching it.
+            # Usually dashboards just show 0 or N/A for first entry if no context.
+            # However, logic above sets it based on 'previous_month_revenue' variable which updates in loop.
+            # So Jan will always compare against 0 (initial value), effectively showing 100% if > 0.
+            # To fix this, we'd need Dec of prev year. For now, let's accept this limitation or handle Jan separately.
+            if month == 1:
+                growth_percentage = 0 # Reset for Jan as we don't have prev year Dec data in this loop
+
+            performance_data.append({
+                'month_name': timezone.datetime(selected_year, month, 1).strftime('%B'),
+                'joinings': joinings_count,
+                'revenue': total_revenue,
+                'pending': total_pending,
+                'growth': round(growth_percentage, 2)
+            })
+            
+            previous_month_revenue = total_revenue
+
     elif request.user.is_superuser:
         # Super admin → all data
         total_students = Student.objects.all().count()
+        selected_year = timezone.now().year
+        performance_data = [] # Admin might not need this specific view or logic differs
     else:
         total_students = 0
+        selected_year = timezone.now().year
+        performance_data = []
 
     context = {
         'total_students': total_students,
@@ -428,6 +515,9 @@ def consultant_dashboard(request):
         'trainers_data': json.dumps(trainers_data, cls=DjangoJSONEncoder),
         'notifications_data': json.dumps(notifications_data, cls=DjangoJSONEncoder),
         'calendar_events': json.dumps(calendar_events, cls=DjangoJSONEncoder),
+        'performance_data': performance_data,
+        'selected_year': selected_year,
+        'year_range': range(timezone.now().year, timezone.now().year - 5, -1),
     }
     return render(request, 'accounts/consultant_dashboard.html', context)
 
