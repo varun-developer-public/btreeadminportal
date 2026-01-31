@@ -171,92 +171,96 @@ window.resetMsgInputs = function(prefix) {
 };
 
 window.selectHashtag = function(val, mode) {
-  var idPrefix = mode === 'remarks' ? 'remarks-' : 'conv-modal-';
-  var btnId = mode === 'remarks' ? 'remarksHashtagBtn' : 'convModalHashtagBtn';
-  var badgeId = idPrefix + 'hashtag-badge';
-  var inputEl = document.getElementById(idPrefix + 'hashtag-val');
-  var btnEl = document.getElementById(btnId);
-  var badgeEl = document.getElementById(badgeId);
-  
-  if (!inputEl) return;
-  
-  var currentVal = inputEl.value ? inputEl.value.split(',') : [];
-  
-  if (val === '') {
-      currentVal = [];
-  } else {
-      var index = currentVal.indexOf(val);
-      if (index > -1) {
-          currentVal.splice(index, 1);
-      } else {
-          currentVal.push(val);
-      }
-  }
-  
-  var newVal = currentVal.join(',');
-  inputEl.value = newVal;
-
-  if (btnEl) {
-    if (currentVal.length > 0) btnEl.classList.add('text-primary');
-    else btnEl.classList.remove('text-primary');
+  try {
+    var idPrefix = mode === 'remarks' ? 'remarks-' : 'conv-modal-';
+    var btnId = mode === 'remarks' ? 'remarksHashtagBtn' : 'convModalHashtagBtn';
+    var badgeId = idPrefix + 'hashtag-badge';
+    var inputEl = document.getElementById(idPrefix + 'hashtag-val');
+    var btnEl = document.getElementById(btnId);
+    var badgeEl = document.getElementById(badgeId);
     
-    // Update active state in dropdown
-    var dropdownMenu = btnEl.nextElementSibling;
-    if (dropdownMenu) {
-        var items = dropdownMenu.querySelectorAll('.dropdown-item');
-        items.forEach(function(item) {
-            var onclick = item.getAttribute('onclick');
-            if (onclick) {
-                var match = onclick.match(/selectHashtag\('([^']+)'/);
-                if (match && match[1]) {
-                    var itemVal = match[1];
-                    if (itemVal) {
-                        if (currentVal.includes(itemVal)) item.classList.add('active');
-                        else item.classList.remove('active');
-                    } else if (val === '') {
-                        // Clear all active if None selected
-                         item.classList.remove('active');
-                    }
-                }
-            }
-        });
-    }
-  }
-  if (badgeEl) {
-    if (currentVal.length === 0) {
-      badgeEl.innerHTML = '';
-      badgeEl.className = 'ms-1 align-self-center';
+    if (!inputEl) return;
+    
+    var currentVal = inputEl.value ? inputEl.value.split(',') : [];
+    
+    if (val === '') {
+        currentVal = [];
     } else {
-      badgeEl.innerHTML = '';
-      badgeEl.className = 'ms-1 align-self-center';
-      
-      currentVal.forEach(function(tag) {
-          var span = document.createElement('span');
-          var badgeClass = 'badge rounded-pill me-1 ';
-          var text = tag;
-          if (tag === 'placement') {
-            badgeClass += 'bg-primary';
-            text = 'Placement';
-          } else if (tag === 'class') {
-            badgeClass += 'bg-info text-dark';
-            text = 'Class';
-          } else if (tag === 'payment') {
-            badgeClass += 'bg-success';
-            text = 'Payment';
-          } else if (tag === 'followups') {
-            badgeClass += 'bg-secondary';
-            text = 'Followups';
-          } else if (tag === 'important') {
-            badgeClass += 'bg-danger';
-            text = 'Important';
-          } else {
-            badgeClass += 'bg-secondary';
-          }
-          span.className = badgeClass;
-          span.textContent = '#' + text;
-          badgeEl.appendChild(span);
-      });
+        var index = currentVal.indexOf(val);
+        if (index > -1) {
+            currentVal.splice(index, 1);
+        } else {
+            currentVal.push(val);
+        }
     }
+    
+    var newVal = currentVal.join(',');
+    inputEl.value = newVal;
+
+    if (btnEl) {
+      if (currentVal.length > 0) btnEl.classList.add('text-primary');
+      else btnEl.classList.remove('text-primary');
+      
+      // Update active state in dropdown
+      var dropdownMenu = btnEl.nextElementSibling;
+      if (dropdownMenu) {
+          var items = dropdownMenu.querySelectorAll('.dropdown-item');
+          items.forEach(function(item) {
+              var onclick = item.getAttribute('onclick');
+              if (onclick) {
+                  var match = onclick.match(/selectHashtag\('([^']+)'/);
+                  if (match && match[1]) {
+                      var itemVal = match[1];
+                      if (itemVal) {
+                          if (currentVal.includes(itemVal)) item.classList.add('active');
+                          else item.classList.remove('active');
+                      } else if (val === '') {
+                          // Clear all active if None selected
+                           item.classList.remove('active');
+                      }
+                  }
+              }
+          });
+      }
+    }
+    if (badgeEl) {
+      if (currentVal.length === 0) {
+        badgeEl.innerHTML = '';
+        badgeEl.className = 'ms-1 align-self-center';
+      } else {
+        badgeEl.innerHTML = '';
+        badgeEl.className = 'ms-1 align-self-center';
+        
+        currentVal.forEach(function(tag) {
+            var span = document.createElement('span');
+            var badgeClass = 'badge rounded-pill me-1 ';
+            var text = tag;
+            if (tag === 'placement') {
+              badgeClass += 'bg-primary';
+              text = 'Placement';
+            } else if (tag === 'class') {
+              badgeClass += 'bg-info text-dark';
+              text = 'Class';
+            } else if (tag === 'payment') {
+              badgeClass += 'bg-success';
+              text = 'Payment';
+            } else if (tag === 'followups') {
+              badgeClass += 'bg-secondary';
+              text = 'Followups';
+            } else if (tag === 'important') {
+              badgeClass += 'bg-danger';
+              text = 'Important';
+            } else {
+              badgeClass += 'bg-secondary';
+            }
+            span.className = badgeClass;
+            span.textContent = '#' + text;
+            badgeEl.appendChild(span);
+        });
+      }
+    }
+  } catch(e) {
+    console.error('Error in selectHashtag:', e);
   }
 };
 
@@ -982,83 +986,87 @@ function getCookie(name) {
 }
 
 window.selectPreviewHashtag = function(val, prefix) {
-  var labelEl = document.getElementById(prefix + '-preview-hashtag-label');
-  var inputEl = document.getElementById(prefix + '-preview-hashtag-val');
-  var btnEl = document.getElementById(prefix + 'PreviewHashtagBtn');
-  
-  if (!inputEl) return;
-  
-  var currentVal = inputEl.value ? inputEl.value.split(',') : [];
-  
-  if (val === '') {
-      currentVal = [];
-  } else {
-      var index = currentVal.indexOf(val);
-      if (index > -1) {
-          currentVal.splice(index, 1);
-      } else {
-          currentVal.push(val);
-      }
-  }
-  
-  var newVal = currentVal.join(',');
-  inputEl.value = newVal;
+  try {
+    var labelEl = document.getElementById(prefix + '-preview-hashtag-label');
+    var inputEl = document.getElementById(prefix + '-preview-hashtag-val');
+    var btnEl = document.getElementById(prefix + 'PreviewHashtagBtn');
+    
+    if (!inputEl) return;
+    
+    var currentVal = inputEl.value ? inputEl.value.split(',') : [];
+    
+    if (val === '') {
+        currentVal = [];
+    } else {
+        var index = currentVal.indexOf(val);
+        if (index > -1) {
+            currentVal.splice(index, 1);
+        } else {
+            currentVal.push(val);
+        }
+    }
+    
+    var newVal = currentVal.join(',');
+    inputEl.value = newVal;
 
-  if (labelEl) {
-      if (currentVal.length === 0) labelEl.textContent = 'Tag';
-      else if (currentVal.length === 1) {
-          var v = currentVal[0];
-          if (v === 'placement') labelEl.textContent = 'Placement';
-          else if (v === 'class') labelEl.textContent = 'Class';
-          else if (v === 'payment') labelEl.textContent = 'Payment';
-          else if (v === 'followups') labelEl.textContent = 'Followups';
-          else if (v === 'important') labelEl.textContent = 'Important';
-          else labelEl.textContent = v;
-      } else {
-          labelEl.textContent = currentVal.length + ' Tags';
-      }
-  }
-  if (btnEl) {
-      if (currentVal.length > 0) btnEl.classList.add('text-primary');
-      else btnEl.classList.remove('text-primary');
-      
-      // Update active classes in dropdown
-      var dropdownMenu = btnEl.nextElementSibling;
-      if (dropdownMenu) {
-          var items = dropdownMenu.querySelectorAll('.dropdown-item');
-          items.forEach(function(item) {
-              var onclick = item.getAttribute('onclick');
-              if (onclick) {
-                  var match = onclick.match(/selectPreviewHashtag\('([^']+)'/);
-                  if (match && match[1]) {
-                      var itemVal = match[1];
-                      if (itemVal) {
-                          if (currentVal.includes(itemVal)) item.classList.add('active');
-                          else item.classList.remove('active');
-                      }
-                  }
-              }
-          });
-      }
-  }
+    if (labelEl) {
+        if (currentVal.length === 0) labelEl.textContent = 'Tag';
+        else if (currentVal.length === 1) {
+            var v = currentVal[0];
+            if (v === 'placement') labelEl.textContent = 'Placement';
+            else if (v === 'class') labelEl.textContent = 'Class';
+            else if (v === 'payment') labelEl.textContent = 'Payment';
+            else if (v === 'followups') labelEl.textContent = 'Followups';
+            else if (v === 'important') labelEl.textContent = 'Important';
+            else labelEl.textContent = v;
+        } else {
+            labelEl.textContent = currentVal.length + ' Tags';
+        }
+    }
+    if (btnEl) {
+        if (currentVal.length > 0) btnEl.classList.add('text-primary');
+        else btnEl.classList.remove('text-primary');
+        
+        // Update active classes in dropdown
+        var dropdownMenu = btnEl.nextElementSibling;
+        if (dropdownMenu) {
+            var items = dropdownMenu.querySelectorAll('.dropdown-item');
+            items.forEach(function(item) {
+                var onclick = item.getAttribute('onclick');
+                if (onclick) {
+                    var match = onclick.match(/selectPreviewHashtag\('([^']+)'/);
+                    if (match && match[1]) {
+                        var itemVal = match[1];
+                        if (itemVal) {
+                            if (currentVal.includes(itemVal)) item.classList.add('active');
+                            else item.classList.remove('active');
+                        }
+                    }
+                }
+            });
+        }
+    }
+  } catch(e){ console.error(e); }
 };
 
 window.selectPreviewPriority = function(val, prefix) {
-  var labelEl = document.getElementById(prefix + '-preview-priority-label');
-  var inputEl = document.getElementById(prefix + '-preview-priority-val');
-  var btnEl = document.getElementById(prefix + 'PreviewPriorityBtn');
-  if (inputEl) inputEl.value = val;
-  if (labelEl) {
-      if (!val) labelEl.textContent = 'Priority';
-      else if (val === 'high') labelEl.textContent = 'High';
-      else if (val === 'medium') labelEl.textContent = 'Medium';
-      else if (val === 'low') labelEl.textContent = 'Low';
-      else labelEl.textContent = val;
-  }
-  if (btnEl) {
-      if (val) btnEl.classList.add('text-primary');
-      else btnEl.classList.remove('text-primary');
-  }
+  try {
+    var labelEl = document.getElementById(prefix + '-preview-priority-label');
+    var inputEl = document.getElementById(prefix + '-preview-priority-val');
+    var btnEl = document.getElementById(prefix + 'PreviewPriorityBtn');
+    if (inputEl) inputEl.value = val;
+    if (labelEl) {
+        if (!val) labelEl.textContent = 'Priority';
+        else if (val === 'high') labelEl.textContent = 'High';
+        else if (val === 'medium') labelEl.textContent = 'Medium';
+        else if (val === 'low') labelEl.textContent = 'Low';
+        else labelEl.textContent = val;
+    }
+    if (btnEl) {
+        if (val) btnEl.classList.add('text-primary');
+        else btnEl.classList.remove('text-primary');
+    }
+  } catch(e){ console.error(e); }
 };
 
 var currentUploadFile = null;

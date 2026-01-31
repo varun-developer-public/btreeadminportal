@@ -125,10 +125,10 @@
         </button>
         
         <div class="dropdown d-inline-block">
-            <button class="chat-icon-btn" type="button" id="{{ chat_id_prefix }}HashtagBtn" data-bs-toggle="dropdown" aria-expanded="false" title="Hashtag">
-                <i class="fas fa-hashtag"></i>
-            </button>
-            <ul class="dropdown-menu" aria-labelledby="{{ chat_id_prefix }}HashtagBtn">
+                <button class="chat-icon-btn" type="button" id="{{ chat_id_prefix }}HashtagBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Hashtag">
+                    <i class="fas fa-hashtag"></i>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="{{ chat_id_prefix }}HashtagBtn">
                 <li><h6 class="dropdown-header">Hashtag</h6></li>
                 <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectHashtag('placement', '{{ chat_context }}')">#Placement</a></li>
                 <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); event.stopPropagation(); selectHashtag('class', '{{ chat_context }}')">#Class</a></li>
@@ -183,7 +183,7 @@
             <div class="preview-actions">
                 <div class="d-flex gap-2">
                     <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-light" type="button" id="{{ chat_id_prefix }}PreviewHashtagBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle text-light" type="button" id="{{ chat_id_prefix }}PreviewHashtagBtn" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                             <i class="fas fa-hashtag"></i> <span id="{{ chat_id_prefix }}-preview-hashtag-label">Tag</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-dark">

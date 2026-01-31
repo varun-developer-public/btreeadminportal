@@ -152,7 +152,7 @@
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title" id="conv-modal-title">Conversation</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="try{var m=bootstrap.Modal.getInstance(document.getElementById('conversationModal'));if(m)m.hide();}catch(e){}"></button>
           </div>
           <div class="modal-body">
             <style>
@@ -215,7 +215,7 @@ textarea.form-control{
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="{% static 'js/student_conversation.js' %}?v=4"></script>
+    <script src="{% static 'js/student_conversation.js' %}?v=5"></script>
     <script>
   document.addEventListener("DOMContentLoaded", function() {
     const toastElList = [].slice.call(document.querySelectorAll('.toast'))
