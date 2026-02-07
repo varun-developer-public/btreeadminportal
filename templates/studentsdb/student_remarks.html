@@ -2,6 +2,8 @@
 {% block title %}Student Remarks{% endblock %}
 {% load static %}
 {% block content %}
+{{ request.user.id|json_script:"current-user-id" }}
+{{ mentions_only|yesno:"true,false"|json_script:"mentions-only-flag" }}
 <style>
   #studentRemarks .chat-container{background:#f7f8fb;border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
   #studentRemarks .chat-container{-ms-overflow-style:none;scrollbar-width:none}
@@ -136,8 +138,29 @@
         <option value="followups" {% if selected_hashtag == 'followups' %}selected{% endif %}>#Followups</option>
         <option value="important" {% if selected_hashtag == 'important' %}selected{% endif %}>#Important</option>
       </select>
+      
+      <!-- My Mentions Filter Button -->
+      <button type="button" class="btn {% if mentions_only %}btn-primary{% else %}btn-outline-secondary{% endif %}" 
+              id="mentionsFilterBtn" 
+              title="My Mentions"
+              onclick="toggleMentionsFilter()">
+        <i class="fas fa-at"></i>
+      </button>
+      <input type="hidden" name="mentions_only" id="mentions_only_input" value="{{ mentions_only|yesno:'true,false' }}">
+
       <a href="{% url 'student_remarks' %}" class="btn btn-secondary" title="Reset Filters"><i class="fas fa-redo"></i></a>
     </form>
+    <script>
+      function toggleMentionsFilter() {
+        var input = document.getElementById('mentions_only_input');
+        if (input.value === 'true') {
+          input.value = 'false';
+        } else {
+          input.value = 'true';
+        }
+        input.form.submit();
+      }
+    </script>
   </div>
   <div class="row g-3">
     <div class="col-md-4">
@@ -194,8 +217,11 @@
     </div>
   </div>
 </div>
+<script src="{% static 'js/student_conversation.js' %}?v=7"></script>
 <script>
   (function(){
+    var currentUserId = parseInt("{{ request.user.id|default:0 }}");
+    var mentionsOnly = {{ mentions_only|yesno:"true,false" }};
     // --- Client-Side Rendering Logic ---
     function getStudentState(unread, isPriority) {
         if (unread > 0) {
@@ -206,7 +232,8 @@
     }
 
     function createStudentItemHTML(s) {
-      var unread = parseInt(s.unread_count || 0);
+      var unread = parseInt(s.user_unread_count || 0);
+      var unreadMentions = parseInt(s.unread_mention_count || 0);
       var isPriority = s.is_priority === true || s.is_priority === 'true';
       var pLevel = s.priority_level || 0;
       var name = (s.first_name + ' ' + (s.last_name||'')).trim();
@@ -228,7 +255,7 @@
           } catch(e){}
       }
 
-      var stateClass = getStudentState(unread, isPriority);
+      var stateClass = getStudentState(unread + unreadMentions, isPriority);
       var badgeClass = unread > 0 ? '' : 'd-none';
       
       var starClass = 'd-none';
@@ -239,11 +266,19 @@
           else starClass += ' text-primary';
       }
 
+      // Mention Badge Logic
+      var mentionBadge = '';
+      if (unreadMentions > 0) {
+          mentionBadge = '<span class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-warning text-dark" ' +
+                         'style="font-size: 0.7rem; padding: 0.25em 0.4em; border: 1px solid #fff; z-index: 2;">@</span>';
+      }
+
       return '<div class="remarks-item ' + stateClass + '" ' +
              'data-student-id="' + s.id + '" ' +
              'data-student-name="' + name + '" ' +
              'data-student-code="' + s.student_id + '" ' +
              'data-unread-count="' + unread + '" ' +
+             'data-unread-mention-count="' + unreadMentions + '" ' +
              'data-is-priority="' + (isPriority?'true':'false') + '">' +
           '<div class="remarks-avatar position-relative">' +
               initial +
@@ -251,6 +286,7 @@
                     'style="font-size: 0.6rem; padding: 0.25em 0.4em;">' +
                 unread +
               '</span>' +
+              mentionBadge +
           '</div>' +
           '<div class="flex-grow-1 overflow-hidden">' +
             '<div class="d-flex justify-content-between align-items-center mb-1">' +
@@ -302,9 +338,22 @@
       var item = listEl.querySelector('.remarks-item[data-student-id="'+sid+'"]');
       if (!item) return;
 
-      // 1. Update Message Preview & Time
-      if (data.message) {
+      // 1. Determine New State (Unread, Priority, Mentions)
+      var currentUnread = parseInt(item.getAttribute('data-unread-count') || '0');
+      var currentUnreadMentions = parseInt(item.getAttribute('data-unread-mention-count') || '0');
+      var isPriority = item.getAttribute('data-is-priority') === 'true';
+      var lastTime = item.getAttribute('data-last-time');
+
+      if (data.is_read_update) {
+          if (data.read_by_user_id === currentUserId) {
+             currentUnread = 0;
+             currentUnreadMentions = 0; 
+          }
+      } else if (data.message) {
           var msg = data.message;
+          var isNewMessage = (msg.created_at !== lastTime);
+
+          // Update Preview & Time
           var preview = item.querySelector('.remarks-preview');
           if (preview) { preview.textContent = (msg.message || '').trim(); }
           
@@ -323,41 +372,75 @@
             }
           } catch(e){}
           item.setAttribute('data-last-time', msg.created_at || '');
-      }
 
-      // 2. Determine New State (Unread & Priority)
-      var currentUnread = parseInt(item.getAttribute('data-unread-count') || '0');
-      var isPriority = item.getAttribute('data-is-priority') === 'true';
+          if (isNewMessage) {
+              // Only increment if message is NOT from me
+              if (msg.sender_id !== currentUserId) {
+                  // If chat is currently open, we might not want to increment?
+                  // But standard behavior is to increment, then mark read immediately if open.
+                  // Since mark_read is async, we increment here.
+                  currentUnread += 1;
+              }
 
-      if (data.is_read_update) {
-          currentUnread = 0;
-      } else if (typeof data.unread_count !== 'undefined') {
-          currentUnread = data.unread_count;
-          // If this chat is currently open by THIS user, force unread to 0
-          if (currentId && String(currentId) === sid) {
-              currentUnread = 0;
+              // Check Mentions
+              if (msg.mentions && Array.isArray(msg.mentions)) {
+                 var mentionedIds = msg.mentions.map(function(m){ return m.id; });
+                 if (mentionedIds.includes(currentUserId)) {
+                     currentUnreadMentions += 1;
+                 }
+              }
           }
       }
 
       if (typeof data.is_priority !== 'undefined') {
           isPriority = data.is_priority;
       }
+      
+      // If currently open by THIS user, force 0 (Double check)
+      if (currentId && String(currentId) === sid) {
+          currentUnread = 0;
+          currentUnreadMentions = 0;
+      }
 
       // Update Attributes
       item.setAttribute('data-unread-count', currentUnread);
+      item.setAttribute('data-unread-mention-count', currentUnreadMentions);
       item.setAttribute('data-is-priority', isPriority ? 'true' : 'false');
 
-      // Update Badge
-      var badge = item.querySelector('.badge');
+      // Update Badge (Standard Unread)
+      var badge = item.querySelector('.badge.bg-primary');
       if (badge) {
           badge.textContent = currentUnread;
           if (currentUnread > 0) badge.classList.remove('d-none');
           else badge.classList.add('d-none');
       }
 
+      // Update Mention Badge (@)
+      var avatarContainer = item.querySelector('.remarks-avatar');
+      var mentionBadge = avatarContainer.querySelector('.badge.bg-warning');
+      if (currentUnreadMentions > 0) {
+          if (!mentionBadge) {
+              // Create it
+              var mb = document.createElement('span');
+              mb.className = 'position-absolute top-0 start-0 translate-middle badge rounded-pill bg-warning text-dark';
+              mb.style.fontSize = '0.7rem';
+              mb.style.padding = '0.25em 0.4em';
+              mb.style.border = '1px solid #fff';
+              mb.style.zIndex = '2';
+              mb.textContent = '@';
+              avatarContainer.appendChild(mb);
+          } else {
+              mentionBadge.style.display = ''; // Ensure visible
+              mentionBadge.classList.remove('start-100');
+              mentionBadge.classList.add('start-0');
+          }
+      } else {
+          if (mentionBadge) mentionBadge.style.display = 'none'; // Hide
+      }
+
       // Apply CSS Classes based on State
       item.classList.remove('state-unread', 'state-priority-unread', 'state-priority-read');
-      var newStateClass = getStudentState(currentUnread, isPriority);
+      var newStateClass = getStudentState(currentUnread + currentUnreadMentions, isPriority);
       if (newStateClass) {
           item.classList.add(newStateClass);
       }
@@ -370,8 +453,6 @@
                   star.classList.remove('d-none');
                   star.classList.remove('text-danger', 'text-warning', 'text-primary');
                   var level = data.priority_level || 0;
-                  // If priority_level is not in update, try to get from previous state or default
-                  // But usually update sends both.
                   if (level == 3) star.classList.add('text-danger');
                   else if (level == 2) star.classList.add('text-warning');
                   else star.classList.add('text-primary');
@@ -381,49 +462,67 @@
           }
       }
 
-      // 4. Sorting logic...
+      // 4. Sorting logic
       var isPriority = (item.getAttribute('data-is-priority') === 'true');
       var unread = parseInt(item.getAttribute('data-unread-count') || '0');
-      var isUnread = unread > 0;
+      var unreadMentions = parseInt(item.getAttribute('data-unread-mention-count') || '0');
+      var isUnread = unread > 0 || unreadMentions > 0;
       
       var listChildren = Array.from(listEl.children);
       
-      if (isUnread) {
-          if (isPriority) {
-              // Unread Priority: Top of list
+      if (mentionsOnly) {
+          // SORTING STRATEGY: Unread Mentions First, Then Read Mentions
+          if (unreadMentions > 0) {
               listEl.insertBefore(item, listEl.firstElementChild);
           } else {
-              // Unread Normal: After Unread Priority, Before Read
-              // Find first item that is NOT (Unread & Priority)
-              var firstNonUnreadPriority = listChildren.find(c => {
+              var firstReadMention = listChildren.find(c => {
                   if (c === item) return false;
-                  var cP = c.getAttribute('data-is-priority') === 'true';
-                  var cU = parseInt(c.getAttribute('data-unread-count')||'0') > 0;
-                  return !(cU && cP);
+                  var cUM = parseInt(c.getAttribute('data-unread-mention-count')||'0');
+                  return cUM === 0;
               });
               
-              if (firstNonUnreadPriority) {
-                  listEl.insertBefore(item, firstNonUnreadPriority);
+              if (firstReadMention) {
+                  listEl.insertBefore(item, firstReadMention);
               } else {
-                  // No non-priority unread items found (all are Unread Priority), append to end?
-                  // No, if all are Unread Priority, I go after them.
                   listEl.appendChild(item);
               }
           }
       } else {
-          // Read: After All Unread
-          // Find first Read item
-          var firstRead = listChildren.find(c => {
-              if (c === item) return false;
-              var cU = parseInt(c.getAttribute('data-unread-count')||'0') > 0;
-              return !cU;
-          });
-          
-          if (firstRead) {
-              listEl.insertBefore(item, firstRead);
+          // STANDARD SORTING
+          if (isUnread) {
+              if (isPriority) {
+                  // Unread Priority: Top of list
+                  listEl.insertBefore(item, listEl.firstElementChild);
+              } else {
+                  // Unread Normal: After Unread Priority, Before Read
+                  var firstNonUnreadPriority = listChildren.find(c => {
+                      if (c === item) return false;
+                      var cP = c.getAttribute('data-is-priority') === 'true';
+                      var cU = parseInt(c.getAttribute('data-unread-count')||'0') > 0;
+                      var cM = parseInt(c.getAttribute('data-unread-mention-count')||'0') > 0;
+                      return !((cU || cM) && cP);
+                  });
+                  
+                  if (firstNonUnreadPriority) {
+                      listEl.insertBefore(item, firstNonUnreadPriority);
+                  } else {
+                      listEl.appendChild(item);
+                  }
+              }
           } else {
-              // No read items found (all are unread), append to end
-              listEl.appendChild(item);
+              // Read: After All Unread
+              var firstRead = listChildren.find(c => {
+                  if (c === item) return false;
+                  var cU = parseInt(c.getAttribute('data-unread-count')||'0') > 0;
+                  var cM = parseInt(c.getAttribute('data-unread-mention-count')||'0') > 0;
+                  return !(cU || cM);
+              });
+              
+              if (firstRead) {
+                  listEl.insertBefore(item, firstRead);
+              } else {
+                  listEl.appendChild(item);
+              }
           }
       }
     }

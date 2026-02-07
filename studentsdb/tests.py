@@ -1,9 +1,10 @@
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
-from .models import Student, StudentConversation, ConversationMessage
+from .models import Student, StudentConversation, ConversationMessage, MessageReadStatus
 from channels.testing import WebsocketCommunicator
 from core.asgi import application
 import asyncio
+from django.db.models import Count, Q, F
 
 class ConversationModelTests(TestCase):
     def test_conversation_auto_created_on_student_create(self):
@@ -19,6 +20,53 @@ class ConversationModelTests(TestCase):
         m = ConversationMessage.objects.create(conversation=conv, sender=u, sender_role='staff', message='Hello')
         self.assertEqual(conv.messages.count(), 1)
         self.assertEqual(m.message, 'Hello')
+
+    def test_unread_mention_count_annotation(self):
+        User = get_user_model()
+        user = User.objects.create_user(email='viewer@example.com', name='Viewer', role='staff', password='pass')
+        student = Student.objects.create(first_name='S', last_name='M', email='s@m.com', mode_of_class='ON', week_type='WD')
+        conv, _ = StudentConversation.objects.get_or_create(student=student)
+        
+        # Message 1: Mention user, unread
+        m1 = ConversationMessage.objects.create(conversation=conv, message='@Viewer unread', sender=user)
+        m1.mentions.add(user)
+        
+        # Message 2: Mention user, read
+        m2 = ConversationMessage.objects.create(conversation=conv, message='@Viewer read', sender=user)
+        m2.mentions.add(user)
+        MessageReadStatus.objects.create(message=m2, user=user)
+        
+        # Message 3: No mention
+        m3 = ConversationMessage.objects.create(conversation=conv, message='No mention', sender=user)
+        
+        # Verify the annotation logic directly matches the view
+        qs = Student.objects.filter(pk=student.pk).annotate(
+            total_user_mentions=Count(
+                'conversation__messages',
+                filter=Q(conversation__messages__mentions=user),
+                distinct=True
+            ),
+            read_user_mentions=Count(
+                'conversation__messages',
+                filter=Q(
+                    conversation__messages__mentions=user,
+                    conversation__messages__read_statuses__user=user
+                ),
+                distinct=True
+            )
+        ).annotate(
+            unread_mention_count=F('total_user_mentions') - F('read_user_mentions')
+        )
+        
+        s_annotated = qs.first()
+        # Should have 1 unread mention (m1)
+        self.assertEqual(s_annotated.unread_mention_count, 1)
+        
+        # Mark m1 as read
+        MessageReadStatus.objects.create(message=m1, user=user)
+        
+        s_annotated_2 = qs.first()
+        self.assertEqual(s_annotated_2.unread_mention_count, 0)
 
 class ConversationWebSocketTests(TransactionTestCase):
     reset_sequences = True
@@ -64,6 +112,58 @@ class ConversationWebSocketTests(TransactionTestCase):
 
         conv = StudentConversation.objects.get(student=student)
         self.assertEqual(conv.messages.count(), 1)
+
+    def test_notification_broadcast(self):
+        User = get_user_model()
+        sender = User.objects.create_user(email='sender@example.com', name='Sender', role='staff', password='pass12345')
+        recipient = User.objects.create_user(email='recipient@example.com', name='Recipient', role='staff', password='pass12345')
+        student = Student.objects.create(first_name='Notif', last_name='User', email='notif@example.com', mode_of_class='ON', week_type='WD')
+        
+        from django.test import Client
+        
+        # Get session for sender
+        client_sender = Client()
+        client_sender.login(email='sender@example.com', password='pass12345')
+        sessionid_sender = client_sender.cookies.get('sessionid').value
+
+        # Get session for recipient
+        client_recipient = Client()
+        client_recipient.login(email='recipient@example.com', password='pass12345')
+        sessionid_recipient = client_recipient.cookies.get('sessionid').value
+
+        async def run_flow():
+            # Connect recipient to notifications
+            notif_path = "/ws/notifications/"
+            notif_headers = [(b"cookie", f"sessionid={sessionid_recipient}".encode())]
+            comm_notif = WebsocketCommunicator(application, notif_path)
+            comm_notif.scope['headers'] = notif_headers
+            connected_n, _ = await comm_notif.connect()
+            assert connected_n, "Notification WS failed to connect"
+
+            # Connect sender to conversation
+            chat_path = f"/ws/student/{student.pk}/"
+            chat_headers = [(b"cookie", f"sessionid={sessionid_sender}".encode())]
+            comm_chat = WebsocketCommunicator(application, chat_path)
+            comm_chat.scope['headers'] = chat_headers
+            connected_c, _ = await comm_chat.connect()
+            assert connected_c, "Chat WS failed to connect"
+            await comm_chat.receive_json_from() # init
+
+            # Send message with mention
+            await comm_chat.send_json_to({"action": "send", "message": "Hello @Recipient"})
+            
+            # Read chat echo first (to ensure processing)
+            await comm_chat.receive_json_from() 
+
+            # Check if recipient got notification
+            notif_msg = await comm_notif.receive_json_from()
+            assert notif_msg.get('action') == 'notification_update'
+            assert 'You were mentioned by Sender' in notif_msg['notification']['content']
+
+            await comm_chat.disconnect()
+            await comm_notif.disconnect()
+
+        asyncio.run(run_flow())
 
 class ConversationHTTPTests(TestCase):
     def test_http_send_and_messages_endpoints(self):

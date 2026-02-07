@@ -9,7 +9,7 @@ from .views import (
     import_students,
     download_error_report,
     delete_all_students,
-    student_report, conversation_messages, conversation_send, conversation_upload
+    student_report, conversation_messages, conversation_send, conversation_upload, get_mentionable_users
 )
 
 urlpatterns = [
@@ -26,4 +26,5 @@ urlpatterns = [
     path('conversation/<int:student_pk>/messages/', conversation_messages, name='conversation_messages'),
     path('conversation/<int:student_pk>/send/', conversation_send, name='conversation_send'),
     path('conversation/<int:student_pk>/upload/', conversation_upload, name='conversation_upload'),
+    path('mentionable-users/', get_mentionable_users, name='get_mentionable_users'),
 ]

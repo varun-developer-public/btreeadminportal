@@ -75,7 +75,7 @@ class BatchCreationForm(forms.ModelForm):
                     # Get all students for this course
                     students_qs = Student.objects.filter(
                         course_id=course_id,
-                        course_status__in=['YTS', 'IP']
+                        course_status__in=['YTS', 'IP', 'H']
                     ).order_by('first_name')
 
                     # Exclude students already in an active batch
@@ -94,7 +94,7 @@ class BatchCreationForm(forms.ModelForm):
                 trainer_id = int(self.data.get('trainer'))
                 trainer = Trainer.objects.get(id=trainer_id)
                 
-                active_batches = Batch.objects.filter(trainer=trainer, batch_status='In Progress')
+                active_batches = Batch.objects.filter(trainer=trainer, batch_status__in=['IP', 'YTS', 'H'])
                 taken_slots = [(b.start_time, b.end_time) for b in active_batches]
 
                 if isinstance(trainer.timing_slots, list):

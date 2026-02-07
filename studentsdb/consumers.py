@@ -1,8 +1,11 @@
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
+from django.contrib.auth import get_user_model
+from django.db.models import Q
 from django.utils import timezone
 from datetime import datetime
+import re
 from .models import StudentConversation, ConversationMessage, Student
 from .serializers import message_to_dict
 
@@ -16,8 +19,6 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
         self.group_name = f"student_{self.student_id}"
         try:
             user = self.scope.get("user", AnonymousUser())
-            print(f"WS CONNECT student={self.student_id} user={getattr(user, 'email', None)} role={getattr(user, 'role', None)}")
-            
             # Mark conversation as read (reset unread count) and broadcast update
             # Only if user is an admin/staff (not the student themselves)
             is_admin = False
@@ -37,13 +38,14 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
                                 "action": "remarks_list_update", 
                                 "student_id": int(self.student_id),
                                 "unread_count": 0,
-                                "is_read_update": True
+                                "is_read_update": True,
+                                "read_by_user_id": user.id
                             }
                         }
                     )
                 
         except Exception as e:
-            print(f"WS CONNECT ERROR student={self.student_id}: {e}")
+            pass # Silent fail on connect error
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
         messages = await self.get_initial_messages()
@@ -51,7 +53,7 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, code):
         try:
-            print(f"WS DISCONNECT student={self.student_id} code={code}")
+            pass
         except Exception:
             pass
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
@@ -78,17 +80,39 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
                 hashtag = ""
             if priority not in ALLOWED_PRIORITIES:
                 priority = ""
-            try:
-                print(f"WS SEND student={self.student_id} by={getattr(user, 'email', None)} role={getattr(user, 'role', None)} len={len(message_text)}")
-            except Exception:
-                pass
-            msg, fb, conv_stats = await self.create_message(user, message_text, hashtag, priority)
+            msg, fb, conv_stats, matched_users = await self.create_message(user, message_text, hashtag, priority)
             
             # Automatically mark as read by sender
             await self.mark_message_read(msg.id, user)
             
             payload = {"action": "new_message", "message": await self.serialize_message(msg)}
             await self.channel_layer.group_send(self.group_name, {"type": "broadcast", "payload": payload})
+
+            # Broadcast notifications to mentioned users
+            if matched_users:
+                msg_dict = await self.serialize_message(msg)
+                student_id = int(self.student_id)
+                student_info = await self.get_student_info(student_id)
+                
+                for u in matched_users:
+                    # Don't notify the sender if they mentioned themselves
+                    if user.is_authenticated and u.id == user.id:
+                        continue
+                        
+                    notif_payload = {
+                        "action": "notification_update",
+                        "notification": {
+                            'id': f"mention_{msg.id}",
+                            'message_id': msg.id,
+                            'student_id': student_id,
+                            'student_name': student_info['name'],
+                            'content': f"You were mentioned by {msg_dict.get('sender', 'Unknown')} in {student_info['name']}'s chat",
+                            'time': "Just now",
+                            'read': False
+                        }
+                    }
+                    await self.channel_layer.group_send(f"user_{u.id}", {"type": "notification_update", "payload": notif_payload})
+
             try:
                 list_payload = {
                     "action": "remarks_list_update", 
@@ -133,7 +157,8 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
                                 "action": "remarks_list_update", 
                                 "student_id": int(self.student_id),
                                 "unread_count": 0,
-                                "is_read_update": True
+                                "is_read_update": True,
+                                "read_by_user_id": user.id
                             }
                         }
                     )
@@ -151,10 +176,6 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
                     updated_msgs.append(mid)
             
             if updated_msgs:
-                # Get the updated read status for these messages to broadcast
-                # For simplicity, we can just broadcast that these messages were read by this user
-                # and let the frontend update the local state.
-                # However, sending the full message object or just the read info is better.
                 read_info = {
                     "user": getattr(user, "name", None) or getattr(user, "email", "Unknown"),
                     "read_at": datetime.now().isoformat()
@@ -168,6 +189,14 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
 
     async def broadcast(self, event):
         await self.send_json(event["payload"])
+
+    @database_sync_to_async
+    def get_student_info(self, student_id):
+        try:
+            student = Student.objects.get(pk=student_id)
+            return {"name": f"{student.first_name} {student.last_name or ''}".strip()}
+        except:
+            return {"name": "Student"}
 
     @database_sync_to_async
     def serialize_message(self, msg):
@@ -211,7 +240,7 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
         except (Student.DoesNotExist, ValueError, TypeError):
             return []
         conv, _ = StudentConversation.objects.get_or_create(student=student)
-        qs = conv.messages.select_related("sender").prefetch_related("read_statuses__user").order_by("-created_at")[:50]
+        qs = conv.messages.select_related("sender").prefetch_related("read_statuses__user", "mentions").order_by("-created_at")[:50]
         return [message_to_dict(m) for m in reversed(list(qs))]
 
     @database_sync_to_async
@@ -225,6 +254,28 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
             priority=priority or "",
             message=message_text
         )
+        
+        matched_users = []
+        # Process mentions
+        try:
+            User = get_user_model()
+            # Fetch all potential mentionable users first
+            potential_users = User.objects.filter(is_active=True).filter(
+                Q(is_staff=True) | 
+                Q(is_superuser=True) | 
+                Q(role__in=['admin', 'staff', 'batch_coordination', 'consultant', 'trainer', 'placement'])
+            )
+            
+            for pu in potential_users:
+                pattern = r'@' + re.escape(pu.name) + r'(?:\b|$)'
+                if re.search(pattern, message_text):
+                    matched_users.append(pu)
+            
+            if matched_users:
+                msg.mentions.set(matched_users)
+        except Exception as e:
+            print(f"Error processing mentions: {e}")
+
         # Reload conversation to get updated stats from signal
         conv.refresh_from_db()
         conv_stats = {
@@ -238,7 +289,7 @@ class StudentConsumer(AsyncJsonWebsocketConsumer):
             fb = apply_feedback_from_message(msg, user=user)
         except Exception:
             fb = None
-        return msg, fb, conv_stats
+        return msg, fb, conv_stats, matched_users
 
     @database_sync_to_async
     def update_message(self, msg_id, user, new_text):
@@ -278,19 +329,27 @@ class StudentRemarksConsumer(AsyncJsonWebsocketConsumer):
         await self.channel_layer.group_add(self.group_name, self.channel_name)
         await self.accept()
         await self.send_json({"action": "remarks_init"})
-        try:
-            user = self.scope.get("user", AnonymousUser())
-            print(f"WS REMARKS CONNECT user={getattr(user, 'email', None)} role={getattr(user, 'role', None)}")
-        except Exception:
-            pass
 
     async def disconnect(self, code):
         await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
     async def broadcast(self, event):
-        try:
-            payload = event.get("payload", {})
-            print(f"WS REMARKS OUT action={payload.get('action')} student_id={payload.get('student_id')}")
-        except Exception:
-            pass
+        await self.send_json(event["payload"])
+
+class NotificationConsumer(AsyncJsonWebsocketConsumer):
+    async def connect(self):
+        self.user = self.scope.get("user", AnonymousUser())
+        if not self.user.is_authenticated:
+            await self.close()
+            return
+        
+        self.group_name = f"user_{self.user.id}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, code):
+        if hasattr(self, 'group_name'):
+            await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def notification_update(self, event):
         await self.send_json(event["payload"])

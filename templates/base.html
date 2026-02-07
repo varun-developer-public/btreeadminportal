@@ -90,6 +90,13 @@
         .chat-actions{gap:10px}
         .chat-action-btn{background:transparent;border:none;color:#6b7280}
         .chat-action-btn:focus{outline:none}
+        
+        /* Mention Styling */
+        .mention-text { color: #0d6efd; }
+        .chat-right .mention-text,
+        .msg-right .mention-text {
+            color: #ffeb3b !important; /* Yellow on purple background */
+        }
     </style>
 </head>
 <body data-current-name="{{ request.user.name|default:'' }}" data-current-email="{{ request.user.email|default:'' }}">
@@ -215,7 +222,7 @@ textarea.form-control{
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="{% static 'js/student_conversation.js' %}?v=5"></script>
+    <script src="{% static 'js/student_conversation.js' %}?v=7"></script>
     <script>
   document.addEventListener("DOMContentLoaded", function() {
     const toastElList = [].slice.call(document.querySelectorAll('.toast'))
@@ -316,6 +323,216 @@ textarea.form-control{
             observer.observe(document.body, {
                 childList: true,
                 subtree: true
+            });
+        });
+    </script>
+    {{ unread_notifications|json_script:"unread-notifications-data" }}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Notification System
+            const notificationsIcon = document.getElementById('notificationsIcon');
+            const notificationsPanel = document.getElementById('notificationsPanel');
+            const closeNotifications = document.getElementById('closeNotifications');
+            const notificationsList = document.getElementById('notificationsList');
+            const notificationCount = document.getElementById('notificationCount');
+            
+            // Only proceed if elements exist
+            if (!notificationsIcon || !notificationsPanel) return;
+
+            let notificationsData = [];
+            try {
+                notificationsData = JSON.parse(document.getElementById('unread-notifications-data').textContent);
+            } catch(e) {
+                console.error('Error parsing notifications data:', e);
+            }
+
+            // WebSocket Connection
+            const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+            const wsUrl = `${wsScheme}://${window.location.host}/ws/notifications/`;
+            let notificationSocket = null;
+
+            function connectNotificationWS() {
+                notificationSocket = new WebSocket(wsUrl);
+
+                notificationSocket.onopen = function() {
+                    console.log('Notification WS Connected');
+                };
+
+                notificationSocket.onmessage = function(e) {
+                    try {
+                        const data = JSON.parse(e.data);
+                        if (data.action === 'notification_update' && data.notification) {
+                            const notif = data.notification;
+                            // Add to top of list
+                            notificationsData.unshift(notif);
+                            renderNotifications();
+                            
+                            // Optional: Show a browser notification or toast if desired
+                        }
+                    } catch (err) {
+                        console.error('Error processing notification WS message:', err);
+                    }
+                };
+
+                notificationSocket.onclose = function(e) {
+                    console.log('Notification WS Closed. Reconnecting in 3s...');
+                    setTimeout(connectNotificationWS, 3000);
+                };
+                
+                notificationSocket.onerror = function(err) {
+                    console.error('Notification WS Error:', err);
+                    notificationSocket.close();
+                };
+            }
+
+            connectNotificationWS();
+
+            function updateBadge() {
+                const unreadCount = notificationsData.filter(n => !n.read).length;
+                if (unreadCount > 0) {
+                    notificationCount.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    notificationCount.style.display = 'flex';
+                } else {
+                    notificationCount.style.display = 'none';
+                }
+            }
+
+            function renderNotifications() {
+                notificationsList.innerHTML = '';
+                const unreadNotifications = notificationsData.filter(n => !n.read);
+                
+                if (unreadNotifications.length === 0) {
+                    notificationsList.innerHTML = '<li style="padding: 2rem; text-align: center; color: var(--text-secondary);">No new notifications</li>';
+                    return;
+                }
+
+                unreadNotifications.forEach(notif => {
+                    const li = document.createElement('li');
+                    li.className = `notification-item unread`;
+                    li.innerHTML = `
+                        <div class="notification-content">${notif.content}</div>
+                        <div class="notification-time">${notif.time}</div>
+                        <div class="notification-actions">
+                            <button class="btn-open-chat" 
+                                data-student-id="${notif.student_id}" 
+                                data-student-name="${notif.student_name}" 
+                                data-message-id="${notif.message_id}"
+                                data-id="${notif.id}">
+                                Open
+                            </button>
+                            <button class="btn-mark-read" data-id="${notif.id}">Mark as read</button>
+                        </div>
+                    `;
+                    notificationsList.appendChild(li);
+                });
+                updateBadge();
+            }
+
+            // Initial render
+            renderNotifications();
+
+            // Toggle panel
+            notificationsIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                notificationsPanel.classList.toggle('active');
+            });
+
+            // Close panel
+            if (closeNotifications) {
+                closeNotifications.addEventListener('click', () => {
+                    notificationsPanel.classList.remove('active');
+                });
+            }
+
+            // Handle notification actions
+            notificationsList.addEventListener('click', function(e) {
+                // Mark as Read
+                if (e.target.classList.contains('btn-mark-read')) {
+                    const notificationId = e.target.dataset.id;
+                    const btn = e.target;
+                    
+                    // Get CSRF token
+                    let csrfToken = '{{ csrf_token }}';
+                    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+                    if (csrfInput) {
+                        csrfToken = csrfInput.value;
+                    }
+
+                    fetch(`/notifications/mark-read/${notificationId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrfToken
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update local data
+                            const notif = notificationsData.find(n => n.id === notificationId);
+                            if (notif) notif.read = true;
+                            
+                            // Re-render to remove the item (since we only show unread)
+                            renderNotifications();
+                        }
+                    })
+                    .catch(err => console.error('Error marking read:', err));
+                }
+                // Open Chat
+                else if (e.target.classList.contains('btn-open-chat')) {
+                    e.preventDefault();
+                    const btn = e.target;
+                    const studentId = btn.getAttribute('data-student-id');
+                    const studentName = btn.getAttribute('data-student-name');
+                    const messageId = btn.getAttribute('data-message-id');
+                    
+                    if (studentId && window.StudentConversationManager) {
+                        if (messageId) {
+                            window.StudentConversationManager.setTargetMessage(messageId);
+                        }
+                        window.StudentConversationManager.open(studentId, studentName, '', null);
+                    }
+
+                    // Mark as read automatically
+                    const notificationId = btn.getAttribute('data-id');
+                    if (notificationId) {
+                        // Get CSRF token
+                        let csrfToken = '{{ csrf_token }}';
+                        const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+                        if (csrfInput) {
+                            csrfToken = csrfInput.value;
+                        }
+
+                        fetch(`/notifications/mark-read/${notificationId}/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrfToken
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                const notif = notificationsData.find(n => n.id === notificationId);
+                                if (notif) notif.read = true;
+                                renderNotifications();
+                            }
+                        })
+                        .catch(err => console.error('Error marking read:', err));
+                    }
+
+                    // Close notification panel
+                    notificationsPanel.classList.remove('active');
+                }
+            });
+            
+            // Close when clicking outside
+            document.addEventListener('click', function(e) {
+                if (notificationsPanel.classList.contains('active') && 
+                    !notificationsPanel.contains(e.target) && 
+                    !notificationsIcon.contains(e.target)) {
+                    notificationsPanel.classList.remove('active');
+                }
             });
         });
     </script>

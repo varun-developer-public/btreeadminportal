@@ -321,7 +321,7 @@ def get_trainer_slots(request):
     trainer_id = request.GET.get('trainer_id')
     try:
         trainer = Trainer.objects.get(id=trainer_id)
-        active_batches = Batch.objects.filter(trainer=trainer, batch_status__in=['IP', 'YTS'])
+        active_batches = Batch.objects.filter(trainer=trainer, batch_status__in=['IP', 'YTS', 'H'])
         taken_slots = [(batch.start_time, batch.end_time) for batch in active_batches]
 
         if not isinstance(trainer.timing_slots, list):
@@ -349,10 +349,10 @@ def get_students_for_course(request):
     course_id = request.GET.get('course_id')
     exclude_students_in_any_batch = request.GET.get('exclude_students_in_any_batch', 'false').lower() == 'true'
 
-    # Fetch all students for this course with status YTS or IP
+    # Fetch all students for this course with status YTS or IP or Hold
     students = Student.objects.filter(
         course_id=course_id,
-        course_status__in=['YTS', 'IP']
+        course_status__in=['YTS', 'IP', 'H']
     )
 
     if exclude_students_in_any_batch:

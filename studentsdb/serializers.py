@@ -3,6 +3,7 @@ from .models import ConversationMessage
 def message_to_dict(msg: ConversationMessage):
     return {
         "id": msg.id,
+        "sender_id": msg.sender.id if msg.sender else None,
         "sender": getattr(msg.sender, "name", None) or getattr(msg.sender, "email", "System") if msg.sender else "System",
         "sender_role": msg.sender_role,
         "hashtag": getattr(msg, "hashtag", "") or "",
@@ -22,5 +23,13 @@ def message_to_dict(msg: ConversationMessage):
                 "read_at": status.read_at.isoformat()
             }
             for status in msg.read_statuses.all()
+        ],
+        "mentions": [
+            {
+                "id": user.id,
+                "name": getattr(user, "name", None) or getattr(user, "email", "Unknown"),
+                "role": getattr(user, "role", "")
+            }
+            for user in msg.mentions.all()
         ]
     }

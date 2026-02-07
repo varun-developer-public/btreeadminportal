@@ -374,7 +374,7 @@
                     <td>{{ batch.trainer.name }}</td>
                     <td>{{ batch.batch_percentage|floatformat:2 }}%</td>
                     <td>
-                        <span class="badge {% if batch.batch_status == 'YTS' %}bg-warning text-dark{% elif batch.batch_status == 'IP' %}bg-success{% else %}bg-secondary{% endif %}">
+                        <span class="badge {% if batch.batch_status == 'YTS' %}bg-warning text-dark{% elif batch.batch_status == 'IP' %}bg-success{% elif batch.batch_status == 'H' %}bg-danger{% else %}bg-secondary{% endif %}">
                             {{ batch.get_batch_status_display }}
                         </span>
                     </td>

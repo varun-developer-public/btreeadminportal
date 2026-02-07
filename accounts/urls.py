@@ -22,4 +22,5 @@ urlpatterns = [
     path('trainers/availability/', trainers_availabity, name='trainers_availability'),
     path('api/trainer_availability/', trainer_availability_api, name='trainer_availability_api'),
     path('api/trainers_by_course/', trainers_by_course, name='trainers_by_course'),
+    path('notifications/mark-read/<str:notification_id>/', mark_notification_read, name='mark_notification_read'),
 ]

@@ -11,7 +11,7 @@ from paymentdb.forms import PaymentForm
 from placementdb.forms import PlacementUpdateForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Max, Case, When, BooleanField, Value, IntegerField
+from django.db.models import Q, Max, Case, When, BooleanField, Value, IntegerField, Count, F
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .forms import StudentUpdateForm
 from dateutil.relativedelta import relativedelta
@@ -25,6 +25,7 @@ from asgiref.sync import async_to_sync
 from .serializers import message_to_dict
 from django.db import transaction
 from datetime import datetime
+from django.contrib.auth import get_user_model
 
 @login_required
 def student_remarks(request):
@@ -86,23 +87,69 @@ def student_remarks(request):
     if hashtag_filter:
         student_qs = student_qs.filter(conversation__last_message_hashtag__icontains=hashtag_filter)
 
-    student_qs = student_qs.select_related('conversation').annotate(
-        has_unread=Case(
-            When(conversation__unread_count__gt=0, then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        ),
-        effective_priority=Case(
-            When(conversation__unread_count__gt=0, then='conversation__priority_level'),
-            default=Value(0),
-            output_field=IntegerField(),
+    # Always annotate unread_mention_count for the current user
+    if user.is_authenticated:
+        student_qs = student_qs.annotate(
+            total_user_mentions=Count(
+                'conversation__messages',
+                filter=Q(conversation__messages__mentions=user),
+                distinct=True
+            ),
+            read_user_mentions=Count(
+                'conversation__messages',
+                filter=Q(
+                    conversation__messages__mentions=user,
+                    conversation__messages__read_statuses__user=user
+                ),
+                distinct=True
+            ),
+            total_incoming_messages=Count(
+                'conversation__messages',
+                filter=~Q(conversation__messages__sender=user),
+                distinct=True
+            ),
+            read_incoming_messages=Count(
+                'conversation__messages',
+                filter=Q(
+                    ~Q(conversation__messages__sender=user),
+                    conversation__messages__read_statuses__user=user
+                ),
+                distinct=True
+            )
+        ).annotate(
+            unread_mention_count=F('total_user_mentions') - F('read_user_mentions'),
+            user_unread_count=F('total_incoming_messages') - F('read_incoming_messages')
         )
-    ).order_by(
-        '-has_unread', 
-        '-effective_priority',
-        '-conversation__last_message_at',
-        '-id'
-    )
+
+    mentions_only = request.GET.get('mentions_only') == 'true'
+
+    if mentions_only and user.is_authenticated:
+        # Filter for conversations where user is mentioned
+        student_qs = student_qs.filter(conversation__messages__mentions=user).distinct()
+        
+        student_qs = student_qs.select_related('conversation').order_by(
+            '-unread_mention_count',
+            '-conversation__last_message_at',
+            '-id'
+        )
+    else:
+        student_qs = student_qs.select_related('conversation').annotate(
+            has_unread=Case(
+                When(conversation__unread_count__gt=0, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
+            ),
+            effective_priority=Case(
+                When(conversation__unread_count__gt=0, then='conversation__priority_level'),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by(
+            '-has_unread', 
+            '-effective_priority',
+            '-conversation__last_message_at',
+            '-id'
+        )
     paginator = Paginator(student_qs, 10)
     page = request.GET.get('page')
     try:
@@ -133,10 +180,12 @@ def student_remarks(request):
             'last_name': s.last_name or '',
             'student_id': s.student_id,
             'unread_count': conv.unread_count,
+            'user_unread_count': getattr(s, 'user_unread_count', 0),
             'is_priority': conv.last_message_priority, # Use the last-message-only derived flag
             'priority_level': conv.last_message_priority_level, # Use the last-message-only derived flag
             'last_message': conv.last_message,
             'last_message_time': conv.last_message_at.isoformat() if conv.last_message_at else None,
+            'unread_mention_count': getattr(s, 'unread_mention_count', 0),
         })
 
     context = {
@@ -148,6 +197,7 @@ def student_remarks(request):
         'query_params': query_params.urlencode(),
         'selected_priority': priority_filter,
         'selected_hashtag': hashtag_filter,
+        'mentions_only': mentions_only,
     }
     return render(request, 'studentsdb/student_remarks.html', context)
 
@@ -890,3 +940,18 @@ def conversation_upload(request, student_pk):
         pass
         
     return JsonResponse(message_to_dict(msg))
+
+@login_required
+@require_http_methods(["GET"])
+def get_mentionable_users(request):
+    User = get_user_model()
+    # Fetch active users who are staff, admin, or have specific roles
+    users = User.objects.filter(is_active=True).filter(
+        Q(is_staff=True) | 
+        Q(is_superuser=True) | 
+        Q(role__in=['admin', 'staff', 'batch_coordination', 'consultant', 'trainer', 'placement'])
+    ).values('id', 'name', 'email', 'role').distinct()
+    
+    data = list(users)
+    return JsonResponse({"users": data})
+

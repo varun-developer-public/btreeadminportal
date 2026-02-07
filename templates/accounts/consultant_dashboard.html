@@ -24,14 +24,11 @@
            <input type="text" class="bcd-search-input" id="bcd-search-input" placeholder="Search batches...">
        </div>
    
-       <!-- Right: notifications -->
-       <div class="bcd-top-right">
-           <div class="bcd-notifications">
-               <i class="fas fa-bell fa-lg"></i>
-               <span class="bcd-notification-count"></span>
-           </div>
-       </div>
-   </div>
+       <!-- notifications moved to navbar -->
+    <div class="bcd-top-right">
+        <!-- Other top right content if any -->
+    </div>
+</div>
    
    
        <!-- Stats Row -->
@@ -64,6 +61,13 @@
                </svg>
                <p class="bcd-stat-value">{{ in_progress_batches }}</p>
                <p class="bcd-stat-label">In Progress</p>
+           </div>
+           <div class="bcd-stat-card">
+               <svg class="bcd-stat-icon" viewBox="0 0 24 24">
+                   <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+               </svg>
+               <p class="bcd-stat-value">{{ hold_batches }}</p>
+               <p class="bcd-stat-label">On Hold</p>
            </div>
            <div class="bcd-stat-card">
                <svg class="bcd-stat-icon" viewBox="0 0 24 24">
@@ -272,20 +276,7 @@
            </div>
        </div>
    
-       <!-- Notifications Panel -->
-       <div class="bcd-notifications-panel" id="notificationsPanel">
-           <div class="bcd-notifications-header">
-               <h3 class="bcd-notifications-title">Notifications</h3>
-               <button class="bcd-action-btn" id="closeNotifications">
-                   <svg class="bcd-icon" viewBox="0 0 24 24" width="24" height="24">
-                       <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path>
-                   </svg>
-               </button>
-           </div>
-           <ul class="bcd-notifications-list" id="notificationsList">
-               <!-- Notifications will be populated by JavaScript -->
-           </ul>
-       </div>
+    <!-- Notifications moved to navbar -->
    
     
    </div>
@@ -299,10 +290,9 @@
    document.addEventListener('DOMContentLoaded', function() {
        // Get data from Django context
        const batchesData = JSON.parse('{{ batches_data|escapejs }}');
-       const trainersData = JSON.parse('{{ trainers_data|escapejs }}');
-       const notificationsData = JSON.parse('{{ notifications_data|escapejs }}');
-   
-       // Initialize Batches Table
+    const trainersData = JSON.parse('{{ trainers_data|escapejs }}');
+    
+    // Initialize Batches Table
        function initBatchesTable() {
            const tableBody = document.querySelector('#batchesTable tbody');
            tableBody.innerHTML = '';
@@ -409,70 +399,7 @@
            }
        }
    
-       // Initialize Notifications
-       function initNotifications() {
-           const notificationsIcon = document.querySelector('.bcd-notifications');
-           const notificationsPanel = document.getElementById('notificationsPanel');
-           const closeNotifications = document.getElementById('closeNotifications');
-           const notificationsList = document.getElementById('notificationsList');
-           
-           // Update notifications badge
-           const unreadCount = notificationsData.filter(n => !n.read).length;
-           document.querySelector('.bcd-notification-count').textContent = unreadCount;
-           
-           // Populate notifications list
-           notificationsList.innerHTML = '';
-           notificationsData.forEach(notification => {
-               const li = document.createElement('li');
-               li.className = 'bcd-notification-item';
-               if (!notification.read) {
-                   li.className += ' unread';
-               }
-               
-               li.innerHTML = `
-                   <div class="bcd-notification-content">${notification.content}</div>
-                   <div class="bcd-notification-time">${notification.time}</div>
-                   <div class="bcd-notification-actions">
-                       <button class="bcd-btn bcd-btn-secondary" data-id="${notification.id}">Mark as Read</button>
-                   </div>
-               `;
-               
-               notificationsList.appendChild(li);
-           });
-           
-           // Toggle notifications panel
-           notificationsIcon.addEventListener('click', function() {
-               notificationsPanel.classList.toggle('active');
-           });
-           
-           // Close notifications panel
-           closeNotifications.addEventListener('click', function() {
-               notificationsPanel.classList.remove('active');
-           });
-           
-           // Mark notification as read
-           notificationsList.addEventListener('click', function(e) {
-               if (e.target.classList.contains('bcd-btn-secondary')) {
-                   const notificationId = e.target.dataset.id;
-                   // Send AJAX request to mark notification as read
-                   fetch(`/notifications/mark-read/${notificationId}/`, {
-                       method: 'POST',
-                       headers: {
-                           'Content-Type': 'application/json',
-                           'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                       }
-                   })
-                   .then(response => response.json())
-                   .then(data => {
-                       if (data.success) {
-                           e.target.closest('.bcd-notification-item').classList.remove('unread');
-                           const newUnreadCount = parseInt(document.querySelector('.bcd-notification-count').textContent) - 1;
-                           document.querySelector('.bcd-notification-count').textContent = newUnreadCount > 0 ? newUnreadCount : 0;
-                       }
-                   });
-               }
-           });
-       }
+   
    
        // Initialize Student Transfer Modal
     //    function initStudentTransferModal() {
@@ -570,17 +497,19 @@
        }
    
        function formatStatus(status) {
-           switch (status) {
-               case 'ip':
-                   return 'In Progress';
-               case 'yts':
-                   return 'Yet to Start';
-               case 'c':
-                   return 'Completed';
-               default:
-                   return status;
-           }
-       }
+        switch (status) {
+            case 'ip':
+                return 'In Progress';
+            case 'yts':
+                return 'Yet to Start';
+            case 'c':
+                return 'Completed';
+            case 'h':
+                return 'Hold';
+            default:
+                return status;
+        }
+    }
    
        // Make viewBatchDetails function globally available
        window.viewBatchDetails = function(batchId) {

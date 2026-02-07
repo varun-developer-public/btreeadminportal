@@ -7,6 +7,24 @@
     </a>
     <div class="navbar-right">
         {% if user.is_authenticated %}
+            <div class="notifications-wrapper">
+                <div class="notifications-icon" id="notificationsIcon">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
+                </div>
+                <div class="notifications-panel" id="notificationsPanel">
+                    <div class="notifications-header">
+                        <h3 class="notifications-title">Notifications</h3>
+                        <button class="close-notifications" id="closeNotifications">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <ul class="notifications-list" id="notificationsList">
+                        <!-- Notifications will be populated by JS -->
+                    </ul>
+                </div>
+            </div>
+
             {% if user.is_superuser or user.role == 'staff' %}
             <div class="dropdown">
                 <button class="profile-button" type="button" id="dashboardDropdown" data-bs-toggle="dropdown" aria-expanded="false">

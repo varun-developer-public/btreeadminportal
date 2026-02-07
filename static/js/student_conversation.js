@@ -170,6 +170,176 @@ window.resetMsgInputs = function(prefix) {
   }
 };
 
+// Mention System
+(function() {
+    var mentionableUsers = [];
+    var isFetchingUsers = false;
+    
+    function fetchMentionUsers() {
+        if (mentionableUsers.length > 0 || isFetchingUsers) return;
+        isFetchingUsers = true;
+        fetch('/students/mentionable-users/')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                mentionableUsers = data.users || [];
+                isFetchingUsers = false;
+            })
+            .catch(function(e) {
+                console.error("Error fetching mention users", e);
+                isFetchingUsers = false;
+            });
+    }
+
+    window.setupMentionSystem = function(textareaOrId) {
+        var textarea = (typeof textareaOrId === 'string') 
+            ? document.getElementById(textareaOrId) 
+            : textareaOrId;
+            
+        if (!textarea) return;
+        
+        // Prevent double attachment
+        if (textarea.getAttribute('data-mention-attached')) return;
+        textarea.setAttribute('data-mention-attached', 'true');
+
+        fetchMentionUsers();
+
+        var popup = document.createElement('div');
+        popup.className = 'list-group position-absolute shadow';
+        popup.style.display = 'none';
+        popup.style.zIndex = '9999';
+        popup.style.maxHeight = '200px';
+        popup.style.overflowY = 'auto';
+        popup.style.width = '250px';
+        popup.style.fontSize = '0.9rem';
+        document.body.appendChild(popup);
+        
+        var activeIndex = 0;
+
+        function showPopup(users) {
+            if (users.length === 0) {
+                popup.style.display = 'none';
+                return;
+            }
+            
+            // Render list
+            popup.innerHTML = '';
+            users.forEach(function(u, idx) {
+                var item = document.createElement('a');
+                item.href = '#';
+                item.className = 'list-group-item list-group-item-action p-2 d-flex flex-column';
+                item.innerHTML = '<div><strong>' + escapeHTML(u.name) + '</strong></div>' +
+                                 '<small class="text-muted">' + escapeHTML(u.role || '') + '</small>';
+                if (idx === activeIndex) item.classList.add('active');
+                
+                item.onmousedown = function(e) { // mousedown prevents blur
+                    e.preventDefault();
+                    selectUser(u);
+                };
+                popup.appendChild(item);
+            });
+            
+            // Position
+            popup.style.display = 'block'; // Block first to get dimensions
+            
+            // Better positioning: stick to bottom-left of textarea if room, else top-left
+            var rect = textarea.getBoundingClientRect();
+            var top = rect.top + window.scrollY - popup.offsetHeight;
+            if (top < window.scrollY) top = rect.bottom + window.scrollY;
+            
+            popup.style.top = top + 'px';
+            popup.style.left = (rect.left + window.scrollX) + 'px';
+        }
+
+        function selectUser(u) {
+            var val = textarea.value;
+            var cursor = textarea.selectionStart;
+            var textBefore = val.substring(0, cursor);
+            var textAfter = val.substring(cursor);
+            var lastAt = textBefore.lastIndexOf('@');
+            
+            if (lastAt === -1) return;
+            
+            var newVal = textBefore.substring(0, lastAt) + '@' + u.name + ' ' + textAfter;
+            textarea.value = newVal;
+            popup.style.display = 'none';
+            textarea.focus();
+            
+            // Move cursor
+            var newCursor = lastAt + u.name.length + 2; // @ + Name + space
+            textarea.setSelectionRange(newCursor, newCursor);
+        }
+
+        textarea.addEventListener('input', function(e) {
+            var val = this.value;
+            var cursor = this.selectionStart;
+            var textBefore = val.substring(0, cursor);
+            
+            // Check if we are typing a mention
+            // Matches @ followed by characters until end of string
+            var match = textBefore.match(/@([a-zA-Z0-9_\.\-\s]*)$/);
+            
+            if (match) {
+                var query = match[1].toLowerCase();
+                // Filter users
+                var filtered = mentionableUsers.filter(function(u) { 
+                    return (u.name.toLowerCase().includes(query) || 
+                           (u.role && u.role.toLowerCase().includes(query)));
+                });
+                
+                if (filtered.length > 0) {
+                    activeIndex = 0;
+                    showPopup(filtered);
+                } else {
+                    popup.style.display = 'none';
+                }
+            } else {
+                popup.style.display = 'none';
+            }
+        });
+
+        textarea.addEventListener('keydown', function(e) {
+            if (popup.style.display === 'block') {
+                var items = popup.querySelectorAll('a');
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex + 1) % items.length;
+                    updateActive(items);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    activeIndex = (activeIndex - 1 + items.length) % items.length;
+                    updateActive(items);
+                } else if (e.key === 'Enter' || e.key === 'Tab') {
+                    e.preventDefault();
+                    if (items[activeIndex]) {
+                         // Trigger click
+                         var evt = new MouseEvent('mousedown', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        items[activeIndex].dispatchEvent(evt);
+                    }
+                } else if (e.key === 'Escape') {
+                    popup.style.display = 'none';
+                }
+            }
+        });
+        
+        textarea.addEventListener('blur', function() {
+            // Delay hiding to allow click event to register
+            setTimeout(function(){ popup.style.display = 'none'; }, 200);
+        });
+
+        function updateActive(items) {
+            items.forEach(function(item, idx) {
+                if (idx === activeIndex) item.classList.add('active');
+                else item.classList.remove('active');
+            });
+            if (items[activeIndex]) items[activeIndex].scrollIntoView({ block: 'nearest' });
+        }
+    };
+})();
+
 window.selectHashtag = function(val, mode) {
   try {
     var idPrefix = mode === 'remarks' ? 'remarks-' : 'conv-modal-';
@@ -475,10 +645,18 @@ function renderMessage(containerEl, msg) {
       contentHtml = '<div class="mb-2 p-2 bg-light border rounded"><a href="' + fileUrl + '" target="_blank" class="text-decoration-none text-dark d-flex align-items-center"><i class="fas fa-file me-2 text-primary"></i> <span class="text-truncate" style="max-width: 200px;">' + fileName + '</span> <i class="fas fa-download ms-auto text-muted"></i></a></div>';
     }
     if (text) {
-      contentHtml += '<p class="msg-text mt-1" id="msg-text-' + msg.id + '">' + text + '</p>';
+      // Mention highlighting - support international chars
+      var processedText = text.replace(/@([a-zA-Z0-9_\.\-\u00C0-\u00FF]+(?:\s[A-Z\u00C0-\u00D6\u00D8-\u00DE][a-zA-Z0-9_\.\-\u00C0-\u00FF]*)?)/g, function(match) {
+          return '<span class="mention-text fw-bold">' + match + '</span>';
+      });
+      contentHtml += '<p class="msg-text mt-1" id="msg-text-' + msg.id + '">' + processedText + '</p>';
     }
   } else {
-    contentHtml = '<p class="msg-text" id="msg-text-' + msg.id + '">' + text + '</p>';
+    // Mention highlighting - support international chars
+    var processedText = text.replace(/@([a-zA-Z0-9_\.\-\u00C0-\u00FF]+(?:\s[A-Z\u00C0-\u00D6\u00D8-\u00DE][a-zA-Z0-9_\.\-\u00C0-\u00FF]*)?)/g, function(match) {
+        return '<span class="mention-text fw-bold">' + match + '</span>';
+    });
+    contentHtml += '<p class="msg-text" id="msg-text-' + msg.id + '">' + processedText + '</p>';
   }
 
   // Edited indicator
@@ -620,6 +798,10 @@ function initStudentConversation(studentId) {
   const formEl = document.getElementById('conv-form-' + studentId);
   const textarea = formEl ? formEl.querySelector('textarea[name="message"]') : null;
 
+  if (window.setupMentionSystem && textarea) {
+    window.setupMentionSystem(textarea);
+  }
+
   function loadMessagesHTTP(){
     fetch('/students/conversation/' + studentId + '/messages/')
     .then(function(r){ 
@@ -738,6 +920,7 @@ var StudentConversationManager = (function(){
   var currentId = null;
   var modalInstance = null;
   var tableRowEl = null;
+  var targetMessageId = null;
   function cleanup(){
     try { if (socket) { socket.close(); socket = null; } } catch(e){}
     try { document.body.classList.remove('modal-open'); } catch(e){}
@@ -808,6 +991,11 @@ var StudentConversationManager = (function(){
     tableRowEl = rowEl || null;
     messagesEl.innerHTML = '';
     messagesEl.setAttribute('data-last-date','');
+    
+    if (window.setupMentionSystem && textareaEl) {
+      window.setupMentionSystem(textareaEl);
+    }
+
     var wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
     var hostname = window.location.hostname;
     var port = window.location.port ? (':' + window.location.port) : '';
@@ -825,6 +1013,22 @@ var StudentConversationManager = (function(){
         messagesEl.innerHTML = '';
         messagesEl.setAttribute('data-last-date','');
         data.messages.forEach(function(m){ renderMessage(messagesEl, m); });
+        
+        if (targetMessageId) {
+            setTimeout(function() {
+                var el = document.getElementById('msg-row-' + targetMessageId);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.transition = 'background-color 2s';
+                    var originalBg = el.style.backgroundColor;
+                    el.style.backgroundColor = '#fff3cd'; 
+                    setTimeout(function() {
+                        el.style.backgroundColor = originalBg;
+                    }, 2000);
+                }
+                targetMessageId = null;
+            }, 300);
+        }
       } else if (data.action === 'new_message' && data.message) {
         renderMessage(messagesEl, data.message);
         updateRowCells(tableRowEl, data.message);
@@ -920,6 +1124,11 @@ var StudentConversationManager = (function(){
     // Connect WebSocket
     connect(id, messagesEl, formEl, textareaEl, titleEl, sname, scode, rowEl);
     
+    // Initialize Mention System
+    if (window.setupMentionSystem && textareaEl) {
+        window.setupMentionSystem(textareaEl);
+    }
+    
     // Get or create modal instance
     var modal = bootstrap.Modal.getOrCreateInstance(modalEl, {backdrop: true, keyboard: true, focus: true});
     modalInstance = modal;
@@ -966,7 +1175,8 @@ var StudentConversationManager = (function(){
   });
 
   return {
-    open: openModal
+    open: openModal,
+    setTargetMessage: function(id) { targetMessageId = id; }
   };
 })();
 
@@ -1191,8 +1401,11 @@ window.updateMessageBubble = function(msg) {
   
   var newText = msg.message || '';
   
-  // Update text
-  msgTextEl.innerText = newText;
+  // Update text with mention highlighting
+  var processedText = escapeHTML(newText).replace(/@([a-zA-Z0-9_\.\-]+(?:\s[a-zA-Z0-9_\.\-]+)?)/g, function(match) {
+      return '<span class="text-primary fw-bold">' + match + '</span>';
+  });
+  msgTextEl.innerHTML = processedText;
   msgTextEl.style.display = 'block';
   
   // Remove edit container if exists

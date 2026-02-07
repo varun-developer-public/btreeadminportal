@@ -26,10 +26,7 @@
 
     <!-- Right: notifications -->
     <div class="bcd-top-right">
-        <div class="bcd-notifications">
-            <i class="fas fa-bell fa-lg"></i>
-            <span class="bcd-notification-count"></span>
-        </div>
+        <!-- Notifications moved to navbar -->
     </div>
 </div>
 
@@ -57,6 +54,13 @@
             </svg>
             <p class="bcd-stat-value">{{ in_progress_batches }}</p>
             <p class="bcd-stat-label">In Progress</p>
+        </div>
+        <div class="bcd-stat-card">
+            <svg class="bcd-stat-icon" viewBox="0 0 24 24">
+                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>
+            </svg>
+            <p class="bcd-stat-value">{{ hold_batches }}</p>
+            <p class="bcd-stat-label">On Hold</p>
         </div>
         <div class="bcd-stat-card">
             <svg class="bcd-stat-icon" viewBox="0 0 24 24">
@@ -394,7 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get data from Django context
     const batchesData = JSON.parse('{{ batches_data|escapejs }}');
     const trainersData = JSON.parse('{{ trainers_data|escapejs }}');
-    const notificationsData = JSON.parse('{{ notifications_data|escapejs }}');
+    // notificationsData moved to base.html
 
     // Initialize Batches Table
     function initBatchesTable() {
@@ -676,69 +680,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Initialize Notifications
-    function initNotifications() {
-        const notificationsIcon = document.querySelector('.bcd-notifications');
-        const notificationsPanel = document.getElementById('notificationsPanel');
-        const closeNotifications = document.getElementById('closeNotifications');
-        const notificationsList = document.getElementById('notificationsList');
-        
-        // Update notifications badge
-        const unreadCount = notificationsData.filter(n => !n.read).length;
-        document.querySelector('.bcd-notification-count').textContent = unreadCount;
-        
-        // Populate notifications list
-        notificationsList.innerHTML = '';
-        notificationsData.forEach(notification => {
-            const li = document.createElement('li');
-            li.className = 'bcd-notification-item';
-            if (!notification.read) {
-                li.className += ' unread';
-            }
-            
-            li.innerHTML = `
-                <div class="bcd-notification-content">${notification.content}</div>
-                <div class="bcd-notification-time">${notification.time}</div>
-                <div class="bcd-notification-actions">
-                    <button class="bcd-btn bcd-btn-secondary" data-id="${notification.id}">Mark as Read</button>
-                </div>
-            `;
-            
-            notificationsList.appendChild(li);
-        });
-        
-        // Toggle notifications panel
-        notificationsIcon.addEventListener('click', function() {
-            notificationsPanel.classList.toggle('active');
-        });
-        
-        // Close notifications panel
-        closeNotifications.addEventListener('click', function() {
-            notificationsPanel.classList.remove('active');
-        });
-        
-        // Mark notification as read
-        notificationsList.addEventListener('click', function(e) {
-            if (e.target.classList.contains('bcd-btn-secondary')) {
-                const notificationId = e.target.dataset.id;
-                // Send AJAX request to mark notification as read
-                fetch(`/notifications/mark-read/${notificationId}/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        e.target.closest('.bcd-notification-item').classList.remove('unread');
-                        const newUnreadCount = parseInt(document.querySelector('.bcd-notification-count').textContent) - 1;
-                        document.querySelector('.bcd-notification-count').textContent = newUnreadCount > 0 ? newUnreadCount : 0;
-                    }
-                });
-            }
-        });
-    }
+    // Notifications moved to base.html
 
     // Initialize Student Transfer Modal
     function initStudentTransferModal() {
@@ -843,6 +785,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return 'Yet to Start';
             case 'c':
                 return 'Completed';
+            case 'h':
+                return 'Hold';
             default:
                 return status;
         }

@@ -23,7 +23,7 @@ URL_ROLE_MAPPINGS = {
         'batchtransaction-list','batchtransaction-detail',
         'studenthistory-list','studenthistory-detail','batch_report','interview_list',
         'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','requests_list','student_report',
-        'student_remarks'
+        'student_remarks',
     ],
     'placement': [
         'placement_dashboard',
@@ -32,13 +32,13 @@ URL_ROLE_MAPPINGS = {
         'batch_list','drive_list', 'drive_add', 'drive_edit', 'get_courses',
         'company_list','company_create','company_update','schedule_interview','add_interview_round','update_interview_students',
         'ajax_load_students','postpone_interview_round', 'restart_interview_cycle','student_report','conversation_messages','api_courses_by_category','edit_resume_shared_status',
-        'delete_placement','batch_report','interview_list','placed_students_list'
+        'delete_placement','batch_report','interview_list','placed_students_list',
     ],
     'trainer': [
         'trainer_dashboard',
         'batch_list', 'student_remarks',
         'student_list','batch_report','student_report','conversation_messages','conversation_send',
-        'batch_list','update_batch','course_list','category_list','course_create','course_update','get_next_course_code','get_courses_by_category'
+        'batch_list','update_batch','course_list','category_list','course_create','course_update','get_next_course_code','get_courses_by_category',
     ],
     'batch_coordination': [
         'batch_coordination_dashboard',
@@ -66,7 +66,7 @@ URL_ROLE_MAPPINGS = {
         'batchtransaction-list','batchtransaction-detail',
         'studenthistory-list','studenthistory-detail','batch_report','conversation_messages','conversation_send',
         'course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report',
-        'get_payment_details'
+        'get_payment_details',
     ],
     'consultant': [
         'consultant_profile',
@@ -74,10 +74,10 @@ URL_ROLE_MAPPINGS = {
         'payment_list', 'payment_update',
         'create_student', 'update_student', 'get_courses','consultant_dashboard','course_list','conversation_messages','conversation_send',
         'category_list','get_courses_by_category','get_trainers_for_course','get_trainer_slots','get_students_for_course',
-        'get_next_course_code','get_course_duration','batch_report','course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report'
+        'get_next_course_code','get_course_duration','batch_report','course_list_api','trainer_availability_api','trainers_availability','trainers_by_course','student_report',
     ],
     'student': [
-        'student_remarks'
+        'student_remarks',
     ]
 }
 
@@ -85,7 +85,7 @@ URL_ROLE_MAPPINGS = {
 PUBLIC_URLS = [
     'home', 'logout', 'login',
     'password_change', 'password_change_done','manage_2fa','verify_2fa',
-    'conversation_messages', 'conversation_send', 'conversation_upload'
+    'conversation_messages', 'conversation_send', 'conversation_upload','get_mentionable_users'
 ]
 
 class RolePermissionsMiddleware:

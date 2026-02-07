@@ -23,6 +23,7 @@ class Batch(models.Model):
         ('YTS', 'Yet to Start'),
         ('IP', 'In Progress'),
         ('C', 'Completed'),
+        ('H', 'Hold'),
     ]
     
     BATCH_TYPE_CHOICES = [

@@ -219,3 +219,22 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function() {
+        function initMentionSystem() {
+            var ta = document.getElementById('{{ chat_id_prefix }}-textarea');
+            if (ta && window.setupMentionSystem) {
+                window.setupMentionSystem(ta);
+            }
+        }
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMentionSystem);
+        } else {
+            // If document is already ready (or this is loaded via AJAX), run immediately
+            // Use setTimeout to ensure the element is in DOM if this script runs before element insertion (unlikely if inline)
+            setTimeout(initMentionSystem, 100);
+        }
+    })();
+</script>

@@ -72,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'accounts.context_processors.user_notifications',
             ],
         },
     },
@@ -132,9 +133,9 @@ STATIC_URL = 'static/'
 
 
 # A list of directories where Django will look for your project's source static files.
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static'),
-# ]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 
 # --- MEDIA FILES CONFIGURATION (User-uploaded content) ---

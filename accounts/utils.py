@@ -37,3 +37,45 @@ def send_otp_email(email, otp):
     msg = EmailMultiAlternatives(subject, text_content, from_email, to)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
+
+from django.utils import timezone
+from studentsdb.models import ConversationMessage
+
+def get_unread_mentions(user):
+    if not user.is_authenticated:
+        return []
+    
+    # Messages where user is mentioned AND NOT read by user
+    messages = ConversationMessage.objects.filter(
+        mentions=user
+    ).exclude(
+        read_statuses__user=user
+    ).select_related('sender', 'conversation__student').order_by('-created_at')
+    
+    notifs = []
+    for msg in messages:
+        student = msg.conversation.student
+        student_name = f"{student.first_name} {student.last_name or ''}"
+        sender_name = msg.sender.name if msg.sender else "Unknown"
+        
+        # Calculate time diff
+        time_diff = timezone.now() - msg.created_at
+        if time_diff.days > 0:
+            time_str = f"{time_diff.days} days ago"
+        elif time_diff.seconds > 3600:
+            time_str = f"{time_diff.seconds // 3600} hours ago"
+        elif time_diff.seconds > 60:
+            time_str = f"{time_diff.seconds // 60} minutes ago"
+        else:
+            time_str = "Just now"
+        
+        notifs.append({
+            'id': f"mention_{msg.id}",
+            'message_id': msg.id,
+            'student_id': student.id,
+            'student_name': student_name,
+            'content': f"You were mentioned by {sender_name} in {student_name}'s chat",
+            'time': time_str,
+            'read': False
+        })
+    return notifs

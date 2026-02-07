@@ -137,6 +137,7 @@ class ConversationMessage(models.Model):
     file_name = models.CharField(max_length=255, blank=True)
     file_size = models.PositiveIntegerField(null=True, blank=True)
     file_mime = models.CharField(max_length=100, blank=True)
+    mentions = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='mentioned_in_messages', blank=True)
     is_edited = models.BooleanField(default=False)
     edited_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

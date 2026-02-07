@@ -42,6 +42,68 @@ from datetime import timedelta
 from trainersdb.models import Trainer
 from django.db.models import Count
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from studentsdb.models import ConversationMessage, MessageReadStatus
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+def get_unread_mentions(user):
+    if not user.is_authenticated:
+        return []
+    
+    # Messages where user is mentioned AND NOT read by user
+    messages = ConversationMessage.objects.filter(
+        mentions=user
+    ).exclude(
+        read_statuses__user=user
+    ).select_related('sender', 'conversation__student').order_by('-created_at')
+    
+    notifs = []
+    for msg in messages:
+        student = msg.conversation.student
+        student_name = f"{student.first_name} {student.last_name or ''}"
+        sender_name = msg.sender.name if msg.sender else "Unknown"
+        
+        # Calculate time diff
+        time_diff = timezone.now() - msg.created_at
+        if time_diff.days > 0:
+            time_str = f"{time_diff.days} days ago"
+        elif time_diff.seconds > 3600:
+            time_str = f"{time_diff.seconds // 3600} hours ago"
+        elif time_diff.seconds > 60:
+            time_str = f"{time_diff.seconds // 60} minutes ago"
+        else:
+            time_str = "Just now"
+        
+        notifs.append({
+            'id': f"mention_{msg.id}",
+            'message_id': msg.id,
+            'student_id': student.id,
+            'student_name': student_name,
+            'content': f"You were mentioned by {sender_name} in {student_name}'s chat",
+            'time': time_str,
+            'read': False
+        })
+    return notifs
+
+@csrf_exempt
+@login_required
+def mark_notification_read(request, notification_id):
+    if request.method == 'POST':
+        str_id = str(notification_id)
+        if str_id.startswith('mention_'):
+            try:
+                msg_id = str_id.split('_')[1]
+                msg = ConversationMessage.objects.get(id=msg_id)
+                MessageReadStatus.objects.get_or_create(message=msg, user=request.user)
+                return JsonResponse({'success': True})
+            except Exception as e:
+                # If message doesn't exist or other error
+                pass
+        
+        # For other types (transient notifications), we just return success
+        # to allow the frontend to update the UI (remove unread class).
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False}, status=400)
 
 @login_required
 @user_passes_test(is_admin)
@@ -293,6 +355,9 @@ def staff_dashboard(request):
     upcoming_payments_list.sort(key=lambda x: x['due_date'])
     upcoming_payments = upcoming_payments_list[:5]
 
+    # Notifications
+    notifications_data = get_unread_mentions(request.user)
+
     import json
     from django.core.serializers.json import DjangoJSONEncoder
 
@@ -318,7 +383,7 @@ def consultant_dashboard(request):
     
     # Get all batches with related data
     all_batches_for_stats = Batch.objects.all()
-    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS']).select_related('course', 'trainer').prefetch_related('students').order_by('end_date')
+    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS', 'H']).select_related('course', 'trainer').prefetch_related('students').order_by('end_date')
     
     # Prepare batches data for the dashboard
     batches_data = []
@@ -381,6 +446,11 @@ def consultant_dashboard(request):
     handovers = TrainerHandover.objects.select_related('batch', 'from_trainer', 'to_trainer').order_by('-requested_at')[:5]
     
     notifications_data = []
+    
+    # Add mention notifications
+    mention_notifs = get_unread_mentions(request.user)
+    notifications_data.extend(mention_notifs)
+
     for handover in handovers:
         notifications_data.append({
             'id': handover.id,
@@ -507,6 +577,7 @@ def consultant_dashboard(request):
         'total_batches': all_batches_for_stats.count(),
         'yts_batches': all_batches_for_stats.filter(batch_status='YTS').count(),
         'in_progress_batches': all_batches_for_stats.filter(batch_status='IP').count(),
+        'hold_batches': all_batches_for_stats.filter(batch_status='H').count(),
         'completed_batches': all_batches_for_stats.filter(batch_status='C').count(),
         'total_trainers': trainers.count(),
         'handovers': handovers.count(),
@@ -530,7 +601,7 @@ def trainer_dashboard(request):
     
     # Get all batches for the specific trainer
     all_batches_for_stats = Batch.objects.filter(trainer=trainer)
-    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS']).select_related('course').prefetch_related('students').order_by('end_date')
+    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS', 'H']).select_related('course').prefetch_related('students').order_by('end_date')
     
     # Prepare batches data for the dashboard
     batches_data = []
@@ -619,6 +690,7 @@ def trainer_dashboard(request):
         'total_batches': all_batches_for_stats.count(),
         'yts_batches': all_batches_for_stats.filter(batch_status='YTS').count(),
         'in_progress_batches': all_batches_for_stats.filter(batch_status='IP').count(),
+        'hold_batches': all_batches_for_stats.filter(batch_status='H').count(),
         'completed_batches': all_batches_for_stats.filter(batch_status='C').count(),
         'handovers': handovers.count(),
         'batches_data': json.dumps(batches_data, cls=DjangoJSONEncoder),
@@ -822,7 +894,7 @@ def batch_coordination_dashboard(request):
     
     # Get all batches with related data
     all_batches_for_stats = Batch.objects.all()
-    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS']).select_related('course', 'trainer').prefetch_related('students').order_by('end_date')
+    active_batches = all_batches_for_stats.filter(batch_status__in=['IP', 'YTS', 'H']).select_related('course', 'trainer').prefetch_related('students').order_by('end_date')
     
     # Prepare batches data for the dashboard
     batches_data = []
@@ -914,6 +986,7 @@ def batch_coordination_dashboard(request):
         'total_batches': all_batches_for_stats.count(),
         'yts_batches': all_batches_for_stats.filter(batch_status='YTS').count(),
         'in_progress_batches': all_batches_for_stats.filter(batch_status='IP').count(),
+        'hold_batches': all_batches_for_stats.filter(batch_status='H').count(),
         'completed_batches': all_batches_for_stats.filter(batch_status='C').count(),
         'total_trainers': trainers.count(),
         'handovers': handovers.count(),
@@ -1258,9 +1331,10 @@ def trainer_availability_api(request):
         completed_batches = all_batches.filter(batch_status='C').count()
         ongoing_batches = all_batches.filter(batch_status='IP').count()
         yts_batches = all_batches.filter(batch_status='YTS').count()
+        hold_batches = all_batches.filter(batch_status='H').count()
 
         # Filter for active batches for slot checking
-        active_batches = all_batches.filter(batch_status__in=['IP', 'YTS'])
+        active_batches = all_batches.filter(batch_status__in=['IP', 'YTS', 'H'])
 
         availability_data = []
         occupied_count = 0
@@ -1306,6 +1380,7 @@ def trainer_availability_api(request):
                 'completed_batches': completed_batches,
                 'ongoing_batches': ongoing_batches,
                 'yts_batches': yts_batches,
+                'hold_batches': hold_batches,
                 'occupied_count': occupied_count,
                 'available_count': available_count,
             }
@@ -1328,7 +1403,7 @@ def trainers_by_course(request):
         
         trainers_data = []
         for trainer in trainers:
-            active_batches = Batch.objects.filter(trainer=trainer, batch_status__in=['IP', 'YTS'])
+            active_batches = Batch.objects.filter(trainer=trainer, batch_status__in=['IP', 'YTS', 'H'])
             occupied_slots = 0
             if trainer.timing_slots:
                 for slot in trainer.timing_slots:
