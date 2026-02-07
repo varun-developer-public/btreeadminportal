@@ -129,7 +129,7 @@ def student_remarks(request):
         
         student_qs = student_qs.select_related('conversation').order_by(
             '-unread_mention_count',
-            '-conversation__last_message_at',
+            F('conversation__last_message_at').desc(nulls_last=True),
             '-id'
         )
     else:
@@ -147,7 +147,7 @@ def student_remarks(request):
         ).order_by(
             '-has_unread', 
             '-effective_priority',
-            '-conversation__last_message_at',
+            F('conversation__last_message_at').desc(nulls_last=True),
             '-id'
         )
     paginator = Paginator(student_qs, 10)
